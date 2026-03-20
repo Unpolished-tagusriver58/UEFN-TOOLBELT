@@ -4,7 +4,7 @@ UEFN Toolbelt contains 123+ tools across 24 modules. Because many tools actively
 
 ### ⚠️ Architectural Constraints
 *   **Main Thread Lock**: UEFN Python runs on the main render thread. Operations like `time.sleep` in wait loops will **deadlock** the engine, preventing async tasks (like screenshot saves) from completing. Verification logic should avoid blocking waits.
-*   **Hot-Reloading**: Use "Nuclear Reload" to clear `sys.modules` cache.
+*   **Hot-Reloading**: Use "Nuclear Reload" to clear `sys.modules` cache. **Mandatory**: Must call `tb.register_all_tools()` after reloading to rebuild the registry.
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 

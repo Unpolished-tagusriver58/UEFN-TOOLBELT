@@ -1113,6 +1113,14 @@ Snippets also auto-copy to the Windows clipboard when generated, so you can past
 
 ---
 
+### **The "Nuclear Reload" Command**
+If you have modified the Toolbelt source code, run this in the UEFN console to refresh everything without a restart:
+```python
+import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.launch_qt()
+```
+> [!IMPORTANT]
+> Always include `tb.register_all_tools()` after a pop, otherwise the tool registry will be empty!
+
 ### REPL Usage
 
 > **UEFN console tip:** Chain multiple statements on one line with semicolons (`;`). The console does not accept multi-line pastes, but a single line can contain as many `;`-separated statements as you need.
@@ -1645,6 +1653,17 @@ You **never need to restart UEFN** when developing for the Toolbelt.
 1.  **Edit** your Python code in your IDE.
 2.  **Run** the `deploy.bat` script to sync files to your project.
 3.  **Reload** in UEFN by pasting the "Nuclear Reload" command into the console.
+
+### **The "Nuclear Reload" Command**
+
+Paste this into the UEFN Python console to instantly refresh the Toolbelt without a restart:
+
+```python
+import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.launch_qt()
+```
+
+> [!WARNING]
+> You **must** include `tb.register_all_tools()` in the command. If you skip it, the Python environment will reload but the tool registry will be empty, resulting in "Unknown Tool" errors.
 
 This wipes the Python cache and re-imports every Toolbelt module instantly.
 
