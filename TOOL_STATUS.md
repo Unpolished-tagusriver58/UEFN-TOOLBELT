@@ -1,6 +1,6 @@
 # UEFN Toolbelt — Tool Status & Testing
 
-UEFN Toolbelt contains 117+ tools across 23 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **they cannot all be automatically executed in a single smoke test.**
+UEFN Toolbelt contains 122+ tools across 23 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **they cannot all be automatically executed in a single smoke test.**
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
