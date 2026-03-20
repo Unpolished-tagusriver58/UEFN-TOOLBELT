@@ -980,14 +980,10 @@ import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")
 
 > **UEFN Python console tip:** The console only accepts **one line at a time** — no multi-line pastes. Chain multiple statements on the same line using semicolons (`;`). A space before and after the semicolon works fine: `import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")`
 
-Expected result: **63/66 passing**. The 3 non-critical checks are:
+Expected result: **85/85 passing** — all systems healthy, Toolbelt is ready.
 
-| Check | Why it fails | How to fix |
-|---|---|---|
-| `import PySide6` | Not installed yet | Complete Step 2 above |
-| `verse-book/ clone present` | Verse spec not cloned yet | See Step 7 below |
-| `verse-book fix` | Same as above | See Step 7 below |
-
+> If you haven't installed PySide6 or cloned the verse-book yet, you may see a few non-critical failures.
+> Complete Steps 2 and 7 in the Getting Started guide above to resolve them.
 Layers 1–4 (Python env, UEFN API, all 117 tools, MCP bridge) will all pass. That means the full toolbelt is working.
 
 ---
