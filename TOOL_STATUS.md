@@ -106,7 +106,7 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - Property maps, method lists, and component hierarchies are accessible
 - JSON output is valid and machine-readable for AI analysis
 
-**What the automated integration test (12/12) proves:**
+**What the automated integration test (20/20) proves:**
 - **Viewport Control:** The system can successfully spawn, select, and destroy actors programmatically.
 - **Context-Aware Tools:** Selection-dependent tools (Bulk Ops, Materials) are confirmed to function on live actors.
 - **File System Integrity:** Screenshots, Snapshots, and Crawler JSONs are successfully written/read.
@@ -118,7 +118,16 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - **User Experience:** The "feel" of tool interactions and UI responsiveness.
 
 > [!IMPORTANT]
-> The `toolbelt_integration_test` is the single most important tool for ensuring the project remains stable as we add more features. **Always run this test before submitting a Pull Request.**
+> The `toolbelt_integration_test` (20/20) is the single most important tool for ensuring the project remains stable as we add more features. **Always run this test before submitting a Pull Request.**
+
+## 🗺️ Automation Roadmap
+The 100% target requires move coverage in these upcoming batches:
+
+### **Batch 3: Advanced Viewport Logic (Target: 35+ Tools)**
+- [ ] **Scatter Tools**: `scatter_props` & `scatter_hism` (Verify actor counts in radius)
+- [ ] **Spline Tools**: `spline_place_props` (Verify actors follow spline path)
+- [ ] **Asset Tools**: `rename_dry_run` & `rename_report` (Verify string manipulation)
+- [ ] **Optimization**: `memory_scan` (Verify JSON report generation)
 
 > **Future potential:** In theory, an automated integration test could use the crawler data to generate validation scripts — spawn actors, apply tool operations, then verify properties changed. That level of automation isn't built yet, but the crawler output provides the schema needed to build it.
 
