@@ -982,9 +982,17 @@ import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")
 
 Expected result: **85/85 passing** — all systems healthy, Toolbelt is ready.
 
+| Layer | What It Verifies | Checks |
+|---|---|---|
+| **Layer 1** — Python Environment | stdlib, threading, sockets, HTTP server, file I/O | 13 |
+| **Layer 2** — UEFN API Surface | `unreal` module, subsystems, AutomationLibrary, Materials | 13 |
+| **Layer 3** — Toolbelt Core | All 23 modules loaded, 122 tools registered, 9 safe tools executed | 40 |
+| **Layer 4** — MCP Bridge | 31 command handlers, HTTP listener state | 4 |
+| **Layer 5** — Dashboard (PySide6) | PySide6 importable, QApplication, ToolbeltDashboard | 3 |
+| **Layer 6** — Verse Book | clone present, git reachable, 22 chapters parsed | 12 |
+
 > If you haven't installed PySide6 or cloned the verse-book yet, you may see a few non-critical failures.
 > Complete Steps 2 and 7 in the Getting Started guide above to resolve them.
-Layers 1–4 (Python env, UEFN API, all 117 tools, MCP bridge) will all pass. That means the full toolbelt is working.
 
 ---
 
