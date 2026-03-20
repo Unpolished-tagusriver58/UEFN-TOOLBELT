@@ -297,24 +297,8 @@ def run_scatter_hism(
         host_actor.set_folder_path(f"/{folder}")
         host_actor.set_actor_label(f"HISM_Scatter_{mesh_path.split('/')[-1]}")
 
-        # Add HISM component
-        hism: unreal.HierarchicalInstancedStaticMeshComponent = (
-            unreal.HierarchicalInstancedStaticMeshComponent()
-        )
-        # Attach component to actor and set the mesh
-        host_actor.add_component_by_class(
-            unreal.HierarchicalInstancedStaticMeshComponent.static_class(),
-            False, unreal.Transform(), False
-        )
-        comps = host_actor.get_components_by_class(
-            unreal.HierarchicalInstancedStaticMeshComponent.static_class()
-        )
-        if not comps:
-            log_error("scatter_hism: could not add HISM component.")
-            host_actor.destroy_actor()
-            return
-
-        hism = comps[0]
+        # Attach component via Constructor
+        hism = unreal.HierarchicalInstancedStaticMeshComponent(host_actor)
         hism.set_static_mesh(mesh)
 
         # Add all instances
@@ -408,7 +392,7 @@ def run_scatter_clear(folder: str = DEFAULT_SCATTER_FOLDER, **kwargs) -> None:
 
     to_delete = [
         a for a in all_actors
-        if folder in (a.get_folder_path() or "")
+        if folder in str(a.get_folder_path() or "")
     ]
 
     if not to_delete:

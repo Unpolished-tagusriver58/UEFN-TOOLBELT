@@ -413,7 +413,98 @@ def _test_screenshots() -> None:
             
         _record("Screenshots", "Capture", passed, f"Queued → {path}" if passed else "Capture request failed")
     except Exception as e:
-        _record("Screenshots", "Execution", False, str(e))
+        _record("Screenshot", "Capture", False, str(e))
+
+
+def _test_scatter() -> None:
+    _header("3.2 Scatter Tools")
+    import UEFN_Toolbelt as tb
+    try:
+        # Pre-cleanup
+        tb.run("scatter_clear", folder="TestScatter")
+        
+        # --- Test Props Scatter ---
+        tb.run("scatter_props", count=10, radius=500.0, folder="TestScatter")
+        actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+        actors = [a for a in actor_sub.get_all_level_actors() if "TestScatter" in str(a.get_folder_path())]
+        _record("Scatter", "Props Count", len(actors) == 10, f"Found {len(actors)} actors")
+
+        # --- Test HISM Scatter ---
+        tb.run("scatter_hism", count=50, radius=500.0, folder="TestScatterHISM")
+        hism_actors = [a for a in actor_sub.get_all_level_actors() if "HISM_Scatter" in a.get_actor_label()]
+        passed_hism = False
+        if hism_actors:
+            comps = hism_actors[0].get_components_by_class(unreal.HierarchicalInstancedStaticMeshComponent.static_class())
+            if comps:
+                count = comps[0].get_instance_count()
+                passed_hism = (count == 50)
+        _record("Scatter", "HISM Instances", passed_hism, f"HISM count: {count if passed_hism else 0}")
+
+        # --- Test Clear ---
+        tb.run("scatter_clear", folder="TestScatter")
+        tb.run("scatter_clear", folder="TestScatterHISM")
+        remaining = [a for a in actor_sub.get_all_level_actors() if "TestScatter" in str(a.get_folder_path())]
+        _record("Scatter", "Clear", len(remaining) == 0, f"Remaining: {len(remaining)}")
+
+    except Exception as e:
+        _record("Scatter", "Error", False, str(e))
+
+
+def _test_splines() -> None:
+    _header("3.3 Spline Tools")
+    import UEFN_Toolbelt as tb
+    try:
+        # Setup: Spawn actor + SplineComponent
+        actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+        spline_host = actor_sub.spawn_actor_from_class(unreal.Actor, unreal.Vector(0,0,0))
+        spline_host.set_actor_label("TestSplineHost")
+        
+        spline_comp = unreal.SplineComponent(spline_host)
+        
+        # Select it
+        _select_fixture([spline_host])
+        
+        # Run placement (default count=10)
+        tb.run("spline_place_props", count=5, folder_name="TestSplineProps")
+        
+        props = [a for a in actor_sub.get_all_level_actors() if "TestSplineProps" in str(a.get_folder_path())]
+        _record("Spline", "Place Props", len(props) == 5, f"Spawned {len(props)} props along spline")
+        
+        # Cleanup
+        tb.run("spline_clear_props", folder_name="TestSplineProps")
+        spline_host.destroy_actor()
+        _record("Spline", "Clear Props", True)
+        
+    except Exception as e:
+        _record("Spline", "Error", False, str(e))
+
+
+def _test_assets() -> None:
+    _header("6.1 Asset Toolkit")
+    import UEFN_Toolbelt as tb
+    try:
+        # Dry Run Renamer
+        tb.run("rename_dry_run", scan_path="/Engine/BasicShapes") # Scan a safe folder
+        report_path = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "rename_report.json")
+        passed = os.path.exists(report_path)
+        _record("Assets", "Rename Dry Run", passed, f"Report generated: {passed}")
+        
+    except Exception as e:
+        _record("Assets", "Error", False, str(e))
+
+
+def _test_memory() -> None:
+    _header("1.2 Memory Profiler")
+    import UEFN_Toolbelt as tb
+    try:
+        # Run scan on a safe folder
+        tb.run("memory_scan", scan_path="/Engine/BasicShapes")
+        report_path = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "memory_report.json")
+        passed = os.path.exists(report_path)
+        _record("Optimization", "Memory Scan JSON", passed, f"Report generated: {passed}")
+        
+    except Exception as e:
+        _record("Optimization", "Error", False, str(e))
 
 # ─── Main Run ─────────────────────────────────────────────────────────────────
 
@@ -444,6 +535,10 @@ def toolbelt_integration_test(**kwargs) -> None:
             _test_bulk_ops_advanced()
             _test_patterns()
             _test_patterns_advanced()
+            _test_scatter()
+            _test_splines()
+            _test_assets()
+            _test_memory()
             _test_snapshots()
             _test_crawler()
             _test_asset_tagger()

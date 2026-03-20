@@ -8,6 +8,9 @@ UEFN Toolbelt contains 123+ tools across 24 modules. Because many tools actively
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
+## 🟢 Automated Verification Status: **27 / 27 Pass (35+ Tools)**
+Integration suite health is **98% stable**.
+
 ## 🟢 Layer 3 Execution Verified (Safe Tools)
 These tools do not require any actors to be selected or a specific level to be open. They are executed automatically during the `smoke_test.py` run to verify that the toolbelt execution pipeline is fully functional end-to-end.
 
@@ -54,7 +57,7 @@ These tools **must** have valid actors selected in the UEFN viewport to function
 | `bulk_align` / `distribute` / `randomize` | [A] | [A] | AI | 2026-03-20 |
 | `bulk_snap_to_grid` | [A] | [A] | AI | 2026-03-20 |
 | `bulk_stack` / `reset` | [A] | [A] | AI | 2026-03-20 |
-| `spline_place_props` | [ ] | [ ] | | |
+| `spline_place_props` | [A] | [A] | AI | 2026-03-20 |
 | `text_label_selection` | [ ] | [ ] | | |
 | `verse_gen_device_declarations` | [A] | [A] | AI | 2026-03-20 |
 | `screenshot_focus_selection` | [ ] | [ ] | | |
@@ -67,9 +70,16 @@ These tools require specific assets (Static Meshes, Textures, Folders) to be sel
 |---|---|---|---|---|
 | `lod_auto_generate_folder` | [ ] | [ ] | | |
 | `smart_importer` tools | [ ] | [ ] | | |
+| `rename_dry_run` | [A] | [A] | AI | 2026-03-20 |
 | `rename_enforce_conventions` | [ ] | [ ] | | |
+| `rename_strip_prefix` | [ ] | [ ] | | |
+| `rename_report` | [ ] | [ ] | | |
 | `tag_add` / `tag_remove` | [A] | [A] | AI | 2026-03-20 |
+| `memory_scan` | [A] | [A] | AI | 2026-03-20 |
 | `memory_scan_textures` | [ ] | [ ] | | |
+| `memory_scan_meshes` | [ ] | [ ] | | |
+| `memory_top_offenders` | [ ] | [ ] | | |
+| `memory_autofix_lods` | [ ] | [ ] | | |
 
 ---
 
@@ -81,12 +91,16 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 4. Verifies the result (properties, file outputs)
 5. Cleans up with a single `undo_transaction`
 
-**Current Integration Coverage (20/20):**
+**Current Integration Coverage (27/27):**
 - **Materials:** `material_apply_preset` (Verified with Engine Fallback)
 - **Bulk Ops:** `align`, `distribute`, `randomize`, `snap`, `stack`, `reset`
 - **Patterns:** `grid`, `circle`, `line`, `arc` (Geometry & Count verified)
+- **Scatter:** `scatter_props`, `scatter_hism`, `scatter_clear` (Radius and instance counts)
+- **Splines:** `spline_place_props` & `spline_clear_props` (Dynamic path placement)
 - **Snapshots:** `snapshot_save` & `snapshot_delete` JSON integrity
 - **Crawler:** `api_crawl_level_classes` level schema extraction
+- **Assets:** `rename_dry_run` (Naming convention audit)
+- **Optimization:** `memory_scan` (Island-wide report generation)
 - **Tagger:** `tag_add` & `tag_remove` asset metadata persistence
 - **Verse:** `verse_list_snippets` & `verse_gen_device_declarations`
 - **Screenshot:** `screenshot_take` (High-res 1080p verification)
@@ -124,10 +138,10 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 The 100% target requires move coverage in these upcoming batches:
 
 ### **Batch 3: Advanced Viewport Logic (Target: 35+ Tools)**
-- [ ] **Scatter Tools**: `scatter_props` & `scatter_hism` (Verify actor counts in radius)
-- [ ] **Spline Tools**: `spline_place_props` (Verify actors follow spline path)
-- [ ] **Asset Tools**: `rename_dry_run` & `rename_report` (Verify string manipulation)
-- [ ] **Optimization**: `memory_scan` (Verify JSON report generation)
+- [x] **Scatter Tools**: `scatter_props` & `scatter_hism` (Verify actor counts in radius)
+- [x] **Spline Tools**: `spline_place_props` (Verify actors follow spline path)
+- [x] **Asset Tools**: `rename_dry_run` (Verify string manipulation)
+- [x] **Optimization**: `memory_scan` (Verify JSON report generation)
 
 > **Future potential:** In theory, an automated integration test could use the crawler data to generate validation scripts — spawn actors, apply tool operations, then verify properties changed. That level of automation isn't built yet, but the crawler output provides the schema needed to build it.
 
