@@ -274,13 +274,15 @@ def _test_screenshots() -> None:
         
         # Wait for file (asynchronous in Unreal)
         passed = False
-        for _ in range(30): # Wait up to 3 seconds
-            if path and os.path.exists(str(path)):
-                passed = True
-                break
-            time.sleep(0.1)
+        if path:
+            normalized_path = os.path.normpath(str(path))
+            for _ in range(100): # Wait up to 10 seconds
+                if os.path.exists(normalized_path):
+                    passed = True
+                    break
+                time.sleep(0.1)
             
-        _record("Screenshots", "Capture", passed, f"Saved to {path}" if passed else "File missing (timeout)")
+        _record("Screenshots", "Capture", passed, f"Saved to {path}" if passed else "File missing (timeout after 10s)")
     except Exception as e:
         _record("Screenshots", "Execution", False, str(e))
 
