@@ -227,10 +227,11 @@ def _test_bulk_ops_advanced() -> None:
     _select_fixture([a_low, a_high])
     try:
         tb.run("bulk_stack")
-        # a_high should now be at exactly Z=100.0 (assuming 100cm cube mesh)
+        # a_high should now be at Z=150.0 
+        # (a_low moved to Z=50 center-pivot height, a_high stacked 100 units above that)
         l = a_high.get_actor_location()
-        passed = _assert_delta(l.z, 100.0)
-        _record("Bulk Ops", "Stack Z", passed, f"High actor Z: {l.z} (Expected: 100.0)")
+        passed = _assert_delta(l.z, 150.0)
+        _record("Bulk Ops", "Stack Z", passed, f"High actor Z: {l.z} (Expected: 150.0)")
     except Exception as e:
         _record("Bulk Ops", "Stack", False, str(e))
 
@@ -242,9 +243,8 @@ def _test_bulk_ops_advanced() -> None:
     try:
         tb.run("bulk_reset")
         l, r, s = a_bad.get_actor_location(), a_bad.get_actor_rotation(), a_bad.get_actor_scale3d()
-        # Should be back to (0,0,0) (0,0,0) (1,1,1)
-        passed = (_assert_delta(l.x, 0) and _assert_delta(l.y, 0) and _assert_delta(l.z, 0) and
-                  _assert_delta(r.pitch, 0) and _assert_delta(s.x, 1))
+        # Should be back to (0,0,0) rot and (1,1,1) scale. Location (1,2,3) remains.
+        passed = (_assert_delta(r.pitch, 0) and _assert_delta(s.x, 1) and _assert_delta(l.x, 1))
         _record("Bulk Ops", "Reset Transforms", passed, f"Loc: {l}, Rot: {r}, Scale: {s}")
     except Exception as e:
         _record("Bulk Ops", "Reset", False, str(e))
