@@ -980,7 +980,7 @@ import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")
 
 > **UEFN Python console tip:** The console only accepts **one line at a time** — no multi-line pastes. Chain multiple statements on the same line using semicolons (`;`). A space before and after the semicolon works fine: `import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")`
 
-Expected result: **61/64 passing**. The 3 non-critical checks are:
+Expected result: **63/66 passing**. The 3 non-critical checks are:
 
 | Check | Why it fails | How to fix |
 |---|---|---|
