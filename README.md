@@ -27,6 +27,7 @@ in the UEFN editor bar.
 - [Getting Started](#getting-started)
 - [Adding a New Tool](#adding-a-new-tool)
 - [Custom Plugins & Security](#custom-plugins--security)
+- [API Capability Crawler](#api-capability-crawler)
 - [MCP / Claude Integration](#mcp--claude-integration)
 - [Spec-Accurate Verse Code Generation](#spec-accurate-verse-code-generation)
 - [CLAUDE.md — Instant AI Context](#claudemd--instant-ai-context)
@@ -1279,6 +1280,84 @@ Saved/UEFN_Toolbelt/plugin_audit.json
 Each entry records the plugin name, its SHA-256 hash, file size, load status, and timestamp. If a plugin file changes between sessions, the hash changes — making unauthorized modifications instantly detectable.
 
 **Read the full developer guide here:** [docs/plugin_dev_guide.md](docs/plugin_dev_guide.md)
+
+---
+
+## API Capability Crawler
+
+Epic's documentation for the UEFN Python API is incomplete. Many Fortnite device properties are exposed to Python but never documented. The **Capability Crawler** solves this by brute-forcing introspection on live actors inside the editor — mapping out exactly what variables exist, which are readable, and what values they hold.
+
+### Why This Matters
+
+- **For Verse developers:** Discover hidden properties on Fortnite devices that aren't in the docs
+- **For tool builders:** Know exactly what you can automate before writing a single line of code
+- **For AI-assisted workflows:** Generate a machine-readable API map that Claude can analyze and act on
+
+### Verified Results (Live)
+
+Tested on a real UEFN project (March 2026):
+
+```
+Found 41 total actors, distilling to 12 unique classes...
+✓ Level class schema saved: api_level_classes_schema.json
+```
+
+The crawler scanned 41 actors, identified 12 unique class types, and deep-introspected every property, method, and component hierarchy — all in under a second, with zero editor impact.
+
+### Workflow
+
+**Step 1 — Scan your level** (headless, no selection required):
+```python
+import UEFN_Toolbelt as tb; tb.run("api_crawl_level_classes")
+```
+
+**Step 2 — Scan a specific selection** (select actors in viewport first):
+```python
+import UEFN_Toolbelt as tb; tb.run("api_crawl_selection")
+```
+
+**Step 3 — Review the output:**
+```
+Saved/UEFN_Toolbelt/api_level_classes_schema.json   ← full level scan
+Saved/UEFN_Toolbelt/api_selection_crawl.json        ← selection scan
+```
+
+### Output Format
+
+The JSON contains a per-class schema with every exposed property, its type, readability, and an example value:
+
+```json
+{
+  "classes": {
+    "StaticMeshActor": {
+      "properties": {
+        "root_component": { "type": "SceneComponent", "readable": true },
+        "mobility": { "type": "str", "readable": true, "example_value": "EComponentMobility.STATIC" }
+      },
+      "methods": ["get_actor_label", "set_actor_location", "get_components_by_class"],
+      "components": {
+        "StaticMeshComponent0": {
+          "properties": { "static_mesh": { "type": "StaticMesh", "readable": true } }
+        }
+      }
+    }
+  }
+}
+```
+
+Properties marked `"readable": false` with an `"error"` field indicate locked-down C++ internals that Epic has not yet exposed.
+
+### AI-Powered Analysis (Claude Integration)
+
+Because the crawler output is structured JSON, it becomes a direct input for AI analysis. After running a crawl, you can ask Claude Code:
+
+> *"Read `Saved/UEFN_Toolbelt/api_level_classes_schema.json` and tell me which properties on each device class are writable from Python."*
+
+> *"Which classes in my level have components with exposed transform properties I could animate?"*
+
+> *"Generate a Verse class that references every device in my level using the correct variable types from the crawl data."*
+
+The crawler is the **data collection engine**. Claude is the **analysis layer**. Together they let you reverse-engineer Epic's undocumented API surface without ever reading a single page of docs.
 
 ---
 
