@@ -1628,9 +1628,29 @@ Because UEFN runs Python on the **main render thread**, there is a unique deadlo
 *   **The Deadlock**: If your Python script uses `time.sleep()` or a long loop to "wait" for a file to appear, you are **blocking the main thread**. Unreal cannot finish the current frame, so it will **never write the file** while your script is waiting.
 *   **The Solution**: Trigger the action and exit. Do not attempt to verify file existence in the same execution block if the engine needs to tick to produce that file.
 
+## 🚀 Automated "Hands-Free" Verification
+
+The UEFN Toolbelt includes a sophisticated integration test suite that validates tools **programmatically**. 
+
+*   **How it works**: The `integration_test.py` script uses the Unreal Python API to remote-control the editor. It spawns actors, modifies transforms, applies tags, and captures screenshots—verified against the engine's internal state.
+*   **What it tests**: It validates the "Logic & Engine" layer (Layer 3). While it doesn't click the physical buttons on the Pyside6 UI, it proves that the toolbelt's brain is working perfectly.
+*   **Benefits**: Run 12 tests in under 5 seconds (excluding screenshots) to ensure no regressions were introduced.
+
 ---
 
-## Troubleshooting
+## 🏎️ Optimized Development Workflow (Hot Reload)
+
+You **never need to restart UEFN** when developing for the Toolbelt. 
+
+1.  **Edit** your Python code in your IDE.
+2.  **Run** the `deploy.bat` script to sync files to your project.
+3.  **Reload** in UEFN by pasting the "Nuclear Reload" command into the console.
+
+This wipes the Python cache and re-imports every Toolbelt module instantly.
+
+---
+
+## 🛠 Troubleshooting
 
 | Problem | Solution |
 |---|---|

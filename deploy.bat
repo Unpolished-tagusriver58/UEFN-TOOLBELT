@@ -94,35 +94,22 @@ if exist "%UE_PYTHON%" (
 )
 
 :: ── Done ──────────────────────────────────────────────────────────────────────
-echo.
 echo  ==========================================
 echo    All files deployed successfully!
 echo  ==========================================
 echo.
-echo  Now open UEFN and paste ONE of these into the Python console:
+echo  HOT-RELOAD WORKFLOW (No UEFN Restart Required):
+echo  Copy and paste this into the UEFN Python console to refresh the toolbelt:
 echo.
-echo  -- First time (or after git pull) --
-echo import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.launch_qt()
+echo  import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.launch_qt()
 echo.
-echo  -- Normal launch --
-echo import UEFN_Toolbelt as tb; tb.launch_qt()
+echo  ------------------------------------------
+echo  TESTING COMMANDS:
+echo  -- Smoke Test:       tb.run("toolbelt_smoke_test")
+echo  -- Integration Test: tb.run("toolbelt_integration_test")
+echo  ------------------------------------------
 echo.
-echo  -- Run smoke test (6-layer health check) --
-echo import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")
-echo.
-echo  -- Run integration test (Automated viewport/selection fixture check) --
-echo import UEFN_Toolbelt as tb; tb.run("toolbelt_integration_test")
-echo.
-echo  -- Validate your custom plugins --
-echo import UEFN_Toolbelt as tb; tb.run("plugin_validate_all")
-echo.
-echo  -- List all registered tools --
-echo import UEFN_Toolbelt as tb; print(len(tb.registry.list_tools()))
-echo.
-echo  -- Deep-scan level for hidden API capabilities --
-echo import UEFN_Toolbelt as tb; tb.run("api_crawl_level_classes")
-echo.
-echo  TIP: If UEFN is already open, restart it so init_unreal.py auto-runs.
+echo  TIP: You only need to restart UEFN if you've changed init_unreal.py.
 echo.
 pause
 exit /b 0
