@@ -136,23 +136,23 @@ class ToolRegistry:
 
     # ── Execution ─────────────────────────────────────────────────────────────
 
-    def execute(self, name: str, **kwargs) -> Any:
+    def execute(self, tool_id: str, **kwargs) -> Any:
         """
         Execute a tool by name. All exceptions are caught and logged so a
         failing tool never crashes the editor session.
 
         Returns the tool's return value, or None on failure.
         """
-        if name not in self._tools:
-            log_error(f"Unknown tool: '{name}'. Call list_tools() to see available tools.")
+        if tool_id not in self._tools:
+            log_error(f"Unknown tool: '{tool_id}'. Call list_tools() to see available tools.")
             return None
 
-        entry = self._tools[name]
-        log_info(f"Running tool: {name}")
+        entry = self._tools[tool_id]
+        log_info(f"Running tool: {tool_id}")
         try:
             return entry.fn(**kwargs)
         except Exception:
-            log_error(f"Tool '{name}' raised an exception:\n{traceback.format_exc()}")
+            log_error(f"Tool '{tool_id}' raised an exception:\n{traceback.format_exc()}")
             return None
 
     # ── Validation ────────────────────────────────────────────────────────────

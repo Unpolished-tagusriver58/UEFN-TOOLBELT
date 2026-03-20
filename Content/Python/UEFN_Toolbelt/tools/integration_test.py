@@ -134,8 +134,11 @@ def _test_materials() -> None:
         mesh_comp = actor.root_component
         current_mat = mesh_comp.get_material(0)
         # Built-in "gold" preset uses MI_Gold_...
-        passed = current_mat is not None and "Gold" in str(current_mat.get_name())
-        _record("Materials", "Apply Preset", passed, f"Got: {current_mat.get_name()}" if not passed else "")
+        if not current_mat or "BasicShapeMaterial" in str(current_mat.get_name()):
+             _record("Materials", "Apply Preset", False, "Parent material missing (M_ToolbeltBase)")
+        else:
+            passed = "Gold" in str(current_mat.get_name())
+            _record("Materials", "Apply Preset", passed, f"Got: {current_mat.get_name()}" if not passed else "")
     except Exception as e:
         _record("Materials", "Apply Preset", False, str(e))
 
@@ -267,7 +270,7 @@ def _test_screenshots() -> None:
     import UEFN_Toolbelt as tb
     try:
         # Take a screenshot
-        path = tb.run("viewport_screenshot", name="integration_test_shot")
+        path = tb.run("screenshot_take", name="integration_test_shot")
         passed = path and os.path.exists(str(path))
         _record("Screenshots", "Capture", passed, f"Saved to {path}" if passed else "File missing")
     except Exception as e:

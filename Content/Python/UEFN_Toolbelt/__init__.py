@@ -150,9 +150,9 @@ def launch() -> None:
     launch_qt()
 
 
-def run(tool_name: str, **kwargs) -> Any:
+def run(tool_id: str, **kwargs) -> Any:
     """Execute a registered tool by name. Returns the tool's return value."""
-    return registry.execute(tool_name, **kwargs)
+    return registry.execute(tool_id, **kwargs)
 
 
 # ── Blueprint / EUW fallback ──────────────────────────────────────────────────
