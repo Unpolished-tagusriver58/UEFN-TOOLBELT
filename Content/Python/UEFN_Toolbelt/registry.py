@@ -26,6 +26,7 @@ The ToolRegistry is a singleton. Access it anywhere via:
 
 from __future__ import annotations
 
+import inspect
 import traceback
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
@@ -46,6 +47,7 @@ class ToolEntry:
     icon: str = ""                      # optional Content Browser icon path
     shortcut: str = ""                  # optional keyboard shortcut hint
     tags: List[str] = field(default_factory=list)  # searchable tags
+    source: str = ""                    # filename for custom plugins; empty = core tool
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -77,10 +79,18 @@ class ToolRegistry:
         icon: str = "",
         shortcut: str = "",
         tags: Optional[List[str]] = None,
+        source: str = "",
     ) -> None:
         """Register a tool. Overwrites any previous registration with the same name."""
         if name in self._tools:
             log_warning(f"Re-registering tool '{name}' (hot-reload?).")
+            
+        if not source:
+            try:
+                source = inspect.getfile(fn)
+            except Exception:
+                source = ""
+                
         self._tools[name] = ToolEntry(
             name=name,
             fn=fn,
@@ -89,6 +99,7 @@ class ToolRegistry:
             icon=icon,
             shortcut=shortcut,
             tags=tags or [],
+            source=source,
         )
         log_info(f"  ✓ Registered: [{category}] {name}")
 
@@ -100,6 +111,7 @@ class ToolRegistry:
         icon: str = "",
         shortcut: str = "",
         tags: Optional[List[str]] = None,
+        source: str = "",
     ) -> Callable:
         """
         @register_tool decorator factory. Use this on the tool's entry-point.
@@ -108,7 +120,7 @@ class ToolRegistry:
             def run(**kwargs): ...
         """
         def _wrap(fn: Callable) -> Callable:
-            self.register(name, fn, category, description, icon, shortcut, tags)
+            self.register(name, fn, category, description, icon, shortcut, tags, source)
             return fn
         return _wrap
 
@@ -132,6 +144,34 @@ class ToolRegistry:
         except Exception:
             log_error(f"Tool '{name}' raised an exception:\n{traceback.format_exc()}")
             return None
+
+    # ── Validation ────────────────────────────────────────────────────────────
+
+    def validate(self, tool_name: Optional[str] = None) -> List[str]:
+        """
+        Validate tools for correct schema and standard conventions.
+        Returns a list of warning/error strings. Empty list means perfect health.
+        """
+        checks = [tool_name] if tool_name else list(self._tools.keys())
+        errors = []
+        for name in checks:
+            if name not in self._tools:
+                errors.append(f"[{name}] Tool not found.")
+                continue
+                
+            entry = self._tools[name]
+            if not name.islower() or " " in name:
+                errors.append(f"[{name}] Name must be snake_case without spaces.")
+            if not entry.description:
+                errors.append(f"[{name}] Missing description. UI will be blank.")
+            if not entry.category:
+                errors.append(f"[{name}] Missing category. UI tab will be undefined.")
+            
+            sig = inspect.signature(entry.fn)
+            if not any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
+                errors.append(f"[{name}] Function signature should accept **kwargs.")
+                
+        return errors
 
     # ── Querying ──────────────────────────────────────────────────────────────
 

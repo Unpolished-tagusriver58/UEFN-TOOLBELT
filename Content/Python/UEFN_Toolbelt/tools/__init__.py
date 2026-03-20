@@ -30,4 +30,5 @@ from . import reference_auditor
 from . import level_snapshot
 from . import asset_tagger
 from . import screenshot_tools
+from . import plugin_manager
 from . import mcp_bridge

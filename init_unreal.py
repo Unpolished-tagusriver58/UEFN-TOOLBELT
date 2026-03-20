@@ -41,6 +41,7 @@ _toolbelt_loaded = False
 try:
     import UEFN_Toolbelt as _tb
     _tb.register_all_tools()
+    _tb.load_custom_plugins()
     _toolbelt_loaded = True
     unreal.log("[TOOLBELT] ✓ All tools registered.")
 except ModuleNotFoundError:

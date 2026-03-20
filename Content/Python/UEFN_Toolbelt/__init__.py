@@ -28,6 +28,29 @@ def register_all_tools() -> None:
     unreal.log(f"[TOOLBELT] {len(registry)} tools registered across {len(registry.categories())} categories.")
 
 
+def load_custom_plugins() -> None:
+    """Load user-provided tools from Saved/UEFN_Toolbelt/Custom_Plugins."""
+    import os, sys, glob, importlib, unreal
+    custom_plugins_dir = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "Custom_Plugins")
+    if not os.path.exists(custom_plugins_dir):
+        return
+        
+    if custom_plugins_dir not in sys.path:
+        sys.path.insert(0, custom_plugins_dir)
+        
+    valid_count = 0
+    for p in glob.glob(os.path.join(custom_plugins_dir, "*.py")):
+        module_name = os.path.splitext(os.path.basename(p))[0]
+        try:
+            importlib.import_module(module_name)
+            valid_count += 1
+        except Exception as e:
+            unreal.log_error(f"[TOOLBELT] Failed to load plugin {module_name}.py: {e}")
+            
+    if valid_count > 0:
+        unreal.log(f"[TOOLBELT] Loaded {valid_count} custom plugins.")
+
+
 def launch_qt() -> None:
     """
     Open the PySide6 tabbed dashboard (recommended).
