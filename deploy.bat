@@ -110,6 +110,9 @@ echo.
 echo  -- Run smoke test --
 echo import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")
 echo.
+echo  -- Find hidden capabilities in your level --
+echo import UEFN_Toolbelt as tb; tb.run("api_crawl_level_classes")
+echo.
 echo  TIP: If UEFN is already open, restart it so init_unreal.py auto-runs.
 echo.
 pause
