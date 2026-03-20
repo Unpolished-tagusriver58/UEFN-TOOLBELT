@@ -81,15 +81,25 @@ class ToolRegistry:
         tags: Optional[List[str]] = None,
         source: str = "",
     ) -> None:
-        """Register a tool. Overwrites any previous registration with the same name."""
-        if name in self._tools:
-            log_warning(f"Re-registering tool '{name}' (hot-reload?).")
-            
+        """Register a tool, with overwrite protection for core system tools."""
         if not source:
             try:
                 source = inspect.getfile(fn)
             except Exception:
                 source = ""
+                
+        is_custom = "Custom_Plugins" in source.replace("\\", "/")
+        
+        if name in self._tools:
+            existing_source = self._tools[name].source
+            existing_is_custom = "Custom_Plugins" in existing_source.replace("\\", "/")
+            
+            # Namespace Protection: Do not allow custom plugins to overwrite core tools
+            if is_custom and not existing_is_custom:
+                log_error(f"[SECURITY] Custom plugin attempted to overwrite core OS tool '{name}'. Registration rejected.")
+                return
+                
+            log_warning(f"Re-registering tool '{name}' (hot-reload?).")
                 
         self._tools[name] = ToolEntry(
             name=name,
