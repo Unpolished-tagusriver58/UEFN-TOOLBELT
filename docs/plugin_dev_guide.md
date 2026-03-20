@@ -74,3 +74,21 @@ If you think your tool is awesome enough to be part of the official Toolbelt sui
 2. Move your `.py` file into the primary `Content/Python/UEFN_Toolbelt/tools/` directory.
 3. Import your file in `tools/__init__.py`.
 4. Submit a Pull Request! We love community additions.
+
+---
+
+## 🔒 Security Model
+
+The Toolbelt applies two layers of protection to custom plugins:
+
+### AST Import Scanner (Pre-Execution)
+Before your plugin file is ever *executed*, the loader parses it using Python's `ast` module and checks for dangerous imports. The following modules are **blocked**:
+
+> `subprocess`, `shutil`, `ctypes`, `socket`, `http`, `urllib`, `requests`, `webbrowser`, `smtplib`, `ftplib`, `xmlrpc`, `multiprocessing`, `signal`, `_thread`
+
+If your plugin imports any of these, the loader will print a `[SECURITY]` error in the Output Log and **refuse to load it**. This protects users from plugins that try to make network calls, run shell commands, or access raw memory.
+
+### Namespace Protection (Registration)
+Custom plugins **cannot** overwrite core Toolbelt tools. If your plugin tries to register a tool with the same name as a built-in tool (e.g., `toolbelt_smoke_test`), the registry will reject it with a `[SECURITY]` warning.
+
+This means users can safely install third-party plugins without worrying about them breaking or hijacking the Toolbelt's native functionality.
