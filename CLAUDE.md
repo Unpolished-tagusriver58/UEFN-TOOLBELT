@@ -102,11 +102,23 @@ If UEFN Python cache gets stuck (NameErrors after renaming or moving code), use 
 ```python
 import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.launch_qt()
 ```
-```
 
 ---
 
-## Complete Tool Reference
+## ⚠️ Development Quirks & "Main Thread Lock"
+
+UEFN's Python execution environment has a critical architectural quirk: **The Main Thread Lock**.
+
+### **Async Operations (Like Screenshots)**
+If you call an asynchronous Unreal API (e.g., `unreal.AutomationLibrary.take_high_res_screenshot` or anything that says "queued"):
+*   **The Problem**: The operation will NOT finish as long as your Python script is running. 
+*   **The "Wait" Trap**: If you use `time.sleep()` to wait for a file, you are **deadlocking the engine**. Unreal needs the main thread to be free (yielded) to process its frame and write the file.
+*   **The Fix**: Do not wait for files in the same script. Trigger the action, verify the request was sent, and exit. The file will appear ~1 second after the user's console command finishes.
+
+### **Hot-Reloading (sys.modules)**
+UEFN does not natively reload modified Python modules. Use the **"Nuclear Reload"** (provided in `README.md`) to clear `sys.modules` and force a fresh import of Toolbelt logic.
+
+---
 
 ### Materials
 

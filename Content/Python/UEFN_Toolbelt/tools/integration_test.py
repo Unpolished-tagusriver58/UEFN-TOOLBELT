@@ -269,9 +269,9 @@ def _test_screenshots() -> None:
     _header("8. Screenshot Tools")
     import UEFN_Toolbelt as tb
     try:
-        # Take a screenshot (tiny resolution for speed/stability in tests)
+        # Take a screenshot (full resolution)
         shot_name = "integration_test_shot"
-        path = tb.run("screenshot_take", name=shot_name, width=480, height=270)
+        path = tb.run("screenshot_take", name=shot_name, width=1920, height=1080)
         
         # Note: AutomationLibrary.take_high_res_screenshot is ASYNCHRONOUS.
         # It only writes the file AFTER this Python script finishes and the engine ticks.
