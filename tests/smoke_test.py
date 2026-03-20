@@ -233,7 +233,7 @@ EXPECTED_MODULES = [
     "verse_snippet_generator", "text_painter", "asset_renamer",
     "foliage_tools", "lod_tools", "spline_to_verse", "project_scaffold",
     "memory_profiler", "api_explorer", "prop_patterns", "reference_auditor",
-    "level_snapshot", "asset_tagger", "screenshot_tools", "mcp_bridge",
+    "level_snapshot", "asset_tagger", "screenshot_tools", "mcp_bridge", "plugin_manager"
 ]
 MIN_TOOL_COUNT = 90
 
@@ -291,7 +291,9 @@ def _layer_toolbelt() -> None:
         "mcp_status",
         "snapshot_list",
         "material_list_presets",
-        "text_list_styles"
+        "text_list_styles",
+        "plugin_validate_all",
+        "plugin_list_custom",
     ]
     for safe_tool in safe_tools_to_test:
         try:

@@ -26,6 +26,7 @@ in the UEFN editor bar.
 - [Tool Reference](#tool-reference)
 - [Getting Started](#getting-started)
 - [Adding a New Tool](#adding-a-new-tool)
+- [Custom Plugins](#custom-plugins)
 - [MCP / Claude Integration](#mcp--claude-integration)
 - [Spec-Accurate Verse Code Generation](#spec-accurate-verse-code-generation)
 - [CLAUDE.md — Instant AI Context](#claudemd--instant-ai-context)
@@ -1171,6 +1172,16 @@ _add_entry(tb_sub, "Utilities", "MyTool",
 ```
 
 Your tool is now registered, searchable, undo-safe, and accessible from the top menu bar.
+
+---
+
+## Custom Plugins
+
+Don't want to fork the repository or modify the core tools? You can drop isolated Python scripts into your project's local `Saved` folder and the Toolbelt will automatically load them, parse their schemas, and render UI buttons for them.
+
+This "app-store" architecture lets you build and distribute third-party extensions for the Toolbelt without ever touching its source code. 
+
+**Read the full developer guide here:** [docs/plugin_dev_guide.md](docs/plugin_dev_guide.md)
 
 ---
 

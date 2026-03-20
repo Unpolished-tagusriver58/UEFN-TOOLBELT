@@ -65,6 +65,16 @@ Then restart Claude Code — it connects automatically.
 
 ---
 
+## Building Custom Plugins
+
+Users can create third-party tools without forking this repository.
+1. Create a `.py` file with a `@register_tool` decorated function.
+2. Place it in `[Project]/Saved/UEFN_Toolbelt/Custom_Plugins/`.
+3. It will auto-load on start and show up in the Dashboard.
+See `docs/plugin_dev_guide.md` for full details. You can generate plugins for the user directly into this folder when requested!
+
+---
+
 ## Running Tools — The Main Interface
 
 ```python
@@ -378,6 +388,15 @@ tb.run("api_export_full")
 # → Saved/UEFN_Toolbelt/stubs/unreal.pyi
 # Add to .vscode/settings.json: "python.analysis.extraPaths": ["Saved/UEFN_Toolbelt/stubs"]
 ```
+
+---
+
+### Plugin Management
+
+| Tool | Key Params | What it does |
+|---|---|---|
+| `plugin_validate_all` | — | Validate all registered tools against schema |
+| `plugin_list_custom` | — | List all loaded third-party tools from `Saved/UEFN_Toolbelt/Custom_Plugins` |
 
 ---
 
