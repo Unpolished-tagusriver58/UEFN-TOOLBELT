@@ -214,3 +214,37 @@ def _print_tool_list() -> None:
         "",
     ]
     unreal.log("\n".join(lines))
+    
+
+def reload() -> None:
+    """Reload all Toolbelt modules and the registry."""
+    import importlib
+    import unreal
+    from . import registry
+    from . import core
+    from . import tools
+    import os
+    
+    # 1. Reload core and registry
+    importlib.reload(core)
+    importlib.reload(registry)
+    
+    # 2. Reset the registry singleton
+    reg = registry.get_registry()
+    reg._tools.clear()
+    
+    # 3. Reload all tool modules in the tools package
+    tools_pkg_path = os.path.dirname(tools.__file__)
+    for f in os.listdir(tools_pkg_path):
+        if f.endswith(".py") and f != "__init__.py":
+            mod_name = f[:-3]
+            try:
+                submod = getattr(tools, mod_name, None)
+                if submod:
+                    importlib.reload(submod)
+            except Exception as e:
+                unreal.log_warning(f"[TOOLBELT] Reload failed for {mod_name}: {e}")
+                
+    # 4. Finally, reload the tools/__init__.py to re-run all registrations
+    importlib.reload(tools)
+    unreal.log("[TOOLBELT] ↻ All modules reloaded and registry rebuilt. (v1.0.1)")

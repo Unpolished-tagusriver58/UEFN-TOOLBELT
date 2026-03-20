@@ -1606,6 +1606,6 @@ def launch_dashboard() -> None:
     icon="⬡",
     tags=["dashboard", "ui", "launch", "pyside6", "qt"],
 )
-def launch_qt() -> None:
+def launch_qt(**kwargs) -> None:
     """Launch the PySide6 dashboard."""
     launch_dashboard()

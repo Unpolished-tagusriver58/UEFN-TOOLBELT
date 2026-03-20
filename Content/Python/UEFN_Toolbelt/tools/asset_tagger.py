@@ -198,10 +198,10 @@ def _list_all_under(folder: str) -> list[str]:
 
 # ─── Tool implementations ─────────────────────────────────────────────────────
 
-def _do_tag_add(tag_name: str, value: str) -> None:
-    paths = _get_selected_asset_paths()
+def _do_tag_add(tag_name: str, value: str, manual_paths: list[str] = None) -> None:
+    paths = manual_paths if manual_paths is not None else _get_selected_asset_paths()
     if not paths:
-        unreal.log_warning("[AssetTagger] Nothing selected in the Content Browser.")
+        unreal.log_warning("[AssetTagger] Nothing selected and no paths provided.")
         return
 
     key = _full_key(tag_name)
@@ -219,10 +219,10 @@ def _do_tag_add(tag_name: str, value: str) -> None:
     unreal.log(f"[AssetTagger] Tagged {ok}/{total} assets as '{_short_key(key)}'.")
 
 
-def _do_tag_remove(tag_name: str) -> None:
-    paths = _get_selected_asset_paths()
+def _do_tag_remove(tag_name: str, manual_paths: list[str] = None) -> None:
+    paths = manual_paths if manual_paths is not None else _get_selected_asset_paths()
     if not paths:
-        unreal.log_warning("[AssetTagger] Nothing selected in the Content Browser.")
+        unreal.log_warning("[AssetTagger] Nothing selected and no paths provided.")
         return
 
     key = _full_key(tag_name)
@@ -356,7 +356,8 @@ def _do_tag_export(folder: str) -> None:
 def tag_add(
     tag_name: str = "",
     value: str = "1",
-**kwargs,
+    asset_paths: list[str] = None,
+    **kwargs,
 ) -> None:
     """
     Apply a metadata tag to all assets currently selected in the Content Browser.
@@ -375,7 +376,7 @@ def tag_add(
             "Example: tb.run('tag_add', tag_name='hero_prop')"
         )
         return
-    _do_tag_add(tag_name, value)
+    _do_tag_add(tag_name, value, manual_paths=asset_paths)
 
 
 @register_tool(
@@ -385,7 +386,7 @@ def tag_add(
     icon="🏷",
     tags=["tag", "metadata", "remove", "cleanup"],
 )
-def tag_remove(tag_name: str = "", **kwargs) -> None:
+def tag_remove(tag_name: str = "", asset_paths: list[str] = None, **kwargs) -> None:
     """
     Remove a tag key from all assets selected in the Content Browser.
 
@@ -395,7 +396,7 @@ def tag_remove(tag_name: str = "", **kwargs) -> None:
     if not tag_name:
         unreal.log_warning("[AssetTagger] Provide a tag_name to remove.")
         return
-    _do_tag_remove(tag_name)
+    _do_tag_remove(tag_name, manual_paths=asset_paths)
 
 
 @register_tool(

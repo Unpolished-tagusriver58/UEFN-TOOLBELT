@@ -39,7 +39,7 @@ _FIXTURE_TAG = "TOOLBELT_TEST_FIXTURE"
 
 _results: list[dict] = []
 _start_time = time.time()
-_spawned_fixtures: list[unreal.Actor] = []
+_spawn_fixtures: list[unreal.Actor] = []
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,14 +126,15 @@ def _test_materials() -> None:
         
     _select_fixture([actor])
     try:
-        # Use a built-in engine material that definitely exists
-        gold_mat = "/Engine/BasicShapes/BasicShapeMaterial"
-        tb.run("material_apply_preset", mesh_path=gold_mat)
+        # Use a built-in preset
+        target_preset = "gold"
+        tb.run("material_apply_preset", preset=target_preset)
         
         # Verify
         mesh_comp = actor.root_component
         current_mat = mesh_comp.get_material(0)
-        passed = current_mat is not None and gold_mat.split("/")[-1] in str(current_mat.get_name())
+        # Built-in "gold" preset uses MI_Gold_...
+        passed = current_mat is not None and "Gold" in str(current_mat.get_name())
         _record("Materials", "Apply Preset", passed, f"Got: {current_mat.get_name()}" if not passed else "")
     except Exception as e:
         _record("Materials", "Apply Preset", False, str(e))
@@ -152,13 +153,13 @@ def _test_bulk_ops() -> None:
         
     _select_fixture([a1, a2, a3])
     
-    # Test alignment (X)
+    # Test alignment (X) - aligns to first selected actor (a1 at X=0)
     try:
-        tb.run("bulk_align", axis="X", mode="min")
+        tb.run("bulk_align", axis="X")
         l1, l2, l3 = a1.get_actor_location(), a2.get_actor_location(), a3.get_actor_location()
-        # All X should be roughly the same (min was -50)
-        passed = abs(l1.x - (-50)) < 1.0 and abs(l2.x - (-50)) < 1.0 and abs(l3.x - (-50)) < 1.0
-        _record("Bulk Ops", "Align X (Min)", passed, f"X coords: {l1.x}, {l2.x}, {l3.x}")
+        # All X should be roughly 0.0 (a1's original X)
+        passed = abs(l1.x - 0.0) < 1.0 and abs(l2.x - 0.0) < 1.0 and abs(l3.x - 0.0) < 1.0
+        _record("Bulk Ops", "Align X (First Actor)", passed, f"X coords: {l1.x}, {l2.x}, {l3.x}")
     except Exception as e:
         _record("Bulk Ops", "Align X", False, str(e))
 
@@ -234,12 +235,12 @@ def _test_asset_tagger() -> None:
         asset_path = _CUBE_MESH
         tag_name = "TEST_INTEGRATION_TAG"
         
-        # Add tag
-        tb.run("tag_add", asset_path=asset_path, tag_name=tag_name, value="verified")
+        # Add tag (passing explicit asset_paths to bypass selection)
+        tb.run("tag_add", asset_paths=[asset_path], tag_name=tag_name, value="verified")
         _record("Asset Tagger", "Add Tag", True)
         
         # Remove tag
-        tb.run("tag_remove", asset_path=asset_path, tag_name=tag_name)
+        tb.run("tag_remove", asset_paths=[asset_path], tag_name=tag_name)
         _record("Asset Tagger", "Remove Tag", True)
     except Exception as e:
         _record("Asset Tagger", "Execution", False, str(e))
@@ -250,14 +251,27 @@ def _test_verse() -> None:
     
     try:
         # Test snippet listing
-        snippets = tb.run("verse_list_snippets")
+        tb.run("verse_list_snippets")
         _record("Verse", "List Snippets", True)
         
-        # Test device generation (to output log)
+        # Test device generation (requires selection)
+        actor = _spawn_fixture()
+        _select_fixture([actor])
         tb.run("verse_gen_device_declarations")
         _record("Verse", "Gen Device Declarations", True)
     except Exception as e:
         _record("Verse", "Execution", False, str(e))
+
+def _test_screenshots() -> None:
+    _header("8. Screenshot Tools")
+    import UEFN_Toolbelt as tb
+    try:
+        # Take a screenshot
+        path = tb.run("viewport_screenshot", name="integration_test_shot")
+        passed = path and os.path.exists(str(path))
+        _record("Screenshots", "Capture", passed, f"Saved to {path}" if passed else "File missing")
+    except Exception as e:
+        _record("Screenshots", "Execution", False, str(e))
 
 # ─── Main Run ─────────────────────────────────────────────────────────────────
 
@@ -290,6 +304,7 @@ def toolbelt_integration_test(**kwargs) -> None:
             _test_crawler()
             _test_asset_tagger()
             _test_verse()
+            _test_screenshots()
             
             # Finalize
             _cleanup_fixtures()
