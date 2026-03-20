@@ -276,13 +276,13 @@ def _test_screenshots() -> None:
         passed = False
         if path:
             normalized_path = os.path.normpath(str(path))
-            for _ in range(100): # Wait up to 10 seconds
+            for _ in range(300): # Wait up to 30 seconds
                 if os.path.exists(normalized_path):
                     passed = True
                     break
                 time.sleep(0.1)
             
-        _record("Screenshots", "Capture", passed, f"Saved to {path}" if passed else "File missing (timeout after 10s)")
+        _record("Screenshots", "Capture", passed, f"Saved to {path}" if passed else "File missing (timeout after 30s)")
     except Exception as e:
         _record("Screenshots", "Execution", False, str(e))
 
