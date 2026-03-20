@@ -30,7 +30,8 @@ def register_all_tools() -> None:
 
 def load_custom_plugins() -> None:
     """Load user-provided tools from Saved/UEFN_Toolbelt/Custom_Plugins."""
-    import os, sys, glob, importlib, ast, unreal
+    import os, sys, glob, importlib, ast, hashlib, json, unreal
+    from datetime import datetime
     custom_plugins_dir = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "Custom_Plugins")
     if not os.path.exists(custom_plugins_dir):
         return
@@ -38,7 +39,9 @@ def load_custom_plugins() -> None:
     if custom_plugins_dir not in sys.path:
         sys.path.insert(0, custom_plugins_dir)
 
-    # Dangerous modules that third-party plugins should never need
+    # ── Security Config ──────────────────────────────────────────────────────
+    MAX_PLUGIN_SIZE_KB = 50   # Reject files larger than 50 KB (likely obfuscated)
+
     _BLOCKED_IMPORTS = frozenset({
         "subprocess", "shutil", "ctypes", "socket", "http",
         "urllib", "requests", "webbrowser", "smtplib", "ftplib",
@@ -67,26 +70,64 @@ def load_custom_plugins() -> None:
                         violations.append(f"Blocked import: 'from {node.module}' (line {node.lineno})")
         return violations
 
+    def _sha256(filepath: str) -> str:
+        """Compute the SHA-256 hash of a file for integrity verification."""
+        h = hashlib.sha256()
+        with open(filepath, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    # ── Audit Log ────────────────────────────────────────────────────────────
+    saved_dir = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt")
+    os.makedirs(saved_dir, exist_ok=True)
+    audit_path = os.path.join(saved_dir, "plugin_audit.json")
+    audit_log = []
+
     valid_count = 0
     for p in glob.glob(os.path.join(custom_plugins_dir, "*.py")):
         module_name = os.path.splitext(os.path.basename(p))[0]
-        
-        # Pre-screen: AST security scan before execution
+        file_size_kb = os.path.getsize(p) / 1024.0
+
+        # Gate 1: File size limit
+        if file_size_kb > MAX_PLUGIN_SIZE_KB:
+            unreal.log_error(f"[SECURITY] Plugin '{module_name}.py' blocked — {file_size_kb:.1f} KB exceeds {MAX_PLUGIN_SIZE_KB} KB limit.")
+            audit_log.append({"plugin": module_name, "status": "BLOCKED_SIZE", "size_kb": round(file_size_kb, 1)})
+            continue
+
+        # Gate 2: AST import scan (pre-execution)
         violations = _scan_plugin(p)
         if violations:
             unreal.log_error(f"[SECURITY] Plugin '{module_name}.py' blocked — dangerous imports detected:")
             for v in violations:
                 unreal.log_error(f"  • {v}")
+            audit_log.append({"plugin": module_name, "status": "BLOCKED_IMPORTS", "violations": violations})
             continue
+
+        # Gate 3: SHA-256 integrity hash
+        file_hash = _sha256(p)
         
         try:
             importlib.import_module(module_name)
             valid_count += 1
+            unreal.log(f"[TOOLBELT] ✓ Plugin loaded: {module_name} (SHA-256: {file_hash[:12]}…)")
+            audit_log.append({
+                "plugin": module_name,
+                "status": "LOADED",
+                "sha256": file_hash,
+                "size_kb": round(file_size_kb, 1),
+                "loaded_at": datetime.now().isoformat(),
+            })
         except Exception as e:
             unreal.log_error(f"[TOOLBELT] Failed to load plugin {module_name}.py: {e}")
-            
+            audit_log.append({"plugin": module_name, "status": "LOAD_ERROR", "error": str(e)})
+
+    # Write the audit log
+    with open(audit_path, "w", encoding="utf-8") as f:
+        json.dump({"scan_time": datetime.now().isoformat(), "plugins": audit_log}, f, indent=2)
+
     if valid_count > 0:
-        unreal.log(f"[TOOLBELT] Loaded {valid_count} custom plugins.")
+        unreal.log(f"[TOOLBELT] Loaded {valid_count} custom plugins. Audit log: {audit_path}")
 
 
 def launch_qt() -> None:

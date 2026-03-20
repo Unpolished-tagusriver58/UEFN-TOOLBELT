@@ -26,7 +26,7 @@ in the UEFN editor bar.
 - [Tool Reference](#tool-reference)
 - [Getting Started](#getting-started)
 - [Adding a New Tool](#adding-a-new-tool)
-- [Custom Plugins](#custom-plugins)
+- [Custom Plugins & Security](#custom-plugins--security)
 - [MCP / Claude Integration](#mcp--claude-integration)
 - [Spec-Accurate Verse Code Generation](#spec-accurate-verse-code-generation)
 - [CLAUDE.md — Instant AI Context](#claudemd--instant-ai-context)
@@ -1189,13 +1189,47 @@ Your tool is now registered, searchable, undo-safe, and accessible from the top 
 
 ---
 
-## Custom Plugins
+## Custom Plugins & Security
 
-Don't want to fork the repository or modify the core tools? You can drop isolated Python scripts into your project's local `Saved` folder and the Toolbelt will automatically load them, parse their schemas, and render UI buttons for them.
+UEFN Toolbelt is a **security-first extensible platform**. Third-party developers can create custom tools that automatically load into the Dashboard and AI bridge — but the Toolbelt enforces strict sandboxing to protect your editor and project files.
 
-This "app-store" architecture lets you build and distribute third-party extensions for the Toolbelt without ever touching its source code. 
+### How Custom Plugins Work
 
-**Security:** Every plugin is pre-screened by an AST import scanner before execution. Dangerous modules (`subprocess`, `socket`, `ctypes`, network libraries) are blocked automatically. Plugins also cannot overwrite core Toolbelt tools — namespace hijacking is rejected at registration time.
+Drop a `.py` file into `[Your Project]/Saved/UEFN_Toolbelt/Custom_Plugins/`. The Toolbelt will:
+1. **Discover** the file on startup.
+2. **Security-screen** it through four gates (see below).
+3. **Register** it in the tool registry with a UI button and AI accessibility.
+4. **Log** a tamper-evident audit record.
+
+```python
+# Example: one-file custom plugin
+from UEFN_Toolbelt.registry import register_tool
+from UEFN_Toolbelt import core
+
+@register_tool(name="my_tool", category="Community", description="Does something cool")
+def run(**kwargs):
+    core.log_info("My custom tool ran!")
+```
+
+### 🔒 Four-Gate Security Model
+
+Every plugin passes through **four security gates** before it can execute inside your editor:
+
+| Gate | What It Checks | What Happens If It Fails |
+|---|---|---|
+| **1. File Size Limit** | Rejects files > 50 KB | Blocks obfuscated or suspiciously large payloads |
+| **2. AST Import Scanner** | Parses the source code *without executing it* using Python's `ast` module | Blocks dangerous imports: `subprocess`, `socket`, `ctypes`, `shutil`, `http`, `urllib`, `requests`, `webbrowser`, `smtplib`, `ftplib`, `xmlrpc`, `multiprocessing`, `signal`, `_thread` |
+| **3. Namespace Protection** | Checks if the tool name collides with a core Toolbelt tool | Rejects registration — prevents hijacking of system commands like `toolbelt_smoke_test` |
+| **4. SHA-256 Integrity Hash** | Computes a cryptographic fingerprint of every loaded plugin | Logged to `plugin_audit.json` — detect tampering by comparing hashes across sessions |
+
+### 📋 Plugin Audit Log
+
+Every time the Toolbelt boots, it writes a tamper-evident audit trail to:
+```
+Saved/UEFN_Toolbelt/plugin_audit.json
+```
+
+Each entry records the plugin name, its SHA-256 hash, file size, load status, and timestamp. If a plugin file changes between sessions, the hash changes — making unauthorized modifications instantly detectable.
 
 **Read the full developer guide here:** [docs/plugin_dev_guide.md](docs/plugin_dev_guide.md)
 

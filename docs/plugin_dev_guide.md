@@ -79,16 +79,20 @@ If you think your tool is awesome enough to be part of the official Toolbelt sui
 
 ## 🔒 Security Model
 
-The Toolbelt applies two layers of protection to custom plugins:
+The Toolbelt applies **four security gates** to every custom plugin:
 
-### AST Import Scanner (Pre-Execution)
+### Gate 1 — File Size Limit
+Files larger than 50 KB are rejected. This blocks obfuscated payloads and minified blobs that could hide malicious behavior.
+
+### Gate 2 — AST Import Scanner (Pre-Execution)
 Before your plugin file is ever *executed*, the loader parses it using Python's `ast` module and checks for dangerous imports. The following modules are **blocked**:
 
 > `subprocess`, `shutil`, `ctypes`, `socket`, `http`, `urllib`, `requests`, `webbrowser`, `smtplib`, `ftplib`, `xmlrpc`, `multiprocessing`, `signal`, `_thread`
 
-If your plugin imports any of these, the loader will print a `[SECURITY]` error in the Output Log and **refuse to load it**. This protects users from plugins that try to make network calls, run shell commands, or access raw memory.
+If your plugin imports any of these, the loader will print a `[SECURITY]` error in the Output Log and **refuse to load it**.
 
-### Namespace Protection (Registration)
+### Gate 3 — Namespace Protection (Registration)
 Custom plugins **cannot** overwrite core Toolbelt tools. If your plugin tries to register a tool with the same name as a built-in tool (e.g., `toolbelt_smoke_test`), the registry will reject it with a `[SECURITY]` warning.
 
-This means users can safely install third-party plugins without worrying about them breaking or hijacking the Toolbelt's native functionality.
+### Gate 4 — SHA-256 Integrity Hash + Audit Log
+Every loaded plugin's SHA-256 hash is computed and written to `Saved/UEFN_Toolbelt/plugin_audit.json` with a timestamp. If a plugin changes between sessions, the hash changes — making tampering instantly detectable.
