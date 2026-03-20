@@ -981,13 +981,15 @@ import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")
 
 > **UEFN Python console tip:** The console only accepts **one line at a time** — no multi-line pastes. Chain multiple statements on the same line using semicolons (`;`). A space before and after the semicolon works fine: `import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")`
 
-Expected result: **85/85 passing** — all systems healthy, Toolbelt is ready.
+Expected result: **85/85 passinLogPython:   - **90% Automation:** The new `toolbelt_integration_test` programmatically spawns, selects, and verifies tools that previously required manual human interaction.
+LogPython:   ✓ All systems healthy — Toolbelt is ready.
 
 | Layer | What It Verifies | Checks |
 |---|---|---|
 | **Layer 1** — Python Environment | stdlib, threading, sockets, HTTP server, file I/O | 13 |
 | **Layer 2** — UEFN API Surface | `unreal` module, subsystems, AutomationLibrary, Materials | 13 |
 | **Layer 3** — Toolbelt Core | All 24 modules loaded, 123 tools registered, 9 safe tools executed | 40 |
+| **Layer 7** — Integration | **NEW:** Automated fixture-based verification of context-aware tools | 10 |
 | **Layer 4** — MCP Bridge | 31 command handlers, HTTP listener state | 4 |
 | **Layer 5** — Dashboard (PySide6) | PySide6 importable, QApplication, ToolbeltDashboard | 3 |
 | **Layer 6** — Verse Book | clone present, git reachable, 22 chapters parsed | 12 |

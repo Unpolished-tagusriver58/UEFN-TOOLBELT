@@ -110,6 +110,9 @@ echo.
 echo  -- Run smoke test (6-layer health check) --
 echo import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")
 echo.
+echo  -- Run integration test (Automated viewport/selection fixture check) --
+echo import UEFN_Toolbelt as tb; tb.run("toolbelt_integration_test")
+echo.
 echo  -- Validate your custom plugins --
 echo import UEFN_Toolbelt as tb; tb.run("plugin_validate_all")
 echo.
