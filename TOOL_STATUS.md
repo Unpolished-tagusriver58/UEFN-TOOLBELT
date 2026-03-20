@@ -48,10 +48,12 @@ These tools **must** have valid actors selected in the UEFN viewport to function
 
 | Tool | UI Verified | AI Verified (MCP) | Tested By | Date |
 |---|---|---|---|---|
-| `material_apply_preset` | [A] | [A] | AI | 2026-03-20 |
-| `material_bulk_swap` | [ ] | [ ] | | |
+| `pattern_grid` / `circle` | [A] | [A] | AI | 2026-03-20 |
+| `pattern_line` / `arc` | [A] | [A] | AI | 2026-03-20 |
+| `pattern_spiral` / `wave` | [ ] | [ ] | | |
 | `bulk_align` / `distribute` / `randomize` | [A] | [A] | AI | 2026-03-20 |
 | `bulk_snap_to_grid` | [A] | [A] | AI | 2026-03-20 |
+| `bulk_stack` / `reset` | [A] | [A] | AI | 2026-03-20 |
 | `spline_place_props` | [ ] | [ ] | | |
 | `text_label_selection` | [ ] | [ ] | | |
 | `verse_gen_device_declarations` | [A] | [A] | AI | 2026-03-20 |
@@ -79,10 +81,10 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 4. Verifies the result (properties, file outputs)
 5. Cleans up with a single `undo_transaction`
 
-**Current Integration Coverage (16/16):**
+**Current Integration Coverage (20/20):**
 - **Materials:** `material_apply_preset` (Verified with Engine Fallback)
-- **Bulk Ops:** `bulk_align`, `bulk_distribute`, `bulk_randomize`, `bulk_snap_to_grid`
-- **Patterns:** `pattern_grid` & `pattern_circle` (Radius/Count verified)
+- **Bulk Ops:** `align`, `distribute`, `randomize`, `snap`, `stack`, `reset`
+- **Patterns:** `grid`, `circle`, `line`, `arc` (Geometry & Count verified)
 - **Snapshots:** `snapshot_save` & `snapshot_delete` JSON integrity
 - **Crawler:** `api_crawl_level_classes` level schema extraction
 - **Tagger:** `tag_add` & `tag_remove` asset metadata persistence

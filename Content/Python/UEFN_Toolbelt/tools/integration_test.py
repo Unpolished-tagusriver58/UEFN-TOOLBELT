@@ -221,6 +221,34 @@ def _test_bulk_ops_advanced() -> None:
     except Exception as e:
         _record("Bulk Ops", "Randomize", False, str(e))
 
+    # --- Test Stack ---
+    a_low = _spawn_fixture(location=unreal.Vector(0,0,0))
+    a_high = _spawn_fixture(location=unreal.Vector(0,0,500))
+    _select_fixture([a_low, a_high])
+    try:
+        tb.run("bulk_stack")
+        # a_high should now be at exactly Z=100.0 (assuming 100cm cube mesh)
+        l = a_high.get_actor_location()
+        passed = _assert_delta(l.z, 100.0)
+        _record("Bulk Ops", "Stack Z", passed, f"High actor Z: {l.z} (Expected: 100.0)")
+    except Exception as e:
+        _record("Bulk Ops", "Stack", False, str(e))
+
+    # --- Test Reset ---
+    a_bad = _spawn_fixture(location=unreal.Vector(1,2,3))
+    a_bad.set_actor_rotation(unreal.Rotator(10,20,30), True)
+    a_bad.set_actor_scale3d(unreal.Vector(2,2,2))
+    _select_fixture([a_bad])
+    try:
+        tb.run("bulk_reset")
+        l, r, s = a_bad.get_actor_location(), a_bad.get_actor_rotation(), a_bad.get_actor_scale3d()
+        # Should be back to (0,0,0) (0,0,0) (1,1,1)
+        passed = (_assert_delta(l.x, 0) and _assert_delta(l.y, 0) and _assert_delta(l.z, 0) and
+                  _assert_delta(r.pitch, 0) and _assert_delta(s.x, 1))
+        _record("Bulk Ops", "Reset Transforms", passed, f"Loc: {l}, Rot: {r}, Scale: {s}")
+    except Exception as e:
+        _record("Bulk Ops", "Reset", False, str(e))
+
 def _test_patterns() -> None:
     _header("3. Prop Patterns")
     import UEFN_Toolbelt as tb
@@ -272,6 +300,26 @@ def _test_patterns_advanced() -> None:
         tb.run("pattern_clear")
     except Exception as e:
         _record("Patterns", "Circle", False, str(e))
+
+    # --- Test Line ---
+    try:
+        tb.run("pattern_line", count=5, spacing=200)
+        all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
+        pattern_actors = [a for a in all_actors if "TOOLBELT_PATTERN" in [str(t) for t in a.get_editor_property("tags")]]
+        _record("Patterns", "Line Spawn (Count=5)", len(pattern_actors) >= 5, f"Found {len(pattern_actors)} actors")
+        tb.run("pattern_clear")
+    except Exception as e:
+        _record("Patterns", "Line", False, str(e))
+
+    # --- Test Arc ---
+    try:
+        tb.run("pattern_arc", radius=500, angle=180, count=4)
+        all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
+        pattern_actors = [a for a in all_actors if "TOOLBELT_PATTERN" in [str(t) for t in a.get_editor_property("tags")]]
+        _record("Patterns", "Arc Spawn (180deg)", len(pattern_actors) >= 4, f"Found {len(pattern_actors)} actors")
+        tb.run("pattern_clear")
+    except Exception as e:
+        _record("Patterns", "Arc", False, str(e))
 
 def _test_snapshots() -> None:
     _header("4. Level Snapshots")
