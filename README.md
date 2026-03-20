@@ -1798,6 +1798,42 @@ Any Claude session in this project starts fully briefed — no prompting require
 | Dashboard | **Sidebar nav, dual search, 12 pages, dark theme** | Blueprint widgets or none |
 | Architecture | **Registry + decorators, undo-safe, extensible** | Monolithic scripts |
 | Day-1 release | **Shipped UEFN 40.00 launch day (March 2026)** | |
+
+---
+
+## Testing & Validation
+
+The UEFN Toolbelt includes a professional-grade testing suite to ensure stability across UEFN updates.
+
+### 1. Smoke Test (Healthy Schema Check)
+Verifies all 24 modules are loaded, all 123 tool schemas are valid (descriptions, tags, `**kwargs` compliance), and UEFN API access is healthy.
+```python
+import UEFN_Toolbelt as tb
+tb.run("toolbelt_smoke_test")
+```
+
+### 2. Integration Test (Context-Aware Verification)
+A sophisticated fixture-based test that spawns actors, programmatically selects them in the viewport, runs tools, and verifies the results (e.g., material changes, transforms, JSON exports).
+```python
+import UEFN_Toolbelt as tb
+tb.run("toolbelt_integration_test")
+```
+*Validated areas: Materials, Bulk Ops, Prop Patterns, Level Snapshots, API Crawler, Asset Tagger, Verse Helpers, and Screenshots.*
+
+---
+
+## Development Workflow
+
+### Hot-Reloading (No UEFN Restart Required)
+We've implemented a custom reloader that lets you pick up Python code changes instantly without closing UEFN.
+```python
+import UEFN_Toolbelt as tb
+tb.reload()  # Re-scans all tools, resets registry, and re-imports modules
+```
+> [!TIP]
+> Use `tb.reload()` after editing any tool file or pulling latest changes from git to keep your session in sync.
+
+---
 | Open source | **AGPL-3.0, full source** | Closed or single files |
 
 Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
