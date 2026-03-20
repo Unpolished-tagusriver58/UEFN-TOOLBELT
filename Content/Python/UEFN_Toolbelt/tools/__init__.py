@@ -10,6 +10,7 @@ To add a new tool:
   Done.
 """
 
+from . import integration_test
 from . import material_master
 from . import arena_generator
 from . import spline_prop_placer

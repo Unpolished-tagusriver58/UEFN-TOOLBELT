@@ -1,6 +1,6 @@
 # UEFN Toolbelt — Tool Status & Testing
 
-UEFN Toolbelt contains 122+ tools across 23 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **they cannot all be automatically executed in a single smoke test.**
+UEFN Toolbelt contains 123+ tools across 24 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **the `integration_test.py` suite uses temporary fixtures to automate verification of context-dependent tools.**
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
@@ -66,11 +66,28 @@ These tools require specific assets (Static Meshes, Textures, Folders) to be sel
 
 ---
 
+## Layer 7: Automated Integration Test (Context-Aware)
+The `toolbelt_integration_test` tool bridges the gap between pure code checks and manual verification. It programmatically:
+1. Spawns fixture actors (cubes/spheres)
+2. Selects them using `EditorActorSubsystem`
+3. Executes tools against that selection
+4. Verifies the result (properties, file outputs)
+5. Cleans up with a single `undo_transaction`
+
+**Current Integration Coverage:**
+- **Materials:** `material_apply_preset` verified.
+- **Bulk Ops:** `bulk_align` (X axis) verified.
+- **Patterns:** `pattern_grid` spawn and `pattern_clear` verified.
+- **Snapshots:** `snapshot_save` and `snapshot_delete` verified.
+- **Crawler:** `api_crawl_level_classes` verified.
+
+---
+
 ## What the Tests Actually Prove (and Don't)
 
 **What the smoke test (85/85) proves:**
-- All 23 modules import and register without errors
-- All 122 tools register into the registry with valid metadata
+- All 24 modules import and register without errors
+- All 123 tools register into the registry with valid metadata
 - 9 "safe" tools execute end-to-end and return correct results
 - MCP bridge, PySide6, and Verse Book infrastructure all functional
 

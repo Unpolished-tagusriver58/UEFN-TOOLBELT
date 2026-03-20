@@ -828,7 +828,7 @@ tb.run("tag_export", folder="/Game")
 ### MCP Bridge (`category="MCP Bridge"`)
 
 Runs an HTTP listener inside UEFN so Claude Code (or any MCP-compatible AI) can directly
-control the editor — spawn actors, run any of the 122 toolbelt tools, execute arbitrary Python.
+control the editor — spawn actors, run any of the 123 toolbelt tools, execute arbitrary Python.
 
 | Tool Name | Description |
 |---|---|
@@ -865,7 +865,7 @@ Restart Claude Code — it connects automatically. Then ask Claude things like:
 - *"Scatter 200 props in a 4000cm spiral around the origin"*
 - *"Save a level snapshot, then mirror the selection across X"*
 
-**Available MCP commands:** ping, execute\_python, run\_tool (→ all 122 tools), list\_tools,
+**Available MCP commands:** ping, execute\_python, run\_tool (→ all 123 tools), list\_tools,
 get\_all\_actors, get\_selected\_actors, spawn\_actor, delete\_actors, set\_actor\_transform,
 list\_assets, get\_asset\_info, rename\_asset, save\_current\_level, get\_viewport\_camera,
 set\_viewport\_camera, and more.
@@ -987,7 +987,7 @@ Expected result: **85/85 passing** — all systems healthy, Toolbelt is ready.
 |---|---|---|
 | **Layer 1** — Python Environment | stdlib, threading, sockets, HTTP server, file I/O | 13 |
 | **Layer 2** — UEFN API Surface | `unreal` module, subsystems, AutomationLibrary, Materials | 13 |
-| **Layer 3** — Toolbelt Core | All 23 modules loaded, 122 tools registered, 9 safe tools executed | 40 |
+| **Layer 3** — Toolbelt Core | All 24 modules loaded, 123 tools registered, 9 safe tools executed | 40 |
 | **Layer 4** — MCP Bridge | 31 command handlers, HTTP listener state | 4 |
 | **Layer 5** — Dashboard (PySide6) | PySide6 importable, QApplication, ToolbeltDashboard | 3 |
 | **Layer 6** — Verse Book | clone present, git reachable, 22 chapters parsed | 12 |
@@ -1005,7 +1005,7 @@ After completing Step 2 (PySide6 installed), click **Toolbelt → Open Dashboard
 import UEFN_Toolbelt as tb; tb.launch_qt()
 ```
 
-A dark-themed floating window opens with a left sidebar nav and 122 tools across 12 pages (including an About page).
+A dark-themed floating window opens with a left sidebar nav and 123 tools across 12 pages (including an About page).
 
 ![Global Dashboard Search](docs/dashboard_search.png)
 
@@ -1013,7 +1013,7 @@ A dark-themed floating window opens with a left sidebar nav and 122 tools across
 
 | Search | Where | What it does |
 |---|---|---|
-| **Find any tool…** | Sidebar (top) | Global — searches all 122 tools across every category by name, description, or tag. Results show a category badge so you know where each tool lives. |
+| **Find any tool…** | Sidebar (top) | Global — searches all 123 tools across every category by name, description, or tag. Results show a category badge so you know where each tool lives. |
 | **Filter this page…** | Content header (top-right) | Within-category — hides/shows buttons on the current page as you type. Disappears during global search. |
 
 > **If the dashboard doesn't open after installing PySide6:** The module may be cached from before PySide6 was installed. Paste this single line to clear and reload:
@@ -1080,7 +1080,7 @@ Claude will call `run_toolbelt_tool("toolbelt_smoke_test")` through the bridge a
 > **Note:** The listener must be started in UEFN each session. You can also click **Dashboard → MCP → Start Listener** instead of pasting the command.
 
 **What Claude can do once connected:**
-- Run any of the 122 tools by name
+- Run any of the 123 tools by name
 - Spawn, move, delete actors directly
 - Generate spec-accurate Verse code (pulls from the live verse-book spec)
 - Execute arbitrary Python inside UEFN
@@ -1673,7 +1673,7 @@ import UEFN_Toolbelt as tb; tb.run("mcp_start")
 `.mcp.json` is already in the repo root — Claude Code picks it up automatically on next launch.
 
 **What Claude can do:**
-- Run any of the 122 toolbelt tools by name (`run_toolbelt_tool`)
+- Run any of the 123 toolbelt tools by name (`run_toolbelt_tool`)
 - Spawn, move, delete actors; read selected actors live
 - List, rename, duplicate, import, delete Content Browser assets
 - Execute arbitrary Python inside UEFN with full `unreal.*` access
@@ -1776,7 +1776,7 @@ tb.run("verse_gen_custom",
 
 `CLAUDE.md` in the project root is auto-loaded by Claude Code every time you open the project. It contains:
 
-- Every tool name, parameter, and usage example for all 122 tools
+- Every tool name, parameter, and usage example for all 123 tools
 - MCP bridge command reference
 - UEFN Python critical rules (main thread, undo transactions, API gotchas)
 - Common patterns and troubleshooting
@@ -1789,7 +1789,7 @@ Any Claude session in this project starts fully briefed — no prompting require
 
 | Feature | UEFN Toolbelt | Everyone else |
 |---|---|---|
-| Tool count | **122 tools, 23 modules** | Single-purpose scripts |
+| Tool count | **123 tools, 24 modules** | Single-purpose scripts |
 | AI integration | **Full MCP bridge + model-agnostic HTTP client** | None |
 | Local model support | **LM Studio, Ollama, any HTTP agent** | None |
 | Verse code gen | **Live spec-backed (27K line reference)** | Static templates |
@@ -1806,7 +1806,7 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 ### v1.0 — March 2026 (Initial Release)
 
-- **122 tools** across 17 categories: Materials, Procedural, Bulk Ops, Text, Assets, Verse, Project, Screenshot, Tags, MCP, API Explorer, Utilities, and more
+- **123 tools** across 17 categories: Materials, Procedural, Bulk Ops, Text, Assets, Verse, Project, Screenshot, Tags, MCP, API Explorer, Utilities, and more
 - **PySide6 dashboard** — dark-themed floating window with sidebar nav, search across all tools, and per-category pages
 - **Tool Registry** — `@register_tool` decorator system, execute-by-name, tag/category search
 - **MCP bridge** — full two-process architecture letting Claude Code control UEFN over HTTP
