@@ -271,8 +271,16 @@ def _test_screenshots() -> None:
     try:
         # Take a screenshot
         path = tb.run("screenshot_take", name="integration_test_shot")
-        passed = path and os.path.exists(str(path))
-        _record("Screenshots", "Capture", passed, f"Saved to {path}" if passed else "File missing")
+        
+        # Wait for file (asynchronous in Unreal)
+        passed = False
+        for _ in range(30): # Wait up to 3 seconds
+            if path and os.path.exists(str(path)):
+                passed = True
+                break
+            time.sleep(0.1)
+            
+        _record("Screenshots", "Capture", passed, f"Saved to {path}" if passed else "File missing (timeout)")
     except Exception as e:
         _record("Screenshots", "Execution", False, str(e))
 

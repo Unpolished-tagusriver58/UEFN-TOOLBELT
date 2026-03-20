@@ -165,7 +165,7 @@ def _take_shot(
 # ─── Tool implementations ─────────────────────────────────────────────────────
 
 def _do_take(name: str, width: int, height: int,
-             capture_hdr: bool, force_game_view: bool) -> None:
+             capture_hdr: bool, force_game_view: bool) -> str:
     _ensure_dir()
     out = _timestamped(name, width, height)
     unreal.log(f"[Screenshot] Capturing {width}×{height}…")
@@ -174,8 +174,10 @@ def _do_take(name: str, width: int, height: int,
 
     if ok:
         unreal.log(f"[Screenshot] ✓  {out}")
+        return out
     else:
         unreal.log_warning(f"[Screenshot] ✗  Capture may have failed — check {_SHOT_DIR}")
+        return ""
 
 
 def _do_focus_selection(
@@ -288,7 +290,7 @@ def screenshot_take(
     Output:
         Saved/UEFN_Toolbelt/screenshots/{name}_{YYYYMMDD_HHMMSS}_{W}x{H}.png
     """
-    _do_take(name, width, height, capture_hdr, force_game_view)
+    return _do_take(name, width, height, capture_hdr, force_game_view)
 
 
 @register_tool(
