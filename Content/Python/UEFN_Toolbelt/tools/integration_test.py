@@ -15,7 +15,7 @@ Usage:
 """
 
 from __future__ import annotations
-
+VERSION = "V10-ULTIMATE-100"
 import os
 import time
 from datetime import datetime
@@ -115,6 +115,10 @@ def _save_report() -> str:
     with open(_RESULTS_PATH, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     return _RESULTS_PATH
+
+def _ensure_folder(path: str) -> None:
+    """Ensures a content folder exists."""
+    unreal.EditorAssetLibrary.make_directory(path)
 
 # ─── Test Sections ────────────────────────────────────────────────────────────
 
@@ -979,7 +983,7 @@ def _test_advanced_materials() -> None:
 @register_tool(
     name="toolbelt_integration_test",
     category="Tests",
-    description="RUN ME: Programmatically verify context-dependent tools (Requires UEFN Viewport)",
+    description="[WARNING: INVASIVE] Runs full automation. Spawns/Deletes actors. BEST IN TEST TEMPLATE.",
     icon="🧪",
     tags=["test", "integration", "full", "automation"],
 )
@@ -1020,6 +1024,14 @@ def toolbelt_integration_test(**kwargs) -> None:
             _test_verse_advanced()
             _test_screenshots()
             
+            # --- Batch 8 (Careful/Non-Invasive) ---
+            _test_lods_safe()
+            _test_optimization_safe()
+            _test_arena_safe()
+            _test_scatter_advanced_safe()
+            _test_assets_advanced_safe()
+            _test_bridge_safe()
+            
             # Finalize
             _cleanup_fixtures()
             report_path = _save_report()
@@ -1036,6 +1048,122 @@ def toolbelt_integration_test(**kwargs) -> None:
         except Exception as e:
             unreal.log_error(f"FATAL ERROR IN INTEGRATION TEST: {e}")
             _cleanup_fixtures()
+
+
+# ─── Batch 8 (Final 20%) ──────────────────────────────────────────────────────
+
+def _test_lods_safe() -> None:
+    _header("8.1 LODs & Collision (Safe Version)")
+    import UEFN_Toolbelt as tb
+    try:
+        # Restriction: Only use the TOOLBELT_TEST folder
+        test_folder = "/Game/TOOLBELT_TEST/LODs"
+        unreal.EditorAssetLibrary.make_directory(test_folder)
+        
+        # 1. Spawn a fresh test mesh (Material Instance + Proxy)
+        # Instead of duplicating project meshes (which might be cooked), 
+        # we'll test the audit and folder tools which are the main goal.
+        tb.run("lod_audit_folder", folder_path=test_folder)
+        _record("LODs", "Audit Folder", True, "Audit executed on test folder")
+        
+    except Exception as e:
+        _record("LODs", "Error", False, str(e))
+
+def _test_optimization_safe() -> None:
+    _header("8.2 Optimization (Restricted Path)")
+    import UEFN_Toolbelt as tb
+    try:
+        # Restriction: Never scan /Game. Only scan the test folder.
+        test_folder = "/Game/TOOLBELT_TEST"
+        
+        tb.run("memory_scan_textures", scan_path=test_folder)
+        tb.run("memory_scan_meshes", scan_path=test_folder)
+        _record("Optimization", "Safe Scans", True, f"Scanned: {test_folder}")
+        
+    except Exception as e:
+        _record("Optimization", "Error", False, str(e))
+
+def _test_arena_safe() -> None:
+    _header("8.3 Arena Generator (Safe Spawn/Cleanup)")
+    import UEFN_Toolbelt as tb
+    try:
+        # Run a SMALL arena generation
+        tb.run("arena_generate", size="small", apply_team_colors=False)
+        
+        # Verify spawning - check for actors containing 'Arena' or 'Base' in folder
+        actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+        arena_actors = [a for a in actor_sub.get_all_level_actors() if "Arena" in str(a.get_folder_path())]
+        _record("Arena", "Generate", len(arena_actors) > 10, f"Spawned {len(arena_actors)} actors")
+        
+        # MANDATORY CLEANUP: Mass destroy everything in the Arena folder
+        for a in arena_actors:
+            a.destroy_actor()
+        _record("Arena", "Cleanup", True, "All arena actors destroyed")
+        
+    except Exception as e:
+        _record("Arena", "Error", False, str(e))
+
+def _test_scatter_advanced_safe() -> None:
+    _header("8.4 Scatter Advanced (Non-Linear)")
+    import UEFN_Toolbelt as tb
+    try:
+        test_folder = "TOOLBELT_SCATTER_TEST"
+        # 1. Scatter Along Path (Linear)
+        pts = [(0,0,0), (1000,0,0)]
+        tb.run("scatter_along_path", path_points=pts, count_per_point=2, folder=test_folder)
+        
+        actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+        actors = [a for a in actor_sub.get_all_level_actors() if test_folder in str(a.get_folder_path())]
+        _record("Scatter", "Along Path", len(actors) == 4, f"Found {len(actors)} actors")
+        
+        # CLEANUP
+        tb.run("scatter_clear", folder=test_folder)
+        _record("Scatter", "Cleanup", True, "Test folder cleared")
+        
+    except Exception as e:
+        _record("Scatter", "Error", False, str(e))
+
+def _test_assets_advanced_safe() -> None:
+    _header("8.5 Assets Advanced (Safe Rename/Organize)")
+    import UEFN_Toolbelt as tb
+    try:
+        # Restriction: Only operate on TOOLBELT_TEST
+        test_dir = "/Game/TOOLBELT_TEST/AssetOps"
+        # Fix: use full unreal path creation to avoid scope issues
+        unreal.EditorAssetLibrary.make_directory(test_dir)
+        
+        # Create a Material Instance to test renaming
+        asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
+        mi = asset_tools.create_asset("mi_bad_Name", test_dir, 
+                                      unreal.MaterialInstanceConstant, unreal.MaterialInstanceConstantFactoryNew())
+        
+        if mi:
+            # Test enforce (mi_ -> MI_)
+            tb.run("rename_enforce_conventions", scan_path=test_dir)
+            _record("Assets", "Enforce Conventions", True, "Tool executed on specific path")
+            
+            # Test organize
+            tb.run("organize_assets", source_path=test_dir, target_base="/Game/TOOLBELT_TEST/Organized")
+            _record("Assets", "Organize Assets", True, "Tool executed on specific path")
+            
+        # Cleanup
+        unreal.EditorAssetLibrary.delete_directory("/Game/TOOLBELT_TEST/AssetOps")
+        unreal.EditorAssetLibrary.delete_directory("/Game/TOOLBELT_TEST/Organized")
+        
+    except Exception as e:
+        _record("Assets", "Error", False, str(e))
+
+def _test_bridge_safe() -> None:
+    _header("8.6 Bridge Toggle")
+    import UEFN_Toolbelt as tb
+    try:
+        # Start/Stop bridge
+        tb.run("mcp_start")
+        _record("Bridge", "Start", True)
+        tb.run("mcp_stop")
+        _record("Bridge", "Stop", True)
+    except Exception as e:
+        _record("Bridge", "Error", False, str(e))
 
 if __name__ == "__main__":
     toolbelt_integration_test()

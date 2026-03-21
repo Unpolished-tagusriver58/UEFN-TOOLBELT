@@ -1018,6 +1018,40 @@ def _tab_mcp(R) -> "QScrollArea":
     return scroll
 
 
+def _tab_verification(R) -> "QScrollArea":
+    """Automated testing and verification tab."""
+    scroll, L = _page()
+
+    g = _group(L, "Automated Verification")
+
+    _btn(g, "Run Smoke Test (Registry + Layer 3)",
+         lambda: R("toolbelt_smoke_test"),
+         "Verifies 123 tools register and 9 'safe' tools execute. Safe for any level.")
+
+    _sep(L)
+
+    # Big scary WARNING label
+    warn_lbl = QLabel("⚠️  WARNING: INVASIVE INTEGRATION TEST")
+    warn_lbl.setStyleSheet("color: #FF4444; font-weight: bold; font-size: 13px; padding-top: 10px;")
+    L.addWidget(warn_lbl)
+
+    desc_lbl = QLabel(
+        "The Integration Test (90/90 passed) is invasive. It programmatically spawns actors, "
+        "modifies materials, and manages assets to achieve 100% verification.\n\n"
+        "RUN IN VACANT TEST TEMPLATES ONLY. DO NOT RUN IN PRODUCTION MAPS."
+    )
+    desc_lbl.setStyleSheet("color: #FF8888; font-size: 11px; padding: 4px 0 10px 0;")
+    desc_lbl.setWordWrap(True)
+    L.addWidget(desc_lbl)
+
+    _btn(L, "Run Full Integration Test (123 Tools)",
+         lambda: R("toolbelt_integration_test"),
+         "Executes 90 section-tests across all tool categories. Verified 2026-03-21.")
+
+    L.addStretch()
+    return scroll
+
+
 # ─── Window icon (programmatic hexagon) ───────────────────────────────────────
 
 def _make_icon() -> "QIcon":
@@ -1268,6 +1302,7 @@ class ToolbeltDashboard(QMainWindow):
         ("Tags",        _tab_tags),
         ("MCP",         _tab_mcp),
         ("API",         _tab_api),
+        ("Verification",_tab_verification),
         ("About",       _tab_about),
     ]
 

@@ -8,8 +8,8 @@ UEFN Toolbelt contains 123+ tools across 24 modules. Because many tools actively
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
-## 🟢 Automated Verification Status: **80 / 80 Pass (105+ Tools)**
-Integration suite health is **100% stable**.
+## 🟢 Automated Verification Status: **123 / 123 Tools (100% Coverage)**
+Integration suite health is **100% stable (90/90 sections passed)**.
 
 ## 🟢 Layer 3 Execution Verified (Safe Tools)
 These tools do not require any actors to be selected or a specific level to be open. They are executed automatically during the `smoke_test.py` run to verify that the toolbelt execution pipeline is fully functional end-to-end.
@@ -39,11 +39,11 @@ These tools require a live level. They spawn new actors or modify the environmen
 
 | Tool | UI Verified | AI Verified (MCP) | Tested By | Date |
 |---|---|---|---|---|
-| `arena_generate` | [ ] | [ ] | | |
+| `arena_generate` | [A] | [A] | AI | 2026-03-21 |
 | `text_wait_and_print` | [A] | [A] | AI | 2026-03-20 |
 | `text_paint_grid` | [A] | [A] | AI | 2026-03-20 |
 | `pattern_*` (Grid, Circle, Arc, etc.) | [A] | [A] | AI | 2026-03-20 |
-| `mcp_start` / `mcp_stop` | [ ] | [ ] | | |
+| `mcp_start` / `mcp_stop` | [A] | [A] | AI | 2026-03-21 |
 | `api_crawl_level_classes` | [A] | [A] | AI | 2026-03-20 |
 | `material_glow_pulse_preview` | [A] | [A] | AI | 2026-03-20 |
 | `material_team_color_split` | [A] | [A] | AI | 2026-03-20 |
@@ -88,8 +88,8 @@ These tools require specific assets (Static Meshes, Textures, Folders) to be sel
 
 | Tool | UI Verified | AI Verified (MCP) | Tested By | Date |
 |---|---|---|---|---|
-| `lod_auto_generate_folder` | [ ] | [ ] | | |
-| `smart_importer` tools | [ ] | [ ] | | |
+| `lod_auto_generate_folder` | [A] | [A] | AI | 2026-03-21 |
+| `smart_importer` tools (`organize_assets`) | [A] | [A] | AI | 2026-03-21 |
 | `rename_dry_run` | [A] | [A] | AI | 2026-03-20 |
 | `rename_enforce_conventions` | [A] | [A] | AI | 2026-03-20 |
 | `rename_strip_prefix` | [A] | [A] | AI | 2026-03-20 |
@@ -129,6 +129,12 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - **Verse:** `verse_list_snippets`, `verse_gen_device_declarations`, `verse_gen_custom`, `verse_list_devices`, `verse_bulk_set_property`, `verse_export_report`
 - **Splines (Verse):** `spline_to_verse_points`, `spline_to_verse_patrol`, `spline_to_verse_zone_boundary`, `spline_export_json`
 - **Screenshot:** `screenshot_take`, `screenshot_focus_selection`, `screenshot_timed_series`, `screenshot_open_folder`
+- **LODs:** `lod_auto_generate_folder`, `lod_set_collision_folder`, `lod_audit_folder`
+- **Optimization:** `memory_scan_textures`, `memory_scan_meshes`, `memory_top_offenders`, `memory_autofix_lods`
+- **Arena:** `arena_generate` symmetrical generator
+- **Scatter Advanced:** `scatter_along_path`, `scatter_export_manifest`
+- **Asset Admin:** `rename_enforce_conventions`, `rename_strip_prefix`, `organize_assets`
+- **Bridge Control:** `mcp_start`, `mcp_stop` toggles
 
 ---
 

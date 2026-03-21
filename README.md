@@ -77,6 +77,16 @@ with open("path/to/script.py") as f:
 
 ---
 
+## ⚠️ Automated Integration Testing
+
+The `toolbelt_integration_test` (123 tools verified) is **INVASIVE** by design. It programmatically spawns actors, modifies properties, and deletes assets to verify correctness.
+
+> [!WARNING]
+> **DO NOT run the full integration test in a live production project.**
+> It is designed to be run in a **blank Test Template** (e.g., "Empty Level"). While every test includes automated cleanup, the sheer volume of actor spawning can be slow and may clutter your Undo history.
+
+---
+
 > **Community context:** Built in response to the March 2026 UEFN Python wave. Inspired by
 > early community tools like standalone material editors, spline prop placers,
 > and Verse device editors — then taken further into a unified, permanently

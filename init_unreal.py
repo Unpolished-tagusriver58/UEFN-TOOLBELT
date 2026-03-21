@@ -44,6 +44,7 @@ try:
     _tb.load_custom_plugins()
     _toolbelt_loaded = True
     unreal.log("[TOOLBELT] ✓ All tools registered.")
+    unreal.log("[TOOLBELT]   NOTE: Run 'toolbelt_integration_test' in a clean level for full verification.")
 except ModuleNotFoundError:
     unreal.log_warning(
         "[TOOLBELT] Package not found. "
@@ -132,6 +133,11 @@ def _build_toolbelt_menu() -> None:
                "List All Tools",
                "Print every registered tool to the Output Log",
                "import UEFN_Toolbelt as tb; [print(f\"  {t['category']:15s} {t['name']}\") for t in tb.registry.list_tools()]")
+
+    _add_entry(tb_sub, "Dashboard", "ToolbeltRunIntegration",
+               "Run Integration Test [WARNING: INVASIVE]",
+               "Full check of 123 tools. Spawns/Deletes actors. RUN IN TEST TEMPLATE ONLY.",
+               "import UEFN_Toolbelt as tb; tb.run('toolbelt_integration_test')")
 
     # ── Section: Materials ────────────────────────────────────────────────
     for preset in ["chrome", "gold", "neon", "hologram", "lava", "team_red", "team_blue"]:
