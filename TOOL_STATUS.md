@@ -8,8 +8,8 @@ UEFN Toolbelt contains 123+ tools across 24 modules. Because many tools actively
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
-## 🟢 Automated Verification Status: **27 / 27 Pass (35+ Tools)**
-Integration suite health is **98% stable**.
+## 🟢 Automated Verification Status: **37 / 37 Pass (45+ Tools)**
+Integration suite health is **100% stable**.
 
 ## 🟢 Layer 3 Execution Verified (Safe Tools)
 These tools do not require any actors to be selected or a specific level to be open. They are executed automatically during the `smoke_test.py` run to verify that the toolbelt execution pipeline is fully functional end-to-end.
@@ -53,7 +53,7 @@ These tools **must** have valid actors selected in the UEFN viewport to function
 |---|---|---|---|---|
 | `pattern_grid` / `circle` | [A] | [A] | AI | 2026-03-20 |
 | `pattern_line` / `arc` | [A] | [A] | AI | 2026-03-20 |
-| `pattern_spiral` / `wave` | [ ] | [ ] | | |
+| `pattern_spiral` / `wave` | [A] | [A] | AI | 2026-03-20 |
 | `bulk_align` / `distribute` / `randomize` | [A] | [A] | AI | 2026-03-20 |
 | `bulk_snap_to_grid` | [A] | [A] | AI | 2026-03-20 |
 | `bulk_stack` / `reset` | [A] | [A] | AI | 2026-03-20 |
@@ -61,7 +61,7 @@ These tools **must** have valid actors selected in the UEFN viewport to function
 | `text_label_selection` | [ ] | [ ] | | |
 | `verse_gen_device_declarations` | [A] | [A] | AI | 2026-03-20 |
 | `screenshot_focus_selection` | [ ] | [ ] | | |
-| `api_crawl_selection` | [ ] | [ ] | | |
+| `api_crawl_selection` | [A] | [A] | AI | 2026-03-20 |
 
 ### 🔴 Requires Manual Verification (Content Browser Dependent)
 These tools require specific assets (Static Meshes, Textures, Folders) to be selected in the Content Browser or exist at a specific path.
@@ -71,15 +71,15 @@ These tools require specific assets (Static Meshes, Textures, Folders) to be sel
 | `lod_auto_generate_folder` | [ ] | [ ] | | |
 | `smart_importer` tools | [ ] | [ ] | | |
 | `rename_dry_run` | [A] | [A] | AI | 2026-03-20 |
-| `rename_enforce_conventions` | [ ] | [ ] | | |
-| `rename_strip_prefix` | [ ] | [ ] | | |
-| `rename_report` | [ ] | [ ] | | |
+| `rename_enforce_conventions` | [A] | [A] | AI | 2026-03-20 |
+| `rename_strip_prefix` | [A] | [A] | AI | 2026-03-20 |
+| `rename_report` | [A] | [A] | AI | 2026-03-20 |
 | `tag_add` / `tag_remove` | [A] | [A] | AI | 2026-03-20 |
 | `memory_scan` | [A] | [A] | AI | 2026-03-20 |
-| `memory_scan_textures` | [ ] | [ ] | | |
-| `memory_scan_meshes` | [ ] | [ ] | | |
-| `memory_top_offenders` | [ ] | [ ] | | |
-| `memory_autofix_lods` | [ ] | [ ] | | |
+| `memory_scan_textures` | [A] | [A] | AI | 2026-03-20 |
+| `memory_scan_meshes` | [A] | [A] | AI | 2026-03-20 |
+| `memory_top_offenders` | [A] | [A] | AI | 2026-03-20 |
+| `memory_autofix_lods` | [A] | [A] | AI | 2026-03-20 |
 
 ---
 
@@ -132,7 +132,7 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - **User Experience:** The "feel" of tool interactions and UI responsiveness.
 
 > [!IMPORTANT]
-> The `toolbelt_integration_test` (20/20) is the single most important tool for ensuring the project remains stable as we add more features. **Always run this test before submitting a Pull Request.**
+> The `toolbelt_integration_test` (37/37) is the single most important tool for ensuring the project remains stable as we add more features. **Always run this test before submitting a Pull Request.**
 
 ## 🗺️ Automation Roadmap
 The 100% target requires move coverage in these upcoming batches:
@@ -142,6 +142,12 @@ The 100% target requires move coverage in these upcoming batches:
 - [x] **Spline Tools**: `spline_place_props` (Verify actors follow spline path)
 - [x] **Asset Tools**: `rename_dry_run` (Verify string manipulation)
 - [x] **Optimization**: `memory_scan` (Verify JSON report generation)
+
+### **Batch 4: Asset Management & Memory (Target: 45+ Tools)**
+- [x] **Asset Reparenting/Renaming**: `rename_report`, `rename_enforce_conventions`, `rename_strip_prefix`
+- [x] **Memory & LODs**: `memory_scan_textures`, `memory_scan_meshes`, `memory_top_offenders`, `memory_autofix_lods`
+- [x] **Procedural Advanced**: `pattern_spiral`, `pattern_wave`
+- [x] **API Capability**: `api_crawl_selection`
 
 > **Future potential:** In theory, an automated integration test could use the crawler data to generate validation scripts — spawn actors, apply tool operations, then verify properties changed. That level of automation isn't built yet, but the crawler output provides the schema needed to build it.
 

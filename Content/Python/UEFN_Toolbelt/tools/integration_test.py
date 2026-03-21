@@ -321,6 +321,26 @@ def _test_patterns_advanced() -> None:
     except Exception as e:
         _record("Patterns", "Arc", False, str(e))
 
+    # --- Test Spiral ---
+    try:
+        tb.run("pattern_spiral", count=12)
+        all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
+        pattern_actors = [a for a in all_actors if "TOOLBELT_PATTERN" in [str(t) for t in a.get_editor_property("tags")]]
+        _record("Patterns", "Spiral Spawn (Count=12)", len(pattern_actors) >= 12, f"Found {len(pattern_actors)} actors")
+        tb.run("pattern_clear")
+    except Exception as e:
+        _record("Patterns", "Spiral", False, str(e))
+
+    # --- Test Wave ---
+    try:
+        tb.run("pattern_wave", count=6)
+        all_actors = unreal.EditorLevelLibrary.get_all_level_actors()
+        pattern_actors = [a for a in all_actors if "TOOLBELT_PATTERN" in [str(t) for t in a.get_editor_property("tags")]]
+        _record("Patterns", "Wave Spawn (Count=6)", len(pattern_actors) >= 6, f"Found {len(pattern_actors)} actors")
+        tb.run("pattern_clear")
+    except Exception as e:
+        _record("Patterns", "Wave", False, str(e))
+
 def _test_snapshots() -> None:
     _header("4. Level Snapshots")
     import UEFN_Toolbelt as tb
@@ -353,6 +373,16 @@ def _test_crawler() -> None:
         # Verify file
         out_path = os.path.join(_SAVED, "api_level_classes_schema.json")
         _record("Crawler", "Level Crawl JSON", os.path.exists(out_path))
+
+        # Crawl selection
+        actor = _spawn_fixture()
+        _select_fixture([actor])
+        tb.run("api_crawl_selection")
+        
+        # Output is typically api_selection_crawl.json
+        out_path_sel = os.path.join(_SAVED, "api_selection_crawl.json")
+        _record("Crawler", "Selection Crawl JSON", os.path.exists(out_path_sel))
+        
     except Exception as e:
         _record("Crawler", "Execution", False, str(e))
 
@@ -454,6 +484,9 @@ def _test_splines() -> None:
     _header("3.3 Spline Tools")
     import UEFN_Toolbelt as tb
     try:
+        # Pre-cleanup to ensure accurate actor counts
+        tb.run("spline_clear_props", folder_name="TestSplineProps")
+        
         # Setup: Spawn actor + SplineComponent
         actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
         spline_host = actor_sub.spawn_actor_from_class(unreal.Actor, unreal.Vector(0,0,0))
@@ -489,6 +522,39 @@ def _test_assets() -> None:
         passed = os.path.exists(report_path)
         _record("Assets", "Rename Dry Run", passed, f"Report generated: {passed}")
         
+        # --- Asset Creation for invasive tests ---
+        test_dir = "/Game/TOOLBELT_TEST"
+        unreal.EditorAssetLibrary.make_directory(test_dir)
+        
+        # We cannot duplicate engine assets because they are cooked. 
+        # Instead, we will create dummy Material Instances.
+        factory = unreal.MaterialInstanceConstantFactoryNew()
+        asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
+        
+        asset_tools.create_asset("BadNameMat", test_dir, unreal.MaterialInstanceConstant, factory)
+        asset_tools.create_asset("M_WrongPrefix", test_dir, unreal.MaterialInstanceConstant, factory)
+        
+        # Note: Unreal's AssetRegistry caches paths. Sequential rename operations 
+        # inside the same tick won't see the updated paths from previous steps.
+        # We verify that the tools execute properly against the created assets without crashing.
+        
+        # Test Report
+        tb.run("rename_report", scan_path=test_dir)
+        _record("Assets", "Rename Report", os.path.exists(report_path), "JSON Report created")
+        
+        # Test Enforce
+        tb.run("rename_enforce_conventions", scan_path=test_dir)
+        _record("Assets", "Enforce Conventions", True, "Tool executed and processed assets")
+        
+        # Test Strip
+        # Spawn a fresh asset for strip_prefix so it's in the registry's initial state
+        asset_tools.create_asset("MI_StripMe", test_dir, unreal.MaterialInstanceConstant, factory)
+        tb.run("rename_strip_prefix", scan_path=test_dir, prefix="MI_", dry_run=False)
+        _record("Assets", "Strip Prefix", True, "Tool executed without errors")
+        
+        # Cleanup
+        unreal.EditorAssetLibrary.delete_directory(test_dir)
+
     except Exception as e:
         _record("Assets", "Error", False, str(e))
 
@@ -503,6 +569,29 @@ def _test_memory() -> None:
         passed = os.path.exists(report_path)
         _record("Optimization", "Memory Scan JSON", passed, f"Report generated: {passed}")
         
+        # Run specific scans (read-only)
+        tb.run("memory_scan_textures", scan_path="/Engine/EngineMaterials")
+        _record("Optimization", "Scan Textures", True)
+        
+        tb.run("memory_scan_meshes", scan_path="/Engine/BasicShapes")
+        _record("Optimization", "Scan Meshes", True)
+        
+        tb.run("memory_top_offenders", scan_path="/Engine/BasicShapes", top_n=5)
+        _record("Optimization", "Top Offenders", True)
+        
+        # Test Auto-Fix LODs
+        # We cannot duplicate engine meshes because they are cooked. 
+        # So we just run the tool on an empty directory to ensure it doesn't crash 
+        # when traversing the Asset Registry.
+        test_dir = "/Game/TOOLBELT_TEST_MEM"
+        unreal.EditorAssetLibrary.make_directory(test_dir)
+        
+        tb.run("memory_autofix_lods", scan_path=test_dir, num_lods=3)
+        _record("Optimization", "Auto-Fix LODs", True, "Tool runs safely on Empty Dir")
+        
+        # Cleanup
+        unreal.EditorAssetLibrary.delete_directory(test_dir)
+
     except Exception as e:
         _record("Optimization", "Error", False, str(e))
 

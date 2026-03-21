@@ -212,7 +212,7 @@ def run_clear_props(folder_name: str = "SplineProps", **kwargs) -> None:
 
     to_delete = [
         a for a in all_actors
-        if a.get_folder_path() == f"/{folder_name}"
+        if str(a.get_folder_path()).strip("/") == folder_name.strip("/")
     ]
 
     if not to_delete:

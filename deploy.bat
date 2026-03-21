@@ -94,20 +94,21 @@ if exist "%UE_PYTHON%" (
 )
 
 :: ── Done ──────────────────────────────────────────────────────────────────────
+echo.
 echo  ==========================================
 echo    All files deployed successfully!
 echo  ==========================================
 echo.
 echo  HOT-RELOAD WORKFLOW (No UEFN Restart Required):
-echo  Copy and paste this into the UEFN Python console to refresh the toolbelt:
+echo  Copy and paste this exact line into the UEFN Python console to refresh the toolbelt:
 echo.
-echo  import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.launch_qt()
+echo import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.launch_qt()
 echo.
-echo  ------------------------------------------
-echo  TESTING COMMANDS:
-echo  -- Smoke Test:       tb.run("toolbelt_smoke_test")
-echo  -- Integration Test: tb.run("toolbelt_integration_test")
-echo  ------------------------------------------
+echo BUNDLE: HOT-RELOAD + INTEGRATION TEST:
+echo import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.run("toolbelt_integration_test")
+echo.
+echo BUNDLE: HOT-RELOAD + SMOKE TEST:
+echo import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.run("toolbelt_smoke_test")
 echo.
 echo  TIP: You only need to restart UEFN if you've changed init_unreal.py.
 echo.
