@@ -595,6 +595,107 @@ def _test_memory() -> None:
     except Exception as e:
         _record("Optimization", "Error", False, str(e))
 
+# ─── Batch 5 Additions ────────────────────────────────────────────────────────
+
+def _test_reference_auditor() -> None:
+    _header("1.3 Reference Auditor")
+    import UEFN_Toolbelt as tb
+    try:
+        # Run audit scans on engine shapes (we don't delete them, just verify tools run)
+        tb.run("ref_audit_orphans", scan_path="/Engine/BasicShapes", excluded_classes=[])
+        _record("Assets", "Audit Orphans", True)
+        
+        tb.run("ref_audit_redirectors", scan_path="/Engine/BasicShapes")
+        _record("Assets", "Audit Redirectors", True)
+        
+        tb.run("ref_audit_duplicates", scan_path="/Engine/BasicShapes")
+        _record("Assets", "Audit Duplicates", True)
+        
+        tb.run("ref_audit_unused_textures", scan_path="/Engine/EngineMaterials")
+        _record("Assets", "Audit Unused Textures", True)
+        
+        tb.run("ref_full_report", scan_path="/Engine/BasicShapes", excluded_classes=[])
+        report_path = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "ref_audit_report.json")
+        passed = os.path.exists(report_path)
+        _record("Assets", "Ref Aud Full Report", passed, f"Report generated: {passed}")
+        
+    except Exception as e:
+        _record("Assets", "Reference Auditor Error", False, str(e))
+
+
+def _test_project_scaffold() -> None:
+    _header("1.4 Project Scaffold")
+    import UEFN_Toolbelt as tb
+    try:
+        # Build a temporary test scaffold structure
+        test_project = "ScaffoldTest"
+        test_base = "/Game/TOOLBELT_TEST"
+        root_path = f"{test_base}/{test_project}"
+        
+        # 1. Preview
+        tb.run("scaffold_preview", template="solo_dev", project_name=test_project, base=test_base)
+        _record("Project", "Scaffold Preview", True)
+        
+        # 2. Generate
+        tb.run("scaffold_generate", template="solo_dev", project_name=test_project, base=test_base)
+        maps_path = f"{root_path}/Maps"
+        passed = unreal.EditorAssetLibrary.does_directory_exist(maps_path)
+        _record("Project", "Scaffold Generate", passed, f"Maps folder created: {passed}")
+        
+        # 3. Save Custom Template
+        tb.run("scaffold_save_template", template_name="TEST_Tmpl", folders=["A", "B/C"])
+        _record("Project", "Scaffold Save Template", True)
+        
+        # 4. Delete Custom Template
+        tb.run("scaffold_delete_template", template_name="TEST_Tmpl")
+        _record("Project", "Scaffold Delete Template", True)
+        
+        # Cleanup
+        unreal.EditorAssetLibrary.delete_directory(test_base)
+        
+    except Exception as e:
+        _record("Project", "Scaffold Error", False, str(e))
+
+
+def _test_text_painter() -> None:
+    _header("1.5 Text Painter")
+    import UEFN_Toolbelt as tb
+    try:
+        # 1. Place Text
+        actor1 = tb.run("text_place", text="UNIT_TEST", location=(0,0,1000), folder="TestTextProps")
+        passed = actor1 is not None and isinstance(actor1, unreal.TextRenderActor)
+        _record("Procedural", "Text Place", passed)
+        
+        # 2. Paint Grid
+        tb.run("text_paint_grid", cols=2, rows=2, origin=(0,0,2000), cell_size=200, folder="TestTextGrid")
+        actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+        grid_actors = [
+            a for a in actor_sub.get_all_level_actors() 
+            if isinstance(a, unreal.TextRenderActor) and "TestTextGrid" in str(a.get_folder_path())
+        ]
+        passed_grid = len(grid_actors) == 4
+        _record("Procedural", "Text Paint Grid", passed_grid, f"Found {len(grid_actors)} actors, expected 4")
+        
+        # 3. Save Style & List Styles
+        tb.run("text_save_style", style_name="TEST_Style", color="#FF0000")
+        _record("Procedural", "Text Save Style", True)
+        tb.run("text_list_styles")
+        
+        # 4. Clear Folder
+        tb.run("text_clear_folder", folder="TestTextProps")
+        tb.run("text_clear_folder", folder="TestTextGrid")
+        
+        remaining = [
+            a for a in actor_sub.get_all_level_actors() 
+            if isinstance(a, unreal.TextRenderActor) and ("TestTextProps" in str(a.get_folder_path()) or "TestTextGrid" in str(a.get_folder_path()))
+        ]
+        passed_clear = len(remaining) == 0
+        _record("Procedural", "Text Clear", passed_clear, f"Remaining actors: {len(remaining)}")
+
+    except Exception as e:
+        _record("Procedural", "Text Painter Error", False, str(e))
+
+
 # ─── Main Run ─────────────────────────────────────────────────────────────────
 
 @register_tool(
@@ -628,6 +729,9 @@ def toolbelt_integration_test(**kwargs) -> None:
             _test_splines()
             _test_assets()
             _test_memory()
+            _test_reference_auditor()
+            _test_project_scaffold()
+            _test_text_painter()
             _test_snapshots()
             _test_crawler()
             _test_asset_tagger()

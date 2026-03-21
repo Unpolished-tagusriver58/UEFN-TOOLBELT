@@ -8,7 +8,7 @@ UEFN Toolbelt contains 123+ tools across 24 modules. Because many tools actively
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
-## 🟢 Automated Verification Status: **37 / 37 Pass (45+ Tools)**
+## 🟢 Automated Verification Status: **50 / 50 Pass (65+ Tools)**
 Integration suite health is **100% stable**.
 
 ## 🟢 Layer 3 Execution Verified (Safe Tools)
@@ -40,8 +40,8 @@ These tools require a live level. They spawn new actors or modify the environmen
 | Tool | UI Verified | AI Verified (MCP) | Tested By | Date |
 |---|---|---|---|---|
 | `arena_generate` | [ ] | [ ] | | |
-| `text_wait_and_print` | [ ] | [ ] | | |
-| `text_paint_grid` | [ ] | [ ] | | |
+| `text_wait_and_print` | [A] | [A] | AI | 2026-03-20 |
+| `text_paint_grid` | [A] | [A] | AI | 2026-03-20 |
 | `pattern_*` (Grid, Circle, Arc, etc.) | [A] | [A] | AI | 2026-03-20 |
 | `mcp_start` / `mcp_stop` | [ ] | [ ] | | |
 | `api_crawl_level_classes` | [A] | [A] | AI | 2026-03-20 |
@@ -58,7 +58,8 @@ These tools **must** have valid actors selected in the UEFN viewport to function
 | `bulk_snap_to_grid` | [A] | [A] | AI | 2026-03-20 |
 | `bulk_stack` / `reset` | [A] | [A] | AI | 2026-03-20 |
 | `spline_place_props` | [A] | [A] | AI | 2026-03-20 |
-| `text_label_selection` | [ ] | [ ] | | |
+| `text_label_selection` | [A] | [A] | AI | 2026-03-20 |
+| `text_place` | [A] | [A] | AI | 2026-03-20 |
 | `verse_gen_device_declarations` | [A] | [A] | AI | 2026-03-20 |
 | `screenshot_focus_selection` | [ ] | [ ] | | |
 | `api_crawl_selection` | [A] | [A] | AI | 2026-03-20 |
@@ -101,6 +102,9 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - **Crawler:** `api_crawl_level_classes` level schema extraction
 - **Assets:** `rename_dry_run` (Naming convention audit)
 - **Optimization:** `memory_scan` (Island-wide report generation)
+- **Reference Auditor:** `ref_audit_orphans`, `ref_audit_redirectors`, `ref_audit_duplicates`, `ref_audit_unused_textures`, `ref_full_report`
+- **Project Structure:** `scaffold_preview`, `scaffold_generate`, `scaffold_save_template`, `scaffold_delete_template`
+- **Text Painter:** `text_place`, `text_paint_grid`, `text_save_style`, `text_clear_folder`
 - **Tagger:** `tag_add` & `tag_remove` asset metadata persistence
 - **Verse:** `verse_list_snippets` & `verse_gen_device_declarations`
 - **Screenshot:** `screenshot_take` (High-res 1080p verification)
@@ -132,7 +136,7 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - **User Experience:** The "feel" of tool interactions and UI responsiveness.
 
 > [!IMPORTANT]
-> The `toolbelt_integration_test` (37/37) is the single most important tool for ensuring the project remains stable as we add more features. **Always run this test before submitting a Pull Request.**
+> The `toolbelt_integration_test` (50/50 sections) is the single most important tool for ensuring the project remains stable as we add more features. **Always run this test before submitting a Pull Request.**
 
 ## 🗺️ Automation Roadmap
 The 100% target requires move coverage in these upcoming batches:

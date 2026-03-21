@@ -121,19 +121,19 @@ COLOR_PALETTE = [
 
 try:
     _H_ALIGN = {
-        "left":   unreal.TextRenderHorizontalAlignment.ETRA_LEFT,
-        "center": unreal.TextRenderHorizontalAlignment.ETRA_CENTER,
-        "right":  unreal.TextRenderHorizontalAlignment.ETRA_RIGHT,
+        "left":   unreal.HorizTextAligment.EHTA_LEFT,
+        "center": unreal.HorizTextAligment.EHTA_CENTER,
+        "right":  unreal.HorizTextAligment.EHTA_RIGHT,
     }
     _V_ALIGN = {
-        "top":    unreal.TextRenderVerticalAlignment.ETRVA_TOP,
-        "center": unreal.TextRenderVerticalAlignment.ETRVA_CENTER,
-        "bottom": unreal.TextRenderVerticalAlignment.ETRVA_BOTTOM,
+        "top":    unreal.VerticalTextAligment.EVRTA_TEXT_TOP,
+        "center": unreal.VerticalTextAligment.EVRTA_TEXT_CENTER,
+        "bottom": unreal.VerticalTextAligment.EVRTA_TEXT_BOTTOM,
     }
 except AttributeError:
-    # UEFN exposes these as integers rather than named enums
-    _H_ALIGN = {"left": 0, "center": 1, "right": 2}
-    _V_ALIGN = {"top": 0, "center": 1, "bottom": 2}
+    # If the exact enums aren't exposed, Unreal usually accepts strings
+    _H_ALIGN = {"left": "EHTA_Left", "center": "EHTA_Center", "right": "EHTA_Right"}
+    _V_ALIGN = {"top": "EVRTA_TextTop", "center": "EVRTA_TextCenter", "bottom": "EVRTA_TextBottom"}
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Internal helpers
@@ -358,6 +358,7 @@ def run_text_paint_grid(
     world_size: float = 100.0,
     style: Optional[str] = None,
     rotation_yaw: float = 0.0,
+    folder: str = TEXT_FOLDER,
     **kwargs,
 ) -> None:
     """
@@ -397,7 +398,7 @@ def run_text_paint_grid(
                 _spawn_text_actor(
                     cell_name, loc, rot, style_data,
                     label=f"GridLabel_{cell_name}",
-                    folder=f"{TEXT_FOLDER}/Grid",
+                    folder=folder,
                 )
 
     log_info(f"Grid complete: {cols * rows} zone labels placed.")
@@ -535,7 +536,7 @@ def run_text_clear_folder(folder: str = TEXT_FOLDER, **kwargs) -> None:
     to_delete = [
         a for a in all_actors
         if (isinstance(a, unreal.TextRenderActor) and
-            folder in (a.get_folder_path() or ""))
+            folder in str(a.get_folder_path() or ""))
     ]
 
     if not to_delete:
