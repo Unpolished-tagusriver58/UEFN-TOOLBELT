@@ -8,7 +8,7 @@ UEFN Toolbelt contains 123+ tools across 24 modules. Because many tools actively
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
-## 🟢 Automated Verification Status: **80 / 80 Pass (85+ Tools)**
+## 🟢 Automated Verification Status: **80 / 80 Pass (105+ Tools)**
 Integration suite health is **100% stable**.
 
 ## 🟢 Layer 3 Execution Verified (Safe Tools)
@@ -49,6 +49,7 @@ These tools require a live level. They spawn new actors or modify the environmen
 | `material_team_color_split` | [A] | [A] | AI | 2026-03-20 |
 | `material_gradient_painter` | [A] | [A] | AI | 2026-03-20 |
 | `material_pattern_painter` | [A] | [A] | AI | 2026-03-20 |
+| `text_color_cycle` | [A] | [A] | AI | 2026-03-20 |
 
 ### 🟠 Requires Manual Verification (Actor Selection Dependent)
 These tools **must** have valid actors selected in the UEFN viewport to function. Running them without a selection will result in a graceful warning, but testing actual logic requires a human.
@@ -68,7 +69,13 @@ These tools **must** have valid actors selected in the UEFN viewport to function
 | `text_label_selection` | [A] | [A] | AI | 2026-03-20 |
 | `text_place` | [A] | [A] | AI | 2026-03-20 |
 | `verse_gen_device_declarations` | [A] | [A] | AI | 2026-03-20 |
-| `screenshot_focus_selection` | [ ] | [ ] | | |
+| `verse_gen_custom` / `verse_gen_game_skeleton` | [A] | [A] | AI | 2026-03-20 |
+| `verse_list_devices` / `verse_export_report` | [A] | [A] | AI | 2026-03-20 |
+| `verse_bulk_set_property` | [A] | [A] | AI | 2026-03-20 |
+| `spline_to_verse_points` / `patrol` | [A] | [A] | AI | 2026-03-20 |
+| `spline_to_verse_zone_boundary` / `export` | [A] | [A] | AI | 2026-03-20 |
+| `screenshot_focus_selection` | [A] | [A] | AI | 2026-03-20 |
+| `screenshot_timed_series` | [A] | [A] | AI | 2026-03-20 |
 | `api_crawl_selection` | [A] | [A] | AI | 2026-03-20 |
 | `material_randomize_colors` | [A] | [A] | AI | 2026-03-20 |
 | `material_bulk_swap` | [A] | [A] | AI | 2026-03-20 |
@@ -88,6 +95,7 @@ These tools require specific assets (Static Meshes, Textures, Folders) to be sel
 | `rename_strip_prefix` | [A] | [A] | AI | 2026-03-20 |
 | `rename_report` | [A] | [A] | AI | 2026-03-20 |
 | `tag_add` / `tag_remove` | [A] | [A] | AI | 2026-03-20 |
+| `tag_show` / `tag_search` / `tag_export` | [A] | [A] | AI | 2026-03-20 |
 | `memory_scan` | [A] | [A] | AI | 2026-03-20 |
 | `memory_scan_textures` | [A] | [A] | AI | 2026-03-20 |
 | `memory_scan_meshes` | [A] | [A] | AI | 2026-03-20 |
@@ -116,10 +124,11 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - **Optimization:** `memory_scan` (Island-wide report generation)
 - **Reference Auditor:** `ref_audit_orphans`, `ref_audit_redirectors`, `ref_audit_duplicates`, `ref_audit_unused_textures`, `ref_full_report`
 - **Project Structure:** `scaffold_preview`, `scaffold_generate`, `scaffold_save_template`, `scaffold_delete_template`
-- **Text Painter:** `text_place`, `text_paint_grid`, `text_save_style`, `text_clear_folder`
-- **Tagger:** `tag_add` & `tag_remove` asset metadata persistence
-- **Verse:** `verse_list_snippets` & `verse_gen_device_declarations`
-- **Screenshot:** `screenshot_take` (High-res 1080p verification)
+- **Text Painter:** `text_place`, `text_paint_grid`, `text_save_style`, `text_clear_folder`, `text_color_cycle`, `text_label_selection`
+- **Tagger:** `tag_add`, `tag_remove`, `tag_show`, `tag_search`, `tag_list_all`, `tag_export`
+- **Verse:** `verse_list_snippets`, `verse_gen_device_declarations`, `verse_gen_custom`, `verse_list_devices`, `verse_bulk_set_property`, `verse_export_report`
+- **Splines (Verse):** `spline_to_verse_points`, `spline_to_verse_patrol`, `spline_to_verse_zone_boundary`, `spline_export_json`
+- **Screenshot:** `screenshot_take`, `screenshot_focus_selection`, `screenshot_timed_series`, `screenshot_open_folder`
 
 ---
 

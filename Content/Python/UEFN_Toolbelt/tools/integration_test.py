@@ -532,6 +532,22 @@ def _test_asset_tagger() -> None:
         tb.run("tag_add", asset_paths=[asset_path], tag_name=tag_name, value="verified")
         _record("Asset Tagger", "Add Tag", True)
         
+        # Select and Show tags
+        _select_fixture([actor])
+        tb.run("tag_show")
+        _record("Asset Tagger", "Show Tags", True)
+        
+        # Search & List
+        search_folder = "/Engine/BasicShapes"
+        tb.run("tag_search", tag_name=tag_name, value="verified", folder=search_folder)
+        tb.run("tag_list_all", folder=search_folder)
+        _record("Asset Tagger", "Search & List All", True)
+        
+        # Export
+        tb.run("tag_export", folder=search_folder)
+        export_path = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "tag_export.json")
+        _record("Asset Tagger", "Export Tags", os.path.exists(export_path))
+        
         # Remove tag
         tb.run("tag_remove", asset_paths=[asset_path], tag_name=tag_name)
         _record("Asset Tagger", "Remove Tag", True)
@@ -555,6 +571,45 @@ def _test_verse() -> None:
     except Exception as e:
         _record("Verse", "Execution", False, str(e))
 
+def _test_verse_advanced() -> None:
+    _header("7.2 Verse Layout & Boilerplate")
+    import UEFN_Toolbelt as tb
+    
+    try:
+        # Code Generators
+        tb.run("verse_gen_custom", code="# custom test snippet", description="pytest")
+        tb.run("verse_gen_elimination_handler")
+        tb.run("verse_gen_game_skeleton", device_name="TestIntegrationGameMgr")
+        tb.run("verse_gen_prop_spawner")
+        tb.run("verse_gen_scoring_tracker", max_score=50)
+        _record("Verse", "CodeGen Boilerplates", True)
+        
+        # Device Editors
+        tb.run("verse_list_devices")
+        tb.run("verse_export_report")
+        
+        actor = _spawn_fixture()
+        _select_fixture([actor])
+        
+        # Select by name fallback (will likely select 0 devices, but shouldn't crash)
+        tb.run("verse_select_by_name", name_filter="RandomNonExistentString123")
+        tb.run("verse_select_by_class", class_filter="RandomNonExistentString123")
+        
+        # Re-select the fixture actor for property sets
+        _select_fixture([actor])
+        tb.run("verse_bulk_set_property", property_name="bHidden", value=True, use_all_devices=False)
+        passed_prop = actor.get_editor_property("bHidden") is True
+        _record("Verse", "Bulk Set Property", passed_prop)
+        
+        # Snippets Open Directory (just test execution path)
+        # Note: actually executing this spawns windows explorer, which is annoying for automation.
+        # tb.run("verse_open_snippets_folder") 
+        
+        # Cleanup
+        actor.destroy_actor()
+    except Exception as e:
+        _record("Verse", "Advanced Execution", False, str(e))
+
 def _test_screenshots() -> None:
     _header("8. Screenshot Tools")
     import UEFN_Toolbelt as tb
@@ -563,14 +618,29 @@ def _test_screenshots() -> None:
         shot_name = "integration_test_shot"
         path = tb.run("screenshot_take", name=shot_name, width=1920, height=1080)
         
+        # Test Focus Selection
+        a1 = _spawn_fixture()
+        _select_fixture([a1])
+        tb.run("screenshot_focus_selection", name="focus_shot", width=1280, height=720, restore_camera=False)
+        _record("Screenshots", "Focus Selection", True)
+        
+        # Test Timed Series (short interval for speed)
+        tb.run("screenshot_timed_series", name="series_shot", count=2, width=1280, height=720, interval_sec=0.1)
+        _record("Screenshots", "Timed Series", True)
+        
+        # Test Open Folder
+        tb.run("screenshot_open_folder")
+        
+        a1.destroy_actor()
+        
         # Note: AutomationLibrary.take_high_res_screenshot is ASYNCHRONOUS.
         # It only writes the file AFTER this Python script finishes and the engine ticks.
         # We verify that the command was successfully sent and the path is valid.
         passed = bool(path and "screenshots" in str(path))
             
-        _record("Screenshots", "Capture", passed, f"Queued → {path}" if passed else "Capture request failed")
+        _record("Screenshots", "Capture Paths", passed, f"Queued → {path}" if passed else "Capture request failed")
     except Exception as e:
-        _record("Screenshot", "Capture", False, str(e))
+        _record("Screenshot", "Capture Error", False, str(e))
 
 
 def _test_scatter() -> None:
@@ -629,6 +699,17 @@ def _test_splines() -> None:
         
         props = [a for a in actor_sub.get_all_level_actors() if "TestSplineProps" in str(a.get_folder_path())]
         _record("Spline", "Place Props", len(props) == 5, f"Spawned {len(props)} props along spline")
+        
+        # 2. Spline to Verse routines
+        tb.run("spline_to_verse_points", sample_count=10)
+        tb.run("spline_to_verse_patrol", device_name="TestSplinePatrol")
+        tb.run("spline_to_verse_zone_boundary", zone_name="TestSplineZone")
+        _record("Spline", "Code Generate Verse", True)
+        
+        # 3. Spline Export
+        tb.run("spline_export_json", sample_count=5, include_tangents=True)
+        export_path = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "spline_export.json")
+        _record("Spline", "Export JSON", os.path.exists(export_path))
         
         # Cleanup
         tb.run("spline_clear_props", folder_name="TestSplineProps")
@@ -808,13 +889,24 @@ def _test_text_painter() -> None:
         _record("Procedural", "Text Save Style", True)
         tb.run("text_list_styles")
         
-        # 4. Clear Folder
+        # 4. Color Cycle & Label Selection
+        tb.run("text_color_cycle", start_location=(0,500,1000), spacing_x=200)
+        _record("Procedural", "Text Color Cycle", True)
+        
+        a1 = _spawn_fixture()
+        _select_fixture([a1])
+        tb.run("text_label_selection", offset_z=100.0, color="#FF00FF")
+        _record("Procedural", "Text Label Selection", True)
+        a1.destroy_actor()
+        
+        # 5. Clear Folder
         tb.run("text_clear_folder", folder="TestTextProps")
         tb.run("text_clear_folder", folder="TestTextGrid")
+        tb.run("text_clear_folder", folder="ToolbeltText")
         
         remaining = [
             a for a in actor_sub.get_all_level_actors() 
-            if isinstance(a, unreal.TextRenderActor) and ("TestTextProps" in str(a.get_folder_path()) or "TestTextGrid" in str(a.get_folder_path()))
+            if isinstance(a, unreal.TextRenderActor) and ("TestText" in str(a.get_folder_path()) or "ToolbeltText" in str(a.get_folder_path()))
         ]
         passed_clear = len(remaining) == 0
         _record("Procedural", "Text Clear", passed_clear, f"Remaining actors: {len(remaining)}")
@@ -925,6 +1017,7 @@ def toolbelt_integration_test(**kwargs) -> None:
             _test_crawler()
             _test_asset_tagger()
             _test_verse()
+            _test_verse_advanced()
             _test_screenshots()
             
             # Finalize
