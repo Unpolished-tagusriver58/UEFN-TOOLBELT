@@ -640,8 +640,8 @@ tb.run("text_apply_translation", manifest_path="C:/Translations/french.json")
 | `import_fbx` | Import single FBX with auto-setup |
 | `import_fbx_folder` | Batch import entire folder |
 | `organize_assets` | Sort Content Browser folder by asset type |
-| `lod_auto_generate_selection` | Auto-generate LODs on selected actors' meshes |
-| `lod_auto_generate_folder` | Batch auto-LOD all meshes in a Content Browser folder |
+| `lod_auto_generate_selection` | ⚠️ Disabled — returns error (UEFN mesh reduction crash, see UEFN_QUIRKS.md #18) |
+| `lod_auto_generate_folder` | ⚠️ Disabled — returns error (UEFN mesh reduction crash, see UEFN_QUIRKS.md #18) |
 | `lod_set_collision_folder` | Batch-set collision complexity on all meshes in a folder |
 | `lod_audit_folder` | Audit folder for missing LODs / collision — zero changes |
 | `rename_dry_run` | Preview Epic naming convention violations — zero changes |
@@ -984,7 +984,7 @@ Restart Claude Code — it connects automatically. Then ask Claude things like:
 - *"Scatter 200 props in a 4000cm spiral around the origin"*
 - *"Save a level snapshot, then mirror the selection across X"*
 
-**Available MCP commands:** ping, execute\_python, run\_tool (→ all 123 tools), list\_tools,
+**Available MCP commands:** ping, execute\_python, run\_tool (→ all 161 tools), list\_tools,
 get\_all\_actors, get\_selected\_actors, spawn\_actor, delete\_actors, set\_actor\_transform,
 list\_assets, get\_asset\_info, rename\_asset, save\_current\_level, get\_viewport\_camera,
 set\_viewport\_camera, and more.
@@ -1136,7 +1136,7 @@ After completing Step 2 (PySide6 installed), click **Toolbelt → Open Dashboard
 import UEFN_Toolbelt as tb; tb.launch_qt()
 ```
 
-A dark-themed floating window opens with a left sidebar nav and 123 tools across 12 pages (including an About page).
+A dark-themed floating window opens with a left sidebar nav and 161 tools across 31 categories (including an About page).
 
 ![Global Dashboard Search](docs/dashboard_search.png)
 
@@ -1144,7 +1144,7 @@ A dark-themed floating window opens with a left sidebar nav and 123 tools across
 
 | Search | Where | What it does |
 |---|---|---|
-| **Find any tool…** | Sidebar (top) | Global — searches all 123 tools across every category by name, description, or tag. Results show a category badge so you know where each tool lives. |
+| **Find any tool…** | Sidebar (top) | Global — searches all 161 tools across every category by name, description, or tag. Results show a category badge so you know where each tool lives. |
 | **Filter this page…** | Content header (top-right) | Within-category — hides/shows buttons on the current page as you type. Disappears during global search. |
 
 > **If the dashboard doesn't open after installing PySide6:** The module may be cached from before PySide6 was installed. Paste this single line to clear and reload:
@@ -1211,7 +1211,7 @@ Claude will call `run_toolbelt_tool("toolbelt_smoke_test")` through the bridge a
 > **Note:** The listener must be started in UEFN each session. You can also click **Dashboard → MCP → Start Listener** instead of pasting the command.
 
 **What Claude can do once connected:**
-- Run any of the 123 tools by name
+- Run any of the 161 tools by name
 - Spawn, move, delete actors directly
 - Generate spec-accurate Verse code (pulls from the live verse-book spec)
 - Execute arbitrary Python inside UEFN
@@ -1739,7 +1739,7 @@ import UEFN_Toolbelt as tb; tb.run("text_clear_folder")
 
 # Assets
 import UEFN_Toolbelt as tb; tb.run("rename_dry_run", scan_path="/Game")
-import UEFN_Toolbelt as tb; tb.run("lod_auto_generate_folder", folder_path="/Game/Meshes", num_lods=3)
+# lod_auto_generate_folder is disabled in UEFN (see UEFN_QUIRKS.md #18) — use lod_audit_folder to find meshes, then add LODs manually in the Static Mesh Editor
 import UEFN_Toolbelt as tb; tb.run("lod_audit_folder", folder_path="/Game")
 import UEFN_Toolbelt as tb; tb.run("organize_assets", source_path="/Game/Imports")
 
@@ -2121,7 +2121,7 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 - **161 tools** across 30 categories
 - **Tool Manifest Export** (`plugin_export_manifest`): Writes `Saved/UEFN_Toolbelt/tool_manifest.json` — a machine-readable index of every registered tool with its full parameter signature (name, type, required/optional, default). Any AI agent or automation script can load this file and know how to call every tool without reading source code. This is the key artifact for full AI-driven UEFN workflows.
-- **Structured Returns Everywhere**: 25+ tools across `verse_device_editor`, `level_snapshot`, `selection_utils`, `asset_tagger`, and `screenshot_tools` now return `{"status", "count", "data"}` dicts instead of `None`. MCP callers (Claude Code, `client.py`, scripts) can now read results programmatically — no log parsing required.
+- **Structured Returns Everywhere (Phase 21 complete)**: All 161 tools return `{"status": "ok"/"error", ...}` dicts. Zero `None` returns remain. MCP callers (Claude Code, `client.py`, scripts) can read every result programmatically — no log parsing required.
 - **Schema-Driven Property Discovery** (`schema_utils.discover_properties`): `verse_device_editor`'s property reader now queries the reference schema for each actor's class before falling back to a hardcoded list. It reads whatever properties the schema actually defines for that class, making it correct-by-construction rather than hardcoded.
 - **Registry `to_manifest()`**: New method on `ToolRegistry` that introspects every function's signature via `inspect.signature()` — captures param names, type annotations, required/optional status, and defaults. Powers `plugin_export_manifest` and exposes the full tool catalog programmatically.
 - **`schema_utils` expansion**: Added `list_classes()` (all schema class names) and `discover_properties(class_name)` (schema property dict for a class) — two new helper functions that replace hardcoded property lists with live schema lookups.

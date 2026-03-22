@@ -37,7 +37,7 @@ This file contains every registered tool with its full Python parameter signatur
   }
 }
 ```
-All 25+ tools updated in Phase 20 return `{"status", "count", "data"}` structured dicts instead of `None` — MCP callers can read results directly without parsing log output.
+All 161 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
 
 **Schema utility functions** (`schema_utils.py`):
 - `schema_utils.validate_property(class_name, prop)` — check if a property exists and is writable
@@ -299,8 +299,8 @@ tb.run("bulk_randomize", rot_range=360.0, randomize_rot=True, randomize_scale=Tr
 
 | Tool | Key Params | What it does |
 |---|---|---|
-| `lod_auto_generate_selection` | `num_lods=4` | LODs for selected actors' meshes |
-| `lod_auto_generate_folder` | `folder="/Game/"`, `num_lods=4` | Batch LOD for entire folder |
+| `lod_auto_generate_selection` | `num_lods=4` | ⚠️ Disabled — UEFN mesh reduction crash (UEFN_QUIRKS.md #18) |
+| `lod_auto_generate_folder` | `folder="/Game/"`, `num_lods=4` | ⚠️ Disabled — UEFN mesh reduction crash (UEFN_QUIRKS.md #18) |
 | `lod_set_collision_folder` | `folder="/Game/"`, `complexity="simple"` | Batch collision setup |
 | `lod_audit_folder` | `folder="/Game/"` | Audit for missing LODs / collision |
 | `memory_scan` | `scan_path="/Game/"` | Full project scan (textures + meshes) |
@@ -310,7 +310,8 @@ tb.run("bulk_randomize", rot_range=360.0, randomize_rot=True, randomize_scale=Tr
 | `memory_autofix_lods` | `scan_path="/Game/"` | Auto-generate missing LODs |
 
 ```python
-tb.run("lod_auto_generate_folder", folder="/Game/Meshes", num_lods=3)
+# lod_auto_generate_folder is disabled in UEFN — use lod_audit_folder to find meshes, add LODs manually in Static Mesh Editor
+tb.run("lod_audit_folder", folder_path="/Game/Meshes")
 tb.run("memory_top_offenders", limit=10)
 ```
 
