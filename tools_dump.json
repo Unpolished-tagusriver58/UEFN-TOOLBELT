@@ -612,6 +612,12 @@
     "description": "Exports spline data as JSON to Saved/UEFN_Toolbelt/spline_export.json."
   },
   {
+    "source_file": "system_perf.py",
+    "name": "system_optimize_background_cpu",
+    "category": "System",
+    "description": "Toggles 'Use Less CPU when in Background'."
+  },
+  {
     "source_file": "text_painter.py",
     "name": "text_place",
     "category": "Text & Signs",

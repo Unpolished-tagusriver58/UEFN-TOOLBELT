@@ -198,7 +198,9 @@ All heavy logic lives in Python. The optional UMG dashboard calls into it via
 │   │           ├── smart_importer.py
 │   │           ├── verse_snippet_generator.py
 │   │           ├── text_painter.py
-│   │           └── asset_renamer.py
+│   │           ├── asset_renamer.py
+│   │           ├── smart_organizer.py
+│   │           └── system_perf.py
 │   └── UEFN_Toolbelt/
 │       ├── Blueprints/
 │       │   └── WBP_ToolbeltDashboard    ← optional EUW — create in UEFN
