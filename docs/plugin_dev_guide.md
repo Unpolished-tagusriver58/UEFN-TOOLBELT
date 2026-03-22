@@ -148,16 +148,48 @@ print(my_params)  # → {"name": ..., "description": ..., "parameters": {...}}
 
 ## 🤝 Distributing Your Plugin
 
-Because custom plugins live in `Saved/UEFN_Toolbelt/Custom_Plugins/`, they are safely outside of the core Toolbelt installation (`Content/Python/UEFN_Toolbelt/`). 
+Because custom plugins live in `Saved/UEFN_Toolbelt/Custom_Plugins/`, they are safely outside of the core Toolbelt installation (`Content/Python/UEFN_Toolbelt/`). You can update the Toolbelt without ever losing your custom tools.
 
-This means you can update the Toolbelt without ever losing your custom tools.
+### Path A — List in the Online Plugin Hub (recommended)
 
-**Want to share your tool with the world?**
-If you think your tool is awesome enough to be part of the official Toolbelt suite:
+The Plugin Hub tab in the dashboard fetches a live registry from GitHub. Any developer can get their tool listed in under 5 minutes:
+
+1. **Host your `.py` file** anywhere with a raw GitHub URL (your own repo works).
+2. **Fork** `undergroundrap/UEFN-TOOLBELT`.
+3. **Add an entry** to `registry.json` at the repo root:
+
+```json
+{
+  "id": "my_cool_tool",
+  "name": "My Cool Tool",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "author_url": "https://github.com/yourhandle",
+  "type": "community",
+  "description": "One sentence on what it does.",
+  "category": "Gameplay",
+  "tags": ["verse", "gameplay"],
+  "url": "https://github.com/yourhandle/yourrepo/blob/main/my_cool_tool.py",
+  "download_url": "https://raw.githubusercontent.com/yourhandle/yourrepo/main/my_cool_tool.py",
+  "min_toolbelt_version": "1.5.3",
+  "size_kb": 10
+}
+```
+
+4. **Open a Pull Request** — once merged, your tool appears in every user's Plugin Hub on next Refresh.
+
+Users install it with one click: the dashboard downloads the raw `.py` into their `Custom_Plugins/` folder. The four-gate security scanner runs automatically on load.
+
+> **`download_url` rules:** must be a raw GitHub URL pointing to a single `.py` file ≤ 50 KB.
+> No zips, no installers, no subfolders.
+
+### Path B — Contribute to the Core Toolbelt
+
+If you think your tool belongs in the 171 built-in tools:
 1. Fork the UEFN-TOOLBELT repository.
-2. Move your `.py` file into the primary `Content/Python/UEFN_Toolbelt/tools/` directory.
-3. Import your file in `tools/__init__.py`.
-4. Submit a Pull Request! We love community additions.
+2. Move your `.py` file into `Content/Python/UEFN_Toolbelt/tools/`.
+3. Import it in `tools/__init__.py`.
+4. Submit a Pull Request — we review for quality, security, and fit.
 
 ---
 

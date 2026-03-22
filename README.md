@@ -1389,6 +1389,49 @@ Your tool is now registered, searchable, undo-safe, and accessible from the top 
 
 ---
 
+## Plugin Hub & Community Ecosystem
+
+UEFN Toolbelt ships a **live Plugin Hub** tab in the dashboard. Click **Refresh Hub** to pull the latest community registry directly from GitHub — no restart required.
+
+### What you see in the Hub
+
+| Section | What it shows |
+|---|---|
+| **Core Tools** (green, BUILT-IN badge) | 10 flagship modules built by Ocean Bennett — already included, View Source only |
+| **Community Plugins** (blue, Install button) | Third-party tools submitted to `registry.json` — one-click download into `Custom_Plugins/` |
+
+The registry is hosted at:
+```
+https://raw.githubusercontent.com/undergroundrap/UEFN-TOOLBELT/main/registry.json
+```
+
+### Getting your plugin listed
+
+Add an entry to `registry.json` at the repo root and open a PR:
+
+```json
+{
+  "id": "my_cool_tool",
+  "name": "My Cool Tool",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "author_url": "https://github.com/yourhandle",
+  "type": "community",
+  "description": "One sentence on what it does.",
+  "category": "Gameplay",
+  "tags": ["verse", "gameplay"],
+  "url": "https://github.com/yourhandle/yourrepo/blob/main/my_cool_tool.py",
+  "download_url": "https://raw.githubusercontent.com/yourhandle/yourrepo/main/my_cool_tool.py",
+  "min_toolbelt_version": "1.5.3",
+  "size_kb": 10
+}
+```
+
+> `download_url` must be a raw GitHub URL. The dashboard downloads it directly into
+> `Saved/UEFN_Toolbelt/Custom_Plugins/` — no zip, no installer, single `.py` file.
+
+---
+
 ## Custom Plugins & Security
 
 UEFN Toolbelt is a **security-first extensible platform**. Third-party developers can create custom tools that automatically load into the Dashboard and AI bridge — but the Toolbelt enforces strict sandboxing to protect your editor and project files.

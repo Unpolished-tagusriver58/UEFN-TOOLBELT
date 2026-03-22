@@ -620,6 +620,12 @@ tb.run("config_reset", key="all")   # wipe all customisations
 | `plugin_list_custom` | — | List all loaded third-party tools from `Saved/UEFN_Toolbelt/Custom_Plugins` |
 | `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 171 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
 
+**Online Plugin Hub** — the Plugin Hub dashboard tab fetches `registry.json` live from GitHub.
+- **Core Tools** (green/BUILT-IN): 10 flagship modules by Ocean Bennett, already built in
+- **Community Plugins** (blue/Install): third-party `.py` files, one-click download into `Custom_Plugins/`
+- Registry: `https://raw.githubusercontent.com/undergroundrap/UEFN-TOOLBELT/main/registry.json`
+- To list a plugin: add an entry to `registry.json` with `"type": "community"` and open a PR
+
 ---
 
 ### MCP Bridge
