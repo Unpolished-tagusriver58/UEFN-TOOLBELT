@@ -47,7 +47,7 @@ def run_text_export_manifest(format: str = "json", **kwargs) -> str:
         for actor in bar:
             # 1. Check for TextRenderActor
             if isinstance(actor, unreal.TextRenderActor):
-                txt = actor.text_render_component.text
+                txt = actor.text_render.text
                 records.append({
                     "actor_name": actor.get_actor_label(),
                     "actor_path": actor.get_path_name(),
@@ -111,7 +111,7 @@ def run_text_apply_translation(manifest_path: str = "", **kwargs) -> bool:
                 
             actor = unreal.load_asset(path)
             if actor and isinstance(actor, unreal.TextRenderActor):
-                actor.text_render_component.set_text(new_text)
+                actor.text_render.set_editor_property("text", new_text)
                 applied_count += 1
             else:
                 log_warning(f"Could not find or update actor at {path}")

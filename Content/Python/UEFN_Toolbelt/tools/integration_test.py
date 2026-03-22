@@ -1200,7 +1200,7 @@ def _test_localization() -> None:
     actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
     txt_actor = actor_sub.spawn_actor_from_class(unreal.TextRenderActor, unreal.Vector(0,0,0))
     txt_actor.set_actor_label("Grok_Test_Actor")
-    txt_actor.text_render_component.set_text("Grok_Test_String")
+    txt_actor.text_render.set_editor_property("text", "Grok_Test_String")
     
     try:
         # Test Export
@@ -1227,7 +1227,7 @@ def _test_localization() -> None:
                 # Test Apply
                 tb.run("text_apply_translation", manifest_path=out_path)
                 # Note: set_text takes a string, but get_text might return an unreal.Text
-                current_text = str(txt_actor.text_render_component.text)
+                current_text = str(txt_actor.text_render.text)
                 passed_apply = ("Grok_Translated" in current_text)
                 _record("Localization", "Apply Translation", passed_apply, f"Current: {current_text}")
             else:
