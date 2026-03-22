@@ -181,6 +181,25 @@ Custom plugins **cannot** overwrite core Toolbelt tools. If your plugin tries to
 ### Gate 4 — SHA-256 Integrity Hash + Audit Log
 Every loaded plugin's SHA-256 hash is computed and written to `Saved/UEFN_Toolbelt/plugin_audit.json` with a timestamp. If a plugin changes between sessions, the hash changes — making tampering instantly detectable.
 
+The audit file also records `toolbelt_version` — both at the file level (which platform release ran this scan) and per plugin entry (which version of the Toolbelt loaded that specific plugin). This means when you share a plugin with someone, the audit file carries provenance: anyone can see exactly what version it was built and verified against.
+
+```json
+{
+  "toolbelt_version": "1.2.0",
+  "scan_time": "2026-03-22T14:30:00",
+  "plugins": [
+    {
+      "plugin": "my_custom_renamer",
+      "status": "LOADED",
+      "toolbelt_version": "1.2.0",
+      "sha256": "a3f9c2...",
+      "size_kb": 2.4,
+      "loaded_at": "2026-03-22T14:30:00"
+    }
+  ]
+}
+```
+
 ### Gate 5 — The Global Safety Gate (`core.safety_gate`)
 As of Phase 15, every plugin has access to the **Safety Gate**. All Toolbelt "Write" operations are now forced to pass through this gate to ensure they only touch assets in `/Game/` and never accidentally corrupt Epic or Fortnite internal assets.
 

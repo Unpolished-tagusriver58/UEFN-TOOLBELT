@@ -20,6 +20,12 @@ from typing import Any
 from .registry import ToolRegistry, get_registry, register_tool
 from . import core
 
+# ── Version ───────────────────────────────────────────────────────────────────
+# Single source of truth — used in audit logs, reload messages, and manifests.
+# Bump this when shipping a release so plugin_audit.json records which version
+# of the platform each plugin was loaded against.
+__version__ = "1.2.0"
+
 # Singleton registry shared across all imports
 registry: ToolRegistry = get_registry()
 
@@ -159,6 +165,7 @@ def load_custom_plugins() -> None:
             audit_log.append({
                 "plugin": module_name,
                 "status": "LOADED",
+                "toolbelt_version": __version__,
                 "sha256": file_hash,
                 "size_kb": round(file_size_kb, 1),
                 "loaded_at": datetime.now().isoformat(),
@@ -167,9 +174,14 @@ def load_custom_plugins() -> None:
             unreal.log_error(f"[TOOLBELT] Failed to load plugin {module_name}.py: {e}")
             audit_log.append({"plugin": module_name, "status": "LOAD_ERROR", "error": str(e)})
 
-    # Write the audit log
+    # Write the audit log — toolbelt_version stamps which platform release
+    # loaded these plugins, so shared audit files carry provenance.
     with open(audit_path, "w", encoding="utf-8") as f:
-        json.dump({"scan_time": datetime.now().isoformat(), "plugins": audit_log}, f, indent=2)
+        json.dump({
+            "toolbelt_version": __version__,
+            "scan_time": datetime.now().isoformat(),
+            "plugins": audit_log,
+        }, f, indent=2)
 
     if valid_count > 0:
         unreal.log(f"[TOOLBELT] Loaded {valid_count} custom plugins. Audit log: {audit_path}")
@@ -292,4 +304,4 @@ def reload() -> None:
                 
     # 4. Finally, reload the tools/__init__.py to re-run all registrations
     importlib.reload(tools)
-    unreal.log("[TOOLBELT] ↻ All modules reloaded and registry rebuilt. (v1.0.1)")
+    unreal.log(f"[TOOLBELT] ↻ All modules reloaded and registry rebuilt. (v{__version__})")

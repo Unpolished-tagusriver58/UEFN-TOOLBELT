@@ -615,11 +615,16 @@ tb.run("scatter_props", ...)   # N actors
 | File | Purpose |
 |---|---|
 | `init_unreal.py` (repo root — copy to `Content/Python/`) | Generic submodule loader, auto-runs on editor start. Scans `Content/Python/` for packages with `register()` and calls them. Not Toolbelt-specific — do not overwrite an existing `init_unreal.py`; merge only the discovery loop instead. |
-| `Content/Python/UEFN_Toolbelt/tools/` | All 21 tool modules |
+| `Content/Python/UEFN_Toolbelt/__init__.py` | Package root. Contains `__version__`, `register()`, `load_custom_plugins()`, `run()`. **`__version__`** is the single source of truth — bump it here when shipping a release. Propagates to audit logs, reload messages, and manifests automatically. |
+| `Content/Python/UEFN_Toolbelt/tools/` | All tool modules |
 | `Content/Python/UEFN_Toolbelt/tools/mcp_bridge.py` | HTTP listener (runs inside UEFN) |
 | `mcp_server.py` | External FastMCP bridge (Claude Code connects to this) |
 | `client.py` | Stdlib-only HTTP client for non-MCP external scripts |
+| `install.py` | One-command community installer — copies Toolbelt into any UEFN project, handles `init_unreal.py` safely |
+| `deploy.bat` | Dev workflow tool — deploy + PySide6 check + prints hot-reload command. Use this for active development. |
 | `.mcp.json` | Claude Code MCP server config — already configured |
 | `docs/uefn_python_capabilities.md` | Full UEFN Python API surface reference |
+| `docs/plugin_dev_guide.md` | Plugin authorship guide — security model, audit format, version stamp |
 | `tests/smoke_test.py` | 5-layer health check — run `tb.smoke_test()` |
+| `Saved/UEFN_Toolbelt/plugin_audit.json` | Security audit of all loaded custom plugins — includes `toolbelt_version`, SHA-256 hashes, timestamps |
 | `Saved/UEFN_Toolbelt/` | All tool outputs (screenshots, snapshots, stubs, exports) |
