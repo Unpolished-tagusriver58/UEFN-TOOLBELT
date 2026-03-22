@@ -1361,9 +1361,14 @@ def _tab_plugin_hub(R) -> "QScrollArea":
             hub_status.setText(f"✗ Install failed: {ex}")
 
     def _make_online_card(pm: dict):
+        is_core = pm.get("type", "community") == "core"
+        border_color = "#336633" if is_core else "#363666"
+        bg_color     = "#0F1F0F" if is_core else "#1A1A2E"
+
         card = QFrame()
         card.setStyleSheet(
-            "QFrame { background: #1A1A2E; border: 1px solid #363666; border-radius: 6px; margin-bottom: 6px; }"
+            f"QFrame {{ background: {bg_color}; border: 1px solid {border_color};"
+            f" border-radius: 6px; margin-bottom: 6px; }}"
         )
         cl = QVBoxLayout(card)
         cl.setContentsMargins(12, 12, 12, 12)
@@ -1374,25 +1379,51 @@ def _tab_plugin_hub(R) -> "QScrollArea":
         hdr.setStyleSheet("border: none; background: transparent;")
         hl = QHBoxLayout(hdr)
         hl.setContentsMargins(0, 0, 0, 0)
+
         t = QLabel(pm["name"])
         t.setStyleSheet("font-size: 13px; font-weight: bold; color: #FFFFFF;")
         hl.addWidget(t)
+
         v = QLabel(f"v{pm['version']}")
         v.setStyleSheet("font-size: 11px; color: #8888AA;")
         hl.addWidget(v)
+
         cat = QLabel(pm.get("category", ""))
-        cat.setStyleSheet("font-size: 10px; color: #44AAFF; background: #0A1A2E; border: 1px solid #225588; border-radius: 3px; padding: 2px 6px;")
+        cat.setStyleSheet(
+            "font-size: 10px; color: #44AAFF; background: #0A1A2E;"
+            " border: 1px solid #225588; border-radius: 3px; padding: 2px 6px;"
+        )
         hl.addWidget(cat)
+
+        if is_core:
+            core_badge = QLabel("BUILT-IN")
+            core_badge.setStyleSheet(
+                "font-size: 10px; color: #44FF88; background: #0F3320;"
+                " border: 1px solid #44FF88; border-radius: 3px; padding: 2px 6px; font-weight: bold;"
+            )
+            hl.addWidget(core_badge)
+
         hl.addStretch()
         cl.addWidget(hdr)
 
-        by = QLabel(f"By {pm.get('author','?')}  ·  {pm.get('size_kb', '?')} KB")
+        # Author line — link if author_url present
+        author = pm.get("author", "?")
+        author_url = pm.get("author_url", "")
+        size_kb = pm.get("size_kb", "?")
+        if author_url:
+            by_text = f'By <a href="{author_url}" style="color: #6688DD;">{author}</a>  ·  {size_kb} KB'
+            by = QLabel(by_text)
+            by.setOpenExternalLinks(True)
+        else:
+            by = QLabel(f"By {author}  ·  {size_kb} KB")
         by.setStyleSheet("font-size: 10px; color: #888888; border: none; background: transparent;")
         cl.addWidget(by)
 
         d = QLabel(pm.get("description", ""))
         d.setWordWrap(True)
-        d.setStyleSheet("font-size: 12px; color: #CCCCCC; padding: 4px 0; border: none; background: transparent;")
+        d.setStyleSheet(
+            "font-size: 12px; color: #CCCCCC; padding: 4px 0; border: none; background: transparent;"
+        )
         cl.addWidget(d)
 
         footer = QWidget()
@@ -1408,22 +1439,23 @@ def _tab_plugin_hub(R) -> "QScrollArea":
 
         fl.addStretch()
 
-        install_btn = QPushButton("Install")
-        install_btn.setStyleSheet(
-            "QPushButton { background: #1A3322; border: 1px solid #44FF88; color: #44FF88;"
-            " padding: 4px 14px; border-radius: 3px; font-weight: bold; }"
-            "QPushButton:hover { background: #2A4A33; }"
-            "QPushButton:pressed { background: #44FF88; color: #000000; }"
-        )
-        install_btn.clicked.connect(lambda _, p=pm: _install_plugin(p))
-        fl.addWidget(install_btn)
+        if not is_core:
+            install_btn = QPushButton("Install")
+            install_btn.setStyleSheet(
+                "QPushButton { background: #1A3322; border: 1px solid #44FF88; color: #44FF88;"
+                " padding: 4px 14px; border-radius: 3px; font-weight: bold; }"
+                "QPushButton:hover { background: #2A4A33; }"
+                "QPushButton:pressed { background: #44FF88; color: #000000; }"
+            )
+            install_btn.clicked.connect(lambda _, p=pm: _install_plugin(p))
+            fl.addWidget(install_btn)
+
         cl.addWidget(footer)
         return card
 
     def _refresh_hub():
         import urllib.request
         hub_status.setText("Fetching registry…")
-        # Clear old cards
         while hub_vbox.count():
             item = hub_vbox.takeAt(0)
             if item.widget():
@@ -1432,11 +1464,32 @@ def _tab_plugin_hub(R) -> "QScrollArea":
             with urllib.request.urlopen(_REGISTRY_URL, timeout=8) as resp:
                 data = json.loads(resp.read().decode())
             plugins = data.get("plugins", [])
+            core = [p for p in plugins if p.get("type") == "core"]
+            community = [p for p in plugins if p.get("type") != "core"]
+
             hub_status.setText(
-                f"✓ {len(plugins)} community plugins · updated {data.get('updated','?')}"
+                f"✓ {len(core)} core tools · {len(community)} community plugins"
+                f" · updated {data.get('updated','?')}"
             )
-            for pm in plugins:
-                hub_vbox.addWidget(_make_online_card(pm))
+
+            if core:
+                core_hdr = QLabel("Core Tools  —  Built into UEFN Toolbelt by Ocean Bennett")
+                core_hdr.setStyleSheet(
+                    "font-size: 12px; font-weight: bold; color: #44FF88; padding: 8px 0 4px 0;"
+                )
+                hub_vbox.addWidget(core_hdr)
+                for pm in core:
+                    hub_vbox.addWidget(_make_online_card(pm))
+
+            if community:
+                comm_hdr = QLabel("Community Plugins  —  Third-party tools")
+                comm_hdr.setStyleSheet(
+                    "font-size: 12px; font-weight: bold; color: #44AAFF; padding: 8px 0 4px 0;"
+                )
+                hub_vbox.addWidget(comm_hdr)
+                for pm in community:
+                    hub_vbox.addWidget(_make_online_card(pm))
+
         except Exception as ex:
             hub_status.setText(f"⚠ Could not reach registry: {ex}")
 
