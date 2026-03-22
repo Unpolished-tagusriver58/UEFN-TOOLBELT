@@ -120,8 +120,13 @@ def _save_report() -> str:
         detail = f"  ({r['detail']})" if r["detail"] else ""
         lines.append(f"  {icon}  {r['name']}{detail}")
 
+    report = "\n".join(lines)
     with open(_RESULTS_PATH, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
+        f.write(report)
+
+    # Print full results to Output Log so you don't need to open the file
+    unreal.log("\n" + report)
+
     return _RESULTS_PATH
 
 def _ensure_folder(path: str) -> None:
@@ -882,8 +887,8 @@ def _test_text_painter() -> None:
     import UEFN_Toolbelt as tb
     try:
         # 1. Place Text
-        actor1 = tb.run("text_place", text="UNIT_TEST", location=(0,0,1000), folder="TestTextProps")
-        passed = actor1 is not None and isinstance(actor1, unreal.TextRenderActor)
+        result1 = tb.run("text_place", text="UNIT_TEST", location=(0,0,1000), folder="TestTextProps")
+        passed = isinstance(result1, dict) and result1.get("status") == "ok"
         _record("Procedural", "Text Place", passed)
         
         # 2. Paint Grid
@@ -1191,7 +1196,8 @@ def _test_measurement() -> None:
     
     try:
         # Test Distance
-        dist = tb.run("measure_distance")
+        dist_result = tb.run("measure_distance")
+        dist = dist_result.get("distance_cm", 0.0) if isinstance(dist_result, dict) else float(dist_result)
         passed_dist = _assert_delta(dist, 1000.0)
         _record("Measurement", "Measure Distance", passed_dist, f"Dist: {dist}")
         
@@ -1217,8 +1223,9 @@ def _test_localization() -> None:
     
     try:
         # Test Export
-        out_path = tb.run("text_export_manifest", format="json")
-        passed_exp = os.path.exists(out_path)
+        exp_result = tb.run("text_export_manifest", format="json")
+        out_path = exp_result.get("path") if isinstance(exp_result, dict) else exp_result
+        passed_exp = out_path is not None and os.path.exists(out_path)
         _record("Localization", "Export Manifest", passed_exp)
         
         # Modify manifest to "Grok_Translated"
@@ -1257,14 +1264,15 @@ def _test_environmental() -> None:
     import UEFN_Toolbelt as tb
     try:
         # Test Audit
-        meshes = tb.run("foliage_audit_brushes")
-        _record("Environmental", "Audit Brushes", isinstance(meshes, list))
-        
+        audit_result = tb.run("foliage_audit_brushes")
+        _record("Environmental", "Audit Brushes", isinstance(audit_result, dict) and audit_result.get("status") == "ok")
+
         # Test Convert (Spawn small test actor)
         a = _spawn_fixture(location=unreal.Vector(0,0,100))
         _select_fixture([a])
-        
-        converted = tb.run("foliage_convert_selected_to_actor")
+
+        conv_result = tb.run("foliage_convert_selected_to_actor")
+        converted = conv_result.get("converted", 0) if isinstance(conv_result, dict) else int(conv_result)
         _record("Environmental", "Convert Props", converted > 0, f"Converted: {converted}")
     except Exception as e:
         _record("Environmental", "Error", False, str(e))
