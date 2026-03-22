@@ -10,7 +10,7 @@ Automate the tedious, script the impossible, and bridge the gap between Python a
 UEFN Toolbelt is a master utility designed to leverage the **2026 UEFN Python 3.11 Update**,
 allowing creators to manipulate actors, manage assets, and generate boilerplate Verse code
 through a high-level, developer-friendly interface — all from a single persistent menu entry
-in the UEFN editor bar.
+in the UEFN editor bar. Reached **138 Registered Tools** in Phase 14.
 
 ---
 
@@ -169,7 +169,9 @@ UEFN TOOLBELT ─── UEFN_Toolbelt/__init__.py   (launch, run, registry acces
         ├── verse_snippet_generator.py  Context-aware Verse boilerplate from level selection
         ├── text_painter.py           Colored 3D text actors with saved style presets
         ├── asset_renamer.py          Epic naming convention enforcer with dry-run + audit
-        └── project_scaffold.py       Professional folder structure generator (4 templates)
+        ├── project_scaffold.py       Professional folder structure generator (4 templates)
+        ├── verse_schema.py           Verse Digest IQ & Universal Schema Search (138th Tool)
+        └── system_build.py           Automated UEFN Build Scraper & Error Monitor
 ```
 
 All heavy logic lives in Python. The optional UMG dashboard calls into it via

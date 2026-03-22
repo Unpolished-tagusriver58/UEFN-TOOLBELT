@@ -163,6 +163,7 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - **Context-Aware Tools:** Selection-dependent tools (Bulk Ops, Materials) are confirmed to function on live actors.
 - **File System Integrity:** Screenshots, Snapshots, and Crawler JSONs are successfully written/read.
 - **Automation Parity:** 95% of the manual testing burden is now eliminated. If this test passes, you have total confidence that the core tool logic is sound.
+- **Phase 14 Breakthrough:** Previously, the Toolbelt was limited to what it could "see" in the viewport. Phase 14 introduces **"External IQ"** — the ability to parse Verse source code and monitor the UEFN build system directly. This bridges the gap between the editor and the filesystem.
 
 **What still requires manual testing:**
 - **Visual Fidelity:** While the test confirms a material *changed*, only a human can verify it looks "correct" for the user's intent.
