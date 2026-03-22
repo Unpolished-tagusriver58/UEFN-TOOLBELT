@@ -4,9 +4,9 @@ UEFN TOOLBELT — Core Utilities
 Shared helpers used by every tool module.
 """
 
-from .config import get_config, Config, DEFAULTS  # noqa: F401 — re-exported for tools
-
 from __future__ import annotations
+
+from .config import get_config, Config, DEFAULTS  # noqa: F401 — re-exported for tools
 
 import contextlib
 import math
