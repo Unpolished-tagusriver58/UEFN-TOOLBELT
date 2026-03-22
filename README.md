@@ -11,12 +11,12 @@ allowing creators to manipulate actors, manage assets, and generate boilerplate 
 through a high-level, developer-friendly interface — all from a single persistent menu entry
 in the UEFN editor bar. Reached **155 Registered Tools** in Phase 17.
 
-## 🤖 AI-Accelerated Development (The Schema)
+## 🤖 AI-Accelerated Development (One-Click Sync)
 Toolbelt is built to be used with AI (Claude/Gemini). To give your AI **perfect information** about your project's unique Verse devices and custom props:
 
-1.  **Generate a Schema**: Run `tb.run("api_crawl_level_classes")` in the UEFN Python console.
-2.  **Save as Source of Truth**: Move the generated `api_level_classes_schema.json` to your `docs/` folder.
-3.  **Perfect Context**: Your AI will now know the exact property names and types in your specific level, eliminating guessing and code errors.
+1.  **Open Dashboard**: Run `tb.launch_qt()` or use the `Toolbelt` menu.
+2.  **One-Click Sync**: Click the **"Sync Level Schema to AI"** button in **Quick Actions**.
+3.  **Instant Content**: The 1.6MB schema is automatically copied to your `docs/` folder. Your AI now knows every hidden property in your specific level.
 
 ---
 

@@ -24,7 +24,7 @@ The full schema is available in the repository as the **Source of Truth**:
 [uefn_reference_schema.json](file:///c:/Users/ocean/AntigravityProjects/UEFN-TOOLBELT/docs/uefn_reference_schema.json)
 
 > [!IMPORTANT]
-> The **Reference Schema** provides standard UEFN API data. For project-specific context (your unique Verse devices), run the crawler and check your git-ignored `docs/api_level_classes_schema.json`.
+> The **Reference Schema** provides standard UEFN API data. For project-specific context (your unique Verse devices), click the **"Sync Level Schema to AI"** button in the Toolbelt Dashboard. This will update your git-ignored `docs/api_level_classes_schema.json` instantly.
 
 ### Example Usage
 

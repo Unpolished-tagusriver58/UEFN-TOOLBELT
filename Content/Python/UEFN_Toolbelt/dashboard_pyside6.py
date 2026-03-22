@@ -243,6 +243,7 @@ def _tab_quick_actions(R) -> "QScrollArea":
     _btn(g_snap, "Snapshot: Backup Current Level", lambda: R("snapshot_save"), "Saves the current transforms of all actors to a JSON backup.")
     _btn(g_snap, "Snapshot: Restore Level", lambda: R("snapshot_restore"), "Restores actor positions from the latest snapshot.")
     _btn(g_snap, "Scan Project Memory Limits", lambda: R("memory_scan"), "Runs a comprehensive memory audit of textures, meshes, and audio to prevent publish failures.")
+    _btn(g_snap, "Sync Level Schema to AI (Docs)", lambda: R("api_crawl_level_classes"), "Crawls the level and automatically syncs the 1.6MB schema to the project docs for AI context.")
 
     # 3. Organization
     g_org = _group(L, "Project Organization")
@@ -617,6 +618,9 @@ def _tab_assets(R) -> "QScrollArea":
     _btn(g_sync, "MASTER SYNC: Level + Verse IQ",
          lambda: R("api_sync_master"),
          "One-click sync: Crawls live actors, parses Verse digests, and updates docs/DEVICE_API_MAP.md.")
+    _btn(g_sync, "Sync Individual Level Schema",
+         lambda: R("api_crawl_level_classes"),
+         "Syncs only the property-level class schema to docs/api_level_classes_schema.json.")
 
     # Reference Auditor
     g4 = _group(L, "Reference Auditor")

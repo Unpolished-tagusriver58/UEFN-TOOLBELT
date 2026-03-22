@@ -134,6 +134,37 @@ def crawl_selection(**kwargs) -> str:
     return out_path
 
 
+def _sync_to_repo(src_path: str, filename: str) -> str:
+    """
+    Helper to copy a generated file from the Saved/ directory to the project's docs/ 
+    folder for Git tracking and AI context.
+    """
+    import shutil
+    try:
+        # Find project root
+        curr = os.path.abspath(__file__)
+        project_root = None
+        while curr and os.path.dirname(curr) != curr:
+            curr = os.path.dirname(curr)
+            if os.path.basename(curr) == "Content":
+                project_root = os.path.dirname(curr)
+                break
+        
+        if not project_root:
+            import unreal
+            project_root = unreal.Paths.project_dir()
+            
+        repo_docs = os.path.join(project_root, "docs")
+        os.makedirs(repo_docs, exist_ok=True)
+        dst_path = os.path.join(repo_docs, filename)
+        
+        shutil.copy2(src_path, dst_path)
+        return dst_path
+    except Exception as e:
+        core.log_warning(f"Schema Sync: Failed to copy {filename} to project docs: {e}")
+        return ""
+
+
 @register_tool(
     name="api_crawl_level_classes",
     category="API Explorer",
@@ -185,6 +216,12 @@ def crawl_level_classes(**kwargs) -> str:
         json.dump(report, f, indent=2)
 
     core.log_info(f"✓ Level class schema saved: {out_path}")
+    
+    # NEW: Sync to repo docs for AI context
+    repo_path = _sync_to_repo(out_path, "api_level_classes_schema.json")
+    if repo_path:
+        core.log_info(f"✓ Auto-synced to repo: {repo_path}")
+        
     return out_path
 
 
