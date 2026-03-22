@@ -1,6 +1,6 @@
 # UEFN Toolbelt — Tool Status & Testing
 
-UEFN Toolbelt contains 123+ tools across 24 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **the `integration_test.py` suite uses temporary fixtures to automate verification of context-dependent tools.**
+UEFN Toolbelt contains 132+ tools across 27 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **the `integration_test.py` suite uses temporary fixtures to automate verification of context-dependent tools.**
 
 ### ⚠️ Architectural Constraints
 *   **Main Thread Lock**: UEFN Python runs on the main render thread. Operations like `time.sleep` in wait loops will **deadlock** the engine, preventing async tasks (like screenshot saves) from completing. Verification logic should avoid blocking waits.
@@ -48,6 +48,12 @@ These tools require a live level. They spawn new actors or modify the environmen
 | `material_glow_pulse_preview` | [A] | [A] | AI | 2026-03-20 |
 | `material_team_color_split` | [A] | [A] | AI | 2026-03-20 |
 | `material_gradient_painter` | [A] | [A] | AI | 2026-03-20 |
+| `import_image_url` | [A] | [A] | AI | 2026-03-22 |
+| `import_image_clip` | [A] | [A] | AI | 2026-03-22 |
+| `procedural_wire` | [A] | [A] | AI | 2026-03-22 |
+| `procedural_scatter` | [A] | [A] | AI | 2026-03-22 |
+| `text_voxelize_3d` | [A] | [A] | AI | 2026-03-22 |
+| `text_render_tex` | [A] | [A] | AI | 2026-03-22 |
 | `material_pattern_painter` | [A] | [A] | AI | 2026-03-20 |
 | `text_color_cycle` | [A] | [A] | AI | 2026-03-20 |
 
@@ -187,6 +193,11 @@ The 100% target requires move coverage in these upcoming batches:
 - [x] **Arena Generator**: `arena_generate` (Symmetrical verification)
 - [x] **Smart Importer**: `organize_assets`, `rename_enforce_conventions`
 - [x] **Bridge Protocol**: `mcp_start`, `mcp_stop`
+
+### **Batch 13: External Absorption Mastery (Target: 132 Tools - COMPLETE)**
+- [x] **Native Importers**: `import_image_from_url`, `import_image_from_clipboard`
+- [x] **Procedural Geo**: `procedural_wire_create`, `procedural_volume_scatter`
+- [x] **Gen-Text Voxel**: `text_voxelize_3d`, `text_render_texture`
 
 > **Future potential:** In theory, an automated integration test could use the crawler data to generate validation scripts — spawn actors, apply tool operations, then verify properties changed. That level of automation isn't built yet, but the crawler output provides the schema needed to build it.
 
