@@ -58,13 +58,13 @@ def _find_uefn_projects():
 
     if sys.platform == "win32":
         roots = [
+            os.path.expanduser("~/Documents/Fortnite Projects"),  # UEFN default
             os.path.expanduser("~/Documents/Unreal Projects"),
             os.path.expanduser("~/Documents/UEFN"),
-            "C:/Users/Public/Documents/Unreal Projects",
         ]
-        # Also check all drive letters for a FortniteGame folder hint
     else:
         roots = [
+            os.path.expanduser("~/Documents/Fortnite Projects"),
             os.path.expanduser("~/Documents/Unreal Projects"),
             os.path.expanduser("~/UnrealProjects"),
         ]
