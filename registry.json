@@ -142,6 +142,21 @@
       "url": "https://github.com/undergroundrap/UEFN-TOOLBELT/blob/main/Content/Python/UEFN_Toolbelt/tools/api_explorer.py",
       "min_toolbelt_version": "1.0.0",
       "size_kb": 19
+    },
+    {
+      "id": "random_yaw",
+      "name": "Random Yaw",
+      "version": "1.0.0",
+      "author": "Ocean Bennett",
+      "author_url": "https://github.com/undergroundrap",
+      "type": "community",
+      "description": "Randomizes only the yaw (Z rotation) of selected actors. Preserves pitch and roll — ideal for natural prop variation without a cluttered look.",
+      "category": "Procedural",
+      "tags": ["randomize", "rotation", "props", "quick"],
+      "url": "https://github.com/undergroundrap/UEFN-TOOLBELT/blob/main/community_plugins/random_yaw.py",
+      "download_url": "https://raw.githubusercontent.com/undergroundrap/UEFN-TOOLBELT/main/community_plugins/random_yaw.py",
+      "min_toolbelt_version": "1.5.3",
+      "size_kb": 2
     }
   ]
 }
