@@ -232,19 +232,39 @@ def _tab_quick_actions(R) -> "QScrollArea":
     desc.setWordWrap(True)
     L.addWidget(desc)
 
+    # 1. Selection & Visibility
+    g_sel = _group(L, "Selection & Utility")
+    _btn(g_sel, "Print Selected Actors to Log", lambda: R("get_all_actors"), "Prints total count and paths of current selection.")
+    _btn(g_sel, "Auto-Generate LODs (Selected)", lambda: R("lod_auto_generate_selection"), "Forces bulk generation of LODs for selected static meshes.")
+
+    # 2. Safety & Backups
     g_snap = _group(L, "Safety & Backups")
     _btn(g_snap, "Snapshot: Backup Current Level", lambda: R("snapshot_save"), "Saves the current transforms of all actors to a JSON backup.")
     _btn(g_snap, "Snapshot: Restore Level", lambda: R("snapshot_restore"), "Restores actor positions from the latest snapshot.")
 
-    g_org = _group(L, "Organization")
-    _btn(g_org, "Organize Loose Assets in /Game", lambda: R("scaffold_organize_loose"), "Moves unstructured loose assets into proper typed folders (Meshes, Materials, etc).")
-    _btn(g_org, "Fix Asset Naming Conventions", lambda: R("rename_enforce_conventions"), "Scans the project and automatically fixes Epic naming convention rule violations.")
+    # 3. Organization
+    g_org = _group(L, "Project Organization")
+    
+    org_inp = _inp("MyProject", "Project root folder name", width=120)
+    _btn_inp(g_org, "Organize Loose Assets in /Game", 
+             lambda: R("scaffold_organize_loose", project_name=org_inp.text(), dry_run=False), 
+             org_inp, tip="Moves unstructured loose assets into proper typed folders.")
 
-    g_sel = _group(L, "Selection & Utility")
-    _btn(g_sel, "Auto-Generate LODs (Selected)", lambda: R("lod_auto_generate_selection"), "Forces bulk generation of LODs for selected static meshes.")
-    _btn(g_sel, "Create Material Instances (Selected)", lambda: R("material_save_preset"), "Extracts current materials and auto-generates instances from them.")
+    ren_inp = _inp("/Game", "Scan Path", width=120)
+    _btn_inp(g_org, "Fix Asset Naming Conventions", 
+             lambda: R("rename_enforce_conventions", scan_path=ren_inp.text()), 
+             ren_inp, tip="Scans the path and automatically fixes Epic naming convention rule violations.")
 
-    g_mat = _group(L, "Level Design")
+    # 4. Level Design
+    g_mat = _group(L, "Level Design & Materials")
+    
+    mat_combo = QComboBox()
+    mat_combo.addItems(["chrome", "gold", "neon", "hologram", "lava", "plasma", "ice", "wood", "concrete", "team_red"])
+    mat_combo.setFixedWidth(120)
+    _btn_inp(g_mat, "Apply Material Preset (Selected)", 
+             lambda: R("material_apply_preset", preset=mat_combo.currentText()), 
+             mat_combo, tip="Instantly applies a smart material preset to all selected actors.")
+
     _btn(g_mat, "Clear Unused References (Orphans)", lambda: R("ref_delete_orphans"), "Deletes assets that have zero references to free up project space.")
     _btn(g_mat, "Replace Selected with Blueprint/Asset", lambda: R("replace_with_assets"), "Swaps all selected viewport actors with a new mesh from the Content Browser.")
 
