@@ -1264,6 +1264,22 @@ def _tab_about(_R=None) -> "QScrollArea":
 
     _sep(L)
 
+    # ── Updates ───────────────────────────────────────────────────────────────
+    g_upd = _group(L, "Platform Updates")
+
+    upd_desc = QLabel("Update the Toolbelt to the latest version directly from GitHub.\nWarning: The UEFN editor must be restarted after updating.")
+    upd_desc.setStyleSheet("font-size: 11px; color: #777777; padding: 2px 4px;")
+    upd_desc.setWordWrap(True)
+    g_upd.addWidget(upd_desc)
+
+    btn_update = QPushButton("  Check for Updates (git pull)")
+    btn_update.setProperty("accent", "true")
+    btn_update.setStyleSheet(btn_update.styleSheet() + "QPushButton { padding: 8px; font-weight: bold; text-align: center; }")
+    btn_update.clicked.connect(lambda: _R("toolbelt_update") if _R else None)
+    g_upd.addWidget(btn_update)
+    
+    _sep(L)
+
     # ── Quick commands (copy-to-clipboard) ────────────────────────────────────
     g_cmds = _group(L, "Quick Commands  —  paste into the UEFN Python console")
 
@@ -1716,14 +1732,28 @@ class ToolbeltDashboard(QMainWindow):
     # ── Tool execution ────────────────────────────────────────────────────────
 
     def _run(self, tool_name: str, **kwargs) -> None:
+        import time
         import UEFN_Toolbelt as _tb
         self._sbar.showMessage(f"  Running  {tool_name}…")
         QApplication.processEvents()
         try:
-            _tb.run(tool_name, **kwargs)
-            self._set_status(f"  ✓  {tool_name} — done", ok=True)
+            t0 = time.time()
+            result = _tb.run(tool_name, **kwargs)
+            t1 = time.time()
+            ms = (t1 - t0) * 1000
+
+            if result is None or result is True:
+                msg = f"  ✓  {tool_name}  ({ms:.1f}ms)"
+            elif isinstance(result, list):
+                msg = f"  ✓  {tool_name}: {len(result)} items processed  ({ms:.1f}ms)"
+            else:
+                s_res = str(result)
+                if len(s_res) > 30: s_res = s_res[:27] + "..."
+                msg = f"  ✓  {tool_name}: {s_res}  ({ms:.1f}ms)"
+
+            self._set_status(msg, ok=True)
         except Exception as e:
-            self._set_status(f"  ✗  {e}", ok=False)
+            self._set_status(f"  ✗  {str(e)[:60]}", ok=False)
             unreal.log_error(f"[Dashboard] {tool_name}: {e}")
 
     def _set_status(self, msg: str, ok: bool = True) -> None:
@@ -1798,3 +1828,40 @@ def launch_dashboard() -> None:
 def launch_qt(**kwargs) -> None:
     """Launch the PySide6 dashboard."""
     launch_dashboard()
+
+
+@register_tool(
+    name="toolbelt_update",
+    category="Utilities",
+    description="Securely pull the latest Toolbelt updates from the GitHub repository.",
+    tags=["update", "git", "pull", "upgrade", "system", "health"]
+)
+def update_toolbelt(**kwargs) -> str:
+    """Execute git pull against the toolbelt repository root."""
+    import subprocess, os
+    import UEFN_Toolbelt as _tb
+    from UEFN_Toolbelt import core
+    root = os.path.abspath(os.path.join(os.path.dirname(_tb.__file__), "..", "..", "..")) 
+    
+    # Pre-flight check: is it a git repo?
+    if not os.path.exists(os.path.join(root, ".git")):
+        return "Error: Not a git repository"
+        
+    try:
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        res = subprocess.run(["git", "-C", root, "pull", "origin", "main"], capture_output=True, text=True, startupinfo=startupinfo)
+        
+        if res.returncode == 0:
+            if "Already up to date" in res.stdout:
+                return "Already up-to-date"
+            else:
+                core.log_info(f"[Updater] {res.stdout}")
+                return "Updated successfully! Restart UEFN."
+        else:
+            core.log_error(f"[Updater] Git failed:\n{res.stderr}")
+            return "Git pull failed"
+    except Exception as e:
+        core.log_error(f"[Updater] Subprocess failed: {e}")
+        return "Command error"
+
