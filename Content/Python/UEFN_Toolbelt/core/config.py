@@ -55,6 +55,9 @@ DEFAULTS: dict[str, Any] = {
 
     # Snapshots
     "snapshot.default_scope":   "all",
+
+    # Verse Device Graph
+    "verse.project_path":       "",
 }
 
 

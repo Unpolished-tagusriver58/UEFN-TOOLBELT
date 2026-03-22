@@ -9,7 +9,7 @@
 ## What This Project Is
 
 **UEFN Toolbelt** is a comprehensive Python automation framework for Unreal Editor for Fortnite (UEFN 40.00+, March 2026).
-It runs inside the editor and exposes 165 tools through:
+It runs inside the editor and exposes 168 tools through:
 - A persistent top-menu entry (`Toolbelt ▾`) in the UEFN editor bar
 - An 18-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
 - An MCP HTTP bridge so Claude Code can control UEFN directly
@@ -37,7 +37,7 @@ This file contains every registered tool with its full Python parameter signatur
   }
 }
 ```
-All 165 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
+All 168 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
 
 **Schema utility functions** (`schema_utils.py`):
 - `schema_utils.validate_property(class_name, prop)` — check if a property exists and is writable
@@ -436,6 +436,9 @@ tb.run("screenshot_focus_selection", width=1920, height=1080, name="prop_focus")
 | `verse_select_by_name` | `name_contains` | Select devices matching label |
 | `verse_select_by_class` | `class_name` | Select devices by class |
 | `verse_export_report` | `output_path` | JSON export of all device properties |
+| `verse_graph_open` | `verse_path=""` | Interactive force-directed device graph (PySide6) |
+| `verse_graph_scan` | `verse_path=""` | Headless scan → full adjacency dict (MCP-friendly) |
+| `verse_graph_export` | `verse_path`, `output_path` | Export device graph to JSON |
 | `verse_gen_game_skeleton` | `device_name` | Full game manager Verse stub |
 | `verse_gen_device_declarations` | — | `@editable` declarations from selection |
 | `verse_gen_elimination_handler` | `device_name` | Elimination event handler |
@@ -520,6 +523,7 @@ tb.run("config_reset", key="all")   # wipe all customisations
 | `screenshot.default_height` | `1080` |
 | `screenshot.default_name` | `shot` |
 | `snapshot.default_scope` | `all` |
+| `verse.project_path` | `""` |
 
 ---
 
@@ -529,7 +533,7 @@ tb.run("config_reset", key="all")   # wipe all customisations
 |---|---|---|
 | `plugin_validate_all` | — | Validate all registered tools against schema |
 | `plugin_list_custom` | — | List all loaded third-party tools from `Saved/UEFN_Toolbelt/Custom_Plugins` |
-| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 165 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
+| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 168 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
 
 ---
 
