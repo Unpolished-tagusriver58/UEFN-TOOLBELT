@@ -195,12 +195,14 @@ All heavy logic lives in Python. The optional UMG dashboard calls into it via
 │   │           ├── spline_prop_placer.py
 │   │           ├── bulk_operations.py
 │   │           ├── verse_device_editor.py
-│   │           ├── smart_importer.py
+│   │           ├── asset_importer.py         # NEW: URL & Clipboard image importing
 │   │           ├── verse_snippet_generator.py
 │   │           ├── text_painter.py
 │   │           ├── asset_renamer.py
-│   │           ├── smart_organizer.py
-│   │           └── system_perf.py
+│   │           ├── procedural_geometry.py    # NEW: Wire & Volumetric generators
+│   │           ├── text_voxelizer.py         # NEW: 3D Text geometry generation
+│   │           ├── smart_organizer.py        # Proprietary Heuristics Engine
+│   │           └── system_perf.py            # Background CPU Optimizer
 │   └── UEFN_Toolbelt/
 │       ├── Blueprints/
 │       │   └── WBP_ToolbeltDashboard    ← optional EUW — create in UEFN

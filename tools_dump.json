@@ -48,6 +48,18 @@
     "description": "Args:"
   },
   {
+    "source_file": "asset_importer.py",
+    "name": "import_image_from_url",
+    "category": "Pipeline",
+    "description": "No description."
+  },
+  {
+    "source_file": "asset_importer.py",
+    "name": "import_image_from_clipboard",
+    "category": "Pipeline",
+    "description": "No description."
+  },
+  {
     "source_file": "asset_renamer.py",
     "name": "rename_dry_run",
     "category": "Assets",
@@ -396,6 +408,18 @@
     "description": "List tools that were loaded from the Saved/UEFN_Toolbelt/Custom_Plugins directory."
   },
   {
+    "source_file": "procedural_geometry.py",
+    "name": "procedural_wire_create",
+    "category": "Procedural",
+    "description": "No description."
+  },
+  {
+    "source_file": "procedural_geometry.py",
+    "name": "procedural_volume_scatter",
+    "category": "Procedural",
+    "description": "No description."
+  },
+  {
     "source_file": "project_scaffold.py",
     "name": "scaffold_list_templates",
     "category": "Project",
@@ -658,6 +682,18 @@
     "name": "text_clear_folder",
     "category": "Text & Signs",
     "description": "Args:"
+  },
+  {
+    "source_file": "text_voxelizer.py",
+    "name": "text_render_texture",
+    "category": "Generative",
+    "description": "No description."
+  },
+  {
+    "source_file": "text_voxelizer.py",
+    "name": "text_voxelize_3d",
+    "category": "Generative",
+    "description": "No description."
   },
   {
     "source_file": "verse_device_editor.py",

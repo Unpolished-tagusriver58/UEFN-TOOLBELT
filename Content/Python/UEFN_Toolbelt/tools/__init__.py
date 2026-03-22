@@ -36,3 +36,6 @@ from . import api_capability_crawler
 from . import mcp_bridge
 from . import smart_organizer
 from . import system_perf
+from . import asset_importer
+from . import procedural_geometry
+from . import text_voxelizer

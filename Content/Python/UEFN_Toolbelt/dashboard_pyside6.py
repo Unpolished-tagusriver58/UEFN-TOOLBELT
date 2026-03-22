@@ -281,6 +281,10 @@ def _tab_quick_actions(R) -> "QScrollArea":
     g_verse = _group(L, "Verse Code Generation")
     _btn(g_verse, "Generate @editable properties (Selected)", lambda: R("verse_gen_device_declarations"), "Reads the selected actors in the viewport and instantly generates perfectly typed Verse code variables.")
 
+    # 6. Media & Assets
+    g_media = _group(L, "Media & Assets")
+    _btn(g_media, "Paste Image from Clipboard", lambda: R("import_image_from_clipboard"), "Instantly imports your current clipboard image as a Texture2D.")
+
     L.addStretch()
     return scroll
 
@@ -422,6 +426,21 @@ def _tab_procedural(R) -> "QScrollArea":
              count2_s)
     _btn(g4, "Clear Spline Props", lambda: R("spline_clear_props"))
 
+    # Procedural Geometry
+    g_geo = _group(L, "Procedural Geometry")
+    wire_seg_s = _spin(16, 2, 64, width=70)
+    wire_sag_s = _spin(120, 0, 1000, width=80)
+    _btn_inp(g_geo, "Generate Wire (Between 2 Selected)",
+             lambda: R("procedural_wire_create", segments=int(wire_seg_s.value()), sag_amount=wire_sag_s.value(), thickness=0.1),
+             wire_seg_s, wire_sag_s, tip="Draws a sagging wire between two selected actors.")
+    
+    scat_count_s = _spin(50, 1, 1000, width=80)
+    scat_rad_s = _spin(1000, 100, 10000, width=90)
+    scat_combo = QComboBox(); scat_combo.addItems(["sphere", "cube"]); scat_combo.setFixedWidth(100)
+    _btn_inp(g_geo, "Volume Scatter Meshes",
+             lambda: R("procedural_volume_scatter", count=int(scat_count_s.value()), radius=scat_rad_s.value(), shape=scat_combo.currentText()),
+             scat_count_s, scat_rad_s, scat_combo, tip="Scatters random meshes within a spherical or cubic boundary.")
+
     return scroll
 
 
@@ -529,6 +548,17 @@ def _tab_text(R) -> "QScrollArea":
              lambda: R("text_save_style", style_name=sname_inp.text()),
              sname_inp)
 
+    # Generative Text (Voxel)
+    g_vox = _group(L, "Generative Text (Voxel)")
+    vox_text_inp = _inp("Voxel Text", "UEFN", width=120)
+    vox_size_s = _spin(120, 8, 512, width=70)
+    _btn_inp(g_vox, "Voxelize Text to 3D Mesh",
+             lambda: R("text_voxelize_3d", text=vox_text_inp.text(), font_size=int(vox_size_s.value())),
+             vox_text_inp, vox_size_s, tip="Converts a text string into a single StaticMesh asset made of voxel blocks.")
+    _btn_inp(g_vox, "Render Text to Texture2D",
+             lambda: R("text_render_texture", text=vox_text_inp.text(), font_size=int(vox_size_s.value())),
+             vox_text_inp, vox_size_s, tip="Renders text to a transparent Texture2D asset.")
+
     return scroll
 
 
@@ -596,6 +626,16 @@ def _tab_assets(R) -> "QScrollArea":
          lambda: R("ref_audit_unused_textures", scan_path="/Game"))
     _btn(g4, "Fix Redirectors — Dry Run first",
          lambda: R("ref_fix_redirectors", scan_path="/Game", dry_run=True))
+
+    # Asset Importers
+    g_imp = _group(L, "Asset Importers")
+    url_inp = _inp("https://...", width=200)
+    _btn_inp(g_imp, "Import Image from URL",
+             lambda: R("import_image_from_url", url=url_inp.text()),
+             url_inp, tip="Downloads an image directly into the Content Browser.")
+    _btn(g_imp, "Import Image from Clipboard",
+         lambda: R("import_image_from_clipboard"),
+         "Captures the current image sitting on the Windows Clipboard.")
 
     return scroll
 
