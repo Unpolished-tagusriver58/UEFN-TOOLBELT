@@ -187,7 +187,7 @@ def _diff_snapshots(
 
 # ─── Tool implementations ──────────────────────────────────────────────────────
 
-def _do_save(name: str, scope: str, class_filter: str) -> None:
+def _do_save(name: str, scope: str, class_filter: str) -> dict:
     sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 
     if scope == "selection":
@@ -200,7 +200,7 @@ def _do_save(name: str, scope: str, class_filter: str) -> None:
 
     if not actors:
         unreal.log_warning("[Snapshot] No actors to snapshot.")
-        return
+        return {"status": "error", "message": "No actors to snapshot."}
 
     serialized = []
     for actor in actors:
@@ -210,12 +210,12 @@ def _do_save(name: str, scope: str, class_filter: str) -> None:
             unreal.log_warning(f"[Snapshot] Skipping {actor.get_actor_label()}: {e}")
 
     snapshot = {
-        "name":        name,
-        "timestamp":   time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "actor_count": len(serialized),
-        "scope":       scope,
+        "name":         name,
+        "timestamp":    time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "actor_count":  len(serialized),
+        "scope":        scope,
         "class_filter": class_filter or "all",
-        "actors":      serialized,
+        "actors":       serialized,
     }
 
     _ensure_dir()
@@ -223,18 +223,17 @@ def _do_save(name: str, scope: str, class_filter: str) -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(snapshot, f, indent=2)
 
-    unreal.log(
-        f"[Snapshot] ✓ Saved '{name}' — {len(serialized)} actors → {path}"
-    )
+    unreal.log(f"[Snapshot] ✓ Saved '{name}' — {len(serialized)} actors → {path}")
+    return {"status": "ok", "name": name, "actor_count": len(serialized), "path": path}
 
 
 def _do_restore(name: str, restore_location: bool,
                 restore_rotation: bool, restore_scale: bool,
-                restore_visibility: bool) -> None:
+                restore_visibility: bool) -> dict:
     path = _snap_path(name)
     if not os.path.exists(path):
         unreal.log_warning(f"[Snapshot] Snapshot '{name}' not found at {path}")
-        return
+        return {"status": "error", "message": f"Snapshot '{name}' not found."}
 
     with open(path, "r", encoding="utf-8") as f:
         snapshot = json.load(f)
@@ -287,6 +286,7 @@ def _do_restore(name: str, restore_location: bool,
             f"[Snapshot]   {skipped} actors from the snapshot were not found "
             "(deleted or renamed since the snapshot was taken)."
         )
+    return {"status": "ok", "name": name, "restored": restored, "skipped": skipped}
 
 
 # ─── Registered tools ──────────────────────────────────────────────────────────
@@ -303,7 +303,7 @@ def snapshot_save(
     scope: str = "all",
     class_filter: str = "",
 **kwargs,
-) -> None:
+) -> dict:
     """
     Capture actor transforms and save them to a named snapshot.
 
@@ -312,10 +312,13 @@ def snapshot_save(
         scope:        "all" = entire level. "selection" = only selected actors.
         class_filter: Only snapshot actors whose class name contains this string.
                       E.g. "StaticMeshActor", "BP_MyDevice". Empty = all classes.
+
+    Returns:
+        dict: {"status", "name", "actor_count", "path"}
     """
     if not name:
         name = time.strftime("snap_%Y%m%d_%H%M%S")
-    _do_save(name, scope, class_filter)
+    return _do_save(name, scope, class_filter)
 
 
 @register_tool(
@@ -332,7 +335,7 @@ def snapshot_restore(
     restore_scale: bool = True,
     restore_visibility: bool = False,
 **kwargs,
-) -> None:
+) -> dict:
     """
     Restore actor transforms from a saved snapshot.
     Actors not found in the current level are skipped with a warning.
@@ -344,15 +347,18 @@ def snapshot_restore(
         restore_rotation:   Reset rotations to saved values.
         restore_scale:      Reset scales to saved values.
         restore_visibility: Also restore hidden/visible state.
+
+    Returns:
+        dict: {"status", "name", "restored", "skipped"}
     """
     if not name:
         unreal.log_warning(
             "[Snapshot] Provide a snapshot name. "
             "Run snapshot_list to see available snapshots."
         )
-        return
-    _do_restore(name, restore_location, restore_rotation,
-                restore_scale, restore_visibility)
+        return {"status": "error", "message": "No snapshot name provided."}
+    return _do_restore(name, restore_location, restore_rotation,
+                       restore_scale, restore_visibility)
 
 
 @register_tool(
@@ -362,17 +368,23 @@ def snapshot_restore(
     icon="📋",
     tags=["snapshot", "list"],
 )
-def snapshot_list(**kwargs) -> None:
-    """Print all saved snapshots in Saved/UEFN_Toolbelt/snapshots/."""
+def snapshot_list(**kwargs) -> dict:
+    """
+    Print all saved snapshots in Saved/UEFN_Toolbelt/snapshots/.
+
+    Returns:
+        dict: {"status", "count", "snapshots": [{"name", "timestamp", "actor_count", "scope"}]}
+    """
     _ensure_dir()
     files = [f for f in os.listdir(_SNAP_DIR) if f.endswith(".json")]
 
     if not files:
         unreal.log("[Snapshot] No snapshots saved yet. Run snapshot_save first.")
-        return
+        return {"status": "ok", "count": 0, "snapshots": []}
 
     unreal.log(f"\n[Snapshot] {len(files)} saved snapshots:\n")
     files.sort()
+    records = []
 
     for fname in files:
         fpath = os.path.join(_SNAP_DIR, fname)
@@ -385,10 +397,17 @@ def snapshot_list(**kwargs) -> None:
                 f"{data['actor_count']:4d} actors  "
                 f"scope={data.get('scope','all')}"
             )
+            records.append({
+                "name":        data["name"],
+                "timestamp":   data["timestamp"],
+                "actor_count": data["actor_count"],
+                "scope":       data.get("scope", "all"),
+            })
         except Exception as e:
             unreal.log(f"  ✗  {fname}  (could not read: {e})")
 
     unreal.log("")
+    return {"status": "ok", "count": len(records), "snapshots": records}
 
 
 @register_tool(
@@ -398,26 +417,29 @@ def snapshot_list(**kwargs) -> None:
     icon="⇄",
     tags=["snapshot", "diff", "compare"],
 )
-def snapshot_diff(name_a: str = "", name_b: str = "", **kwargs) -> None:
+def snapshot_diff(name_a: str = "", name_b: str = "", **kwargs) -> dict:
     """
     Diff two snapshots and print what changed.
 
     Args:
         name_a: Earlier/baseline snapshot name.
         name_b: Later/current snapshot name.
+
+    Returns:
+        dict: full diff result with added, removed, moved lists and counts.
     """
     if not name_a or not name_b:
         unreal.log_warning(
             "[Snapshot] Provide two snapshot names. "
             "Example: tb.run('snapshot_diff', name_a='before', name_b='after')"
         )
-        return
+        return {"status": "error", "message": "Two snapshot names required."}
 
     path_a, path_b = _snap_path(name_a), _snap_path(name_b)
     for path, name in ((path_a, name_a), (path_b, name_b)):
         if not os.path.exists(path):
             unreal.log_warning(f"[Snapshot] Snapshot '{name}' not found at {path}")
-            return
+            return {"status": "error", "message": f"Snapshot '{name}' not found."}
 
     with open(path_a, "r", encoding="utf-8") as f:
         snap_a = json.load(f)
@@ -453,6 +475,9 @@ def snapshot_diff(name_a: str = "", name_b: str = "", **kwargs) -> None:
     if diff["added_count"] + diff["removed_count"] + diff["moved_count"] == 0:
         unreal.log("  ✓ No differences found — snapshots are identical.")
 
+    diff["status"] = "ok"
+    return diff
+
 
 @register_tool(
     name="snapshot_delete",
@@ -461,19 +486,25 @@ def snapshot_diff(name_a: str = "", name_b: str = "", **kwargs) -> None:
     icon="🗑",
     tags=["snapshot", "delete"],
 )
-def snapshot_delete(name: str = "", **kwargs) -> None:
-    """Delete a single snapshot file."""
+def snapshot_delete(name: str = "", **kwargs) -> dict:
+    """
+    Delete a single snapshot file.
+
+    Returns:
+        dict: {"status", "name"}
+    """
     if not name:
         unreal.log_warning("[Snapshot] Provide a snapshot name to delete.")
-        return
+        return {"status": "error", "message": "No snapshot name provided."}
 
     path = _snap_path(name)
     if not os.path.exists(path):
         unreal.log_warning(f"[Snapshot] Snapshot '{name}' not found.")
-        return
+        return {"status": "error", "message": f"Snapshot '{name}' not found."}
 
     os.remove(path)
     unreal.log(f"[Snapshot] ✓ Deleted snapshot '{name}'.")
+    return {"status": "ok", "name": name}
 
 
 @register_tool(
@@ -551,7 +582,7 @@ def snapshot_import(import_path: str = "", name: str = "", **kwargs) -> None:
     icon="🔍",
     tags=["snapshot", "diff", "live", "compare"],
 )
-def snapshot_compare_live(name: str = "", **kwargs) -> None:
+def snapshot_compare_live(name: str = "", **kwargs) -> dict:
     """
     Diff a saved snapshot against the current level — no second snapshot needed.
 
@@ -560,13 +591,16 @@ def snapshot_compare_live(name: str = "", **kwargs) -> None:
 
     Args:
         name: Snapshot to compare the current level against.
+
+    Returns:
+        dict: full diff result (same shape as snapshot_diff) with status key.
     """
     if not name:
         unreal.log_warning(
             "[Snapshot] Provide a snapshot name to compare against. "
             "Example: tb.run('snapshot_compare_live', name='before_bulk_op')"
         )
-        return
+        return {"status": "error", "message": "No snapshot name provided."}
 
     temp_name = f"_live_compare_{time.strftime('%H%M%S')}"
     _do_save(temp_name, "all", "")
@@ -576,8 +610,11 @@ def snapshot_compare_live(name: str = "", **kwargs) -> None:
 
     if not os.path.exists(path_saved):
         unreal.log_warning(f"[Snapshot] Snapshot '{name}' not found.")
-        os.remove(path_live)
-        return
+        try:
+            os.remove(path_live)
+        except Exception:
+            pass
+        return {"status": "error", "message": f"Snapshot '{name}' not found."}
 
     with open(path_saved, "r", encoding="utf-8") as f:
         snap_saved = json.load(f)
@@ -611,3 +648,6 @@ def snapshot_compare_live(name: str = "", **kwargs) -> None:
         os.remove(path_live)
     except Exception:
         pass
+
+    diff["status"] = "ok"
+    return diff
