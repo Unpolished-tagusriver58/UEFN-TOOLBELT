@@ -840,20 +840,14 @@ def start_listener(port: int = 0) -> int:
 
     try:
         _tick_handle = unreal.register_slate_post_tick_callback(_tick)
+        _log("Dispatch: tick-based")
     except Exception as e:
+        # register_slate_post_tick_callback unavailable (e.g. headless/CI) — fall back.
+        # NOTE: the old sleep-based health check was self-defeating: sleeping on the main
+        # thread blocks Slate from ticking, so _tick_health never incremented and the
+        # bridge always fell back to direct mode even when tick mode would work.
         _log(f"Tick callback registration failed: {e} — using direct mode", "warning")
         _dispatch_mode = "direct"
-
-    # Auto-detect: if Slate ticks aren't firing (e.g. loading screen), fall back
-    # to direct mode so commands don't time out waiting for a tick that never comes.
-    if _dispatch_mode == "tick":
-        health_before = int(_tick_health)
-        time.sleep(0.15)   # ~9 frames at 60fps
-        if _tick_health <= health_before:
-            _dispatch_mode = "direct"
-            _log("Slate ticks not detected — switched to direct dispatch mode")
-        else:
-            _log("Dispatch: tick-based")
 
     _log(f"Listener started on http://127.0.0.1:{port}")
     _log(f"{len(_HANDLERS)} commands registered")

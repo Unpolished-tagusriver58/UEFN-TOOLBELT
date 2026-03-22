@@ -63,7 +63,8 @@ def _header(title: str) -> None:
 
 def _spawn_fixture(mesh_path: str = _CUBE_MESH, location: unreal.Vector = unreal.Vector(0,0,0)) -> unreal.Actor:
     """Spawn a temporary actor and track it for cleanup."""
-    actor = unreal.EditorLevelLibrary.spawn_actor_from_object(
+    actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    actor = actor_sub.spawn_actor_from_object(
         unreal.EditorAssetLibrary.load_asset(mesh_path),
         location,
         unreal.Rotator(0, 0, 0)
@@ -82,8 +83,9 @@ def _select_fixture(actors: list[unreal.Actor]) -> None:
 
 def _cleanup_fixtures() -> None:
     actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    all_actors = actor_sub.get_all_level_actors()
     for actor in _spawn_fixtures:
-        if actor and unreal.EditorLevelLibrary.get_all_level_actors().count(actor) > 0:
+        if actor and actor in all_actors:
             actor_sub.destroy_actor(actor)
     _spawn_fixtures.clear()
 
@@ -152,9 +154,9 @@ def _test_materials() -> None:
             mat = component.get_material(0)
             if mat and (PARENT_MATERIAL_PATH in mat.get_path_name()):
                 passed = True
-        except:
+        except Exception:
             pass
-        
+
         _record("Materials", "Apply Preset", passed, "Applied 'gold' to cube" if passed else f"Material mismatch (Target: {PARENT_MATERIAL_PATH})")
     except Exception as e:
         _record("Materials", "Apply Preset", False, str(e))

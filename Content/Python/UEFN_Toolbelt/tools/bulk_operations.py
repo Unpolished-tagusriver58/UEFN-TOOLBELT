@@ -302,8 +302,12 @@ def run_stack(gap: float = 0.0, **kwargs) -> dict:
             height = box_extent.z * 2
             
             # SCHEMA HARDENING: Account for pivot_offset (discovered in schema)
-            # pivot_offset is relative to the actor origin.
-            pivot = actor.get_editor_property("pivot_offset") if hasattr(actor, "pivot_offset") else unreal.Vector(0,0,0)
+            # pivot_offset is relative to the actor origin. Use getattr — get_editor_property
+            # raises on Verse-driven properties that aren't tagged as editor properties.
+            try:
+                pivot = getattr(actor, "pivot_offset", unreal.Vector(0, 0, 0))
+            except Exception:
+                pivot = unreal.Vector(0, 0, 0)
             
             actor.set_actor_location(
                 unreal.Vector(loc.x, loc.y, current_z + box_extent.z - pivot.z),

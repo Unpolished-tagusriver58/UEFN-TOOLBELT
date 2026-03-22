@@ -362,8 +362,11 @@ def run_organize_assets(
         new_path = f"{target_folder}/{asset_name}"
 
         try:
-            unreal.EditorAssetLibrary.rename_asset(asset_path, new_path)
-            moved += 1
+            success = unreal.EditorAssetLibrary.rename_asset(asset_path, new_path)
+            if success:
+                moved += 1
+            else:
+                log_warning(f"  Could not move {asset_name}: rename_asset returned False (check revision control or read-only flags)")
         except Exception as e:
             log_warning(f"  Could not move {asset_name}: {e}")
 
