@@ -1317,6 +1317,141 @@ def _tab_plugin_hub(R) -> "QScrollArea":
 
     _sep(L)
 
+    # ── Online Plugin Hub ──────────────────────────────────────────────────────
+    _REGISTRY_URL = (
+        "https://raw.githubusercontent.com/undergroundrap/UEFN-TOOLBELT/main/registry.json"
+    )
+
+    hub_header = QLabel("Browse Online Hub")
+    hub_header.setStyleSheet("font-size: 15px; font-weight: bold; color: #FFFFFF; padding: 4px 0 2px 0;")
+    L.addWidget(hub_header)
+
+    hub_desc = QLabel("Community plugins — click Install to download into your Custom_Plugins folder.")
+    hub_desc.setStyleSheet("font-size: 11px; color: #AAAAAA; padding-bottom: 8px;")
+    hub_desc.setWordWrap(True)
+    L.addWidget(hub_desc)
+
+    # Status label updated by the fetch
+    hub_status = QLabel("Click 'Refresh' to load the community registry.")
+    hub_status.setStyleSheet("font-size: 11px; color: #777777; font-style: italic;")
+    L.addWidget(hub_status)
+
+    # Container for online cards — populated on refresh
+    hub_container = QWidget()
+    hub_container.setStyleSheet("background: transparent;")
+    hub_vbox = QVBoxLayout(hub_container)
+    hub_vbox.setContentsMargins(0, 0, 0, 0)
+    hub_vbox.setSpacing(6)
+    L.addWidget(hub_container)
+
+    def _install_plugin(plugin_meta: dict):
+        """Download a plugin from download_url into Custom_Plugins."""
+        import urllib.request
+        dl_url = plugin_meta.get("download_url", "")
+        if not dl_url:
+            hub_status.setText("⚠ No download URL for this plugin.")
+            return
+        plugin_dir = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "Custom_Plugins")
+        os.makedirs(plugin_dir, exist_ok=True)
+        dest = os.path.join(plugin_dir, f"{plugin_meta['id']}.py")
+        try:
+            urllib.request.urlretrieve(dl_url, dest)
+            hub_status.setText(f"✓ Installed '{plugin_meta['name']}' → restart UEFN to activate.")
+        except Exception as ex:
+            hub_status.setText(f"✗ Install failed: {ex}")
+
+    def _make_online_card(pm: dict):
+        card = QFrame()
+        card.setStyleSheet(
+            "QFrame { background: #1A1A2E; border: 1px solid #363666; border-radius: 6px; margin-bottom: 6px; }"
+        )
+        cl = QVBoxLayout(card)
+        cl.setContentsMargins(12, 12, 12, 12)
+        cl.setSpacing(4)
+
+        # Title row
+        hdr = QWidget()
+        hdr.setStyleSheet("border: none; background: transparent;")
+        hl = QHBoxLayout(hdr)
+        hl.setContentsMargins(0, 0, 0, 0)
+        t = QLabel(pm["name"])
+        t.setStyleSheet("font-size: 13px; font-weight: bold; color: #FFFFFF;")
+        hl.addWidget(t)
+        v = QLabel(f"v{pm['version']}")
+        v.setStyleSheet("font-size: 11px; color: #8888AA;")
+        hl.addWidget(v)
+        cat = QLabel(pm.get("category", ""))
+        cat.setStyleSheet("font-size: 10px; color: #44AAFF; background: #0A1A2E; border: 1px solid #225588; border-radius: 3px; padding: 2px 6px;")
+        hl.addWidget(cat)
+        hl.addStretch()
+        cl.addWidget(hdr)
+
+        by = QLabel(f"By {pm.get('author','?')}  ·  {pm.get('size_kb', '?')} KB")
+        by.setStyleSheet("font-size: 10px; color: #888888; border: none; background: transparent;")
+        cl.addWidget(by)
+
+        d = QLabel(pm.get("description", ""))
+        d.setWordWrap(True)
+        d.setStyleSheet("font-size: 12px; color: #CCCCCC; padding: 4px 0; border: none; background: transparent;")
+        cl.addWidget(d)
+
+        footer = QWidget()
+        footer.setStyleSheet("border: none; background: transparent;")
+        fl = QHBoxLayout(footer)
+        fl.setContentsMargins(0, 4, 0, 0)
+
+        if pm.get("url"):
+            link = QLabel(f'<a href="{pm["url"]}" style="color: #6688DD;">View Source</a>')
+            link.setOpenExternalLinks(True)
+            link.setStyleSheet("font-size: 11px; border: none; background: transparent;")
+            fl.addWidget(link)
+
+        fl.addStretch()
+
+        install_btn = QPushButton("Install")
+        install_btn.setStyleSheet(
+            "QPushButton { background: #1A3322; border: 1px solid #44FF88; color: #44FF88;"
+            " padding: 4px 14px; border-radius: 3px; font-weight: bold; }"
+            "QPushButton:hover { background: #2A4A33; }"
+            "QPushButton:pressed { background: #44FF88; color: #000000; }"
+        )
+        install_btn.clicked.connect(lambda _, p=pm: _install_plugin(p))
+        fl.addWidget(install_btn)
+        cl.addWidget(footer)
+        return card
+
+    def _refresh_hub():
+        import urllib.request
+        hub_status.setText("Fetching registry…")
+        # Clear old cards
+        while hub_vbox.count():
+            item = hub_vbox.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        try:
+            with urllib.request.urlopen(_REGISTRY_URL, timeout=8) as resp:
+                data = json.loads(resp.read().decode())
+            plugins = data.get("plugins", [])
+            hub_status.setText(
+                f"✓ {len(plugins)} community plugins · updated {data.get('updated','?')}"
+            )
+            for pm in plugins:
+                hub_vbox.addWidget(_make_online_card(pm))
+        except Exception as ex:
+            hub_status.setText(f"⚠ Could not reach registry: {ex}")
+
+    btn_refresh = QPushButton("  Refresh Hub")
+    btn_refresh.setStyleSheet(
+        "QPushButton { background: #2D2D2D; border: 1px solid #555555; color: #DDDDDD;"
+        " padding: 6px 16px; border-radius: 4px; font-weight: bold; }"
+        "QPushButton:hover { background: #3A3AFF; border-color: #5555FF; color: #FFFFFF; }"
+    )
+    btn_refresh.clicked.connect(_refresh_hub)
+    L.addWidget(btn_refresh)
+    L.addWidget(hub_container)
+
+    _sep(L)
+
     # ── Load Audit Log
     audit_data = {}
     audit_path = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt", "plugin_audit.json")

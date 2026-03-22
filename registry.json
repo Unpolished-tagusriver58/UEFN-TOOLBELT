@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "updated": "2026-03-22",
+  "description": "UEFN Toolbelt Community Plugin Registry — one-click install from the Plugin Hub tab.",
+  "plugins": [
+    {
+      "id": "wave_spawner",
+      "name": "Wave Spawner",
+      "version": "1.0.0",
+      "author": "OceanBennett",
+      "description": "Automatically spawns and manages timed enemy waves using Verse device groups. Integrates with the Toolbelt device graph.",
+      "category": "Gameplay",
+      "tags": ["verse", "spawner", "waves", "gameplay"],
+      "url": "https://github.com/OceanBennett/uefn-toolbelt-plugins/blob/main/wave_spawner.py",
+      "download_url": "https://raw.githubusercontent.com/OceanBennett/uefn-toolbelt-plugins/main/wave_spawner.py",
+      "min_toolbelt_version": "1.5.0",
+      "size_kb": 8
+    },
+    {
+      "id": "day_night_cycle",
+      "name": "Day/Night Cycle Manager",
+      "version": "1.1.0",
+      "author": "OceanBennett",
+      "description": "Drives sky light, directional light, and fog settings through a configurable day-night cycle. Supports custom time-of-day presets.",
+      "category": "Environment",
+      "tags": ["lighting", "sky", "environment", "atmosphere"],
+      "url": "https://github.com/OceanBennett/uefn-toolbelt-plugins/blob/main/day_night_cycle.py",
+      "download_url": "https://raw.githubusercontent.com/OceanBennett/uefn-toolbelt-plugins/main/day_night_cycle.py",
+      "min_toolbelt_version": "1.5.0",
+      "size_kb": 11
+    },
+    {
+      "id": "prop_randomizer_plus",
+      "name": "Prop Randomizer Plus",
+      "version": "1.0.0",
+      "author": "OceanBennett",
+      "description": "Extended scatter and randomization toolkit. Supports asset pools, weighted probability, and terrain-conforming placement.",
+      "category": "Procedural",
+      "tags": ["scatter", "props", "randomize", "procedural"],
+      "url": "https://github.com/OceanBennett/uefn-toolbelt-plugins/blob/main/prop_randomizer_plus.py",
+      "download_url": "https://raw.githubusercontent.com/OceanBennett/uefn-toolbelt-plugins/main/prop_randomizer_plus.py",
+      "min_toolbelt_version": "1.5.0",
+      "size_kb": 14
+    }
+  ]
+}

@@ -295,6 +295,29 @@ def list_toolbelt_tools(category: str = "") -> str:
     return f"// {count} tools registered\n{_j(tools)}"
 
 
+@mcp.tool()
+def describe_toolbelt_tool(tool_name: str) -> str:
+    """Get the full parameter schema for a single UEFN Toolbelt tool.
+
+    Returns the tool's name, description, category, tags, and complete parameter
+    signatures (type, required, default) — everything needed to call it correctly
+    without loading the full tool manifest.
+
+    Use this before calling run_toolbelt_tool() when you need to verify parameter
+    names, types, or defaults for a specific tool.
+
+    Args:
+        tool_name: Registered tool name (e.g. 'scatter_hism', 'material_apply_preset').
+
+    Examples:
+        describe_toolbelt_tool("scatter_hism")
+        describe_toolbelt_tool("verse_gen_game_skeleton")
+        describe_toolbelt_tool("snapshot_save")
+    """
+    result = _send("describe_tool", {"tool_name": tool_name})
+    return _j(result)
+
+
 # ─── Actors ───────────────────────────────────────────────────────────────────
 
 
