@@ -1906,8 +1906,8 @@ def _tab_about(_R=None) -> "QScrollArea":
     g_stats = _group(L, "What's Inside")
 
     stats = [
-        ("155", "registered tools"),
-        ("18",  "categories"),
+        ("171", "registered tools"),
+        ("30",  "categories"),
         ("6",   "smoke-test layers"),
         ("0",   "network calls — fully offline"),
         ("1",   "Ctrl+Z to undo anything"),

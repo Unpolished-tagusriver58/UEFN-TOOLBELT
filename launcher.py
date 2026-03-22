@@ -15,7 +15,7 @@ Paste ONE of these into the UEFN Python REPL (Tools → Execute Python Script):
 The launcher:
   1. Adds Content/Python/ to sys.path
   2. Hot-reloads all toolbelt modules (safe to run repeatedly during development)
-  3. Registers all tool modules (143 tools)
+  3. Registers all tool modules (171 tools)
   4. Opens the PySide6 tabbed dashboard (falls back gracefully if PySide6 missing)
 
 Install PySide6 (one-time, run OUTSIDE UEFN in a regular terminal):

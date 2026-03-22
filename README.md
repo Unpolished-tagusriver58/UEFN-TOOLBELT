@@ -2120,7 +2120,7 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 ### v1.5.3 — March 2026 (Audit Fixes + MCP Auto-Start)
 
-- **Version string corrected**: `__version__` bumped from stale `1.2.0` to `1.5.2` (now `1.5.3`). Dashboard About tab now shows `v1.5.2 · 171 tools`.
+- **Version string corrected**: `__version__` bumped from stale `1.2.0` to `1.5.3`. Dashboard About tab now shows `v1.5.3 · 171 tools`.
 - **MCP listener auto-starts** when the dashboard opens — no more manual `tb.run("mcp_start")`. If Claude Code is already configured, it connects automatically on first dashboard open. Silent if already running; never blocks the UI if MCP fails.
 - **Smoke test threshold corrected**: `MIN_TOOL_COUNT` updated from stale `155` to `171`. Smoke test now catches regressions at the real tool count.
 - **Safe tool execution expanded**: 23 no-argument tools now verified at smoke-test time (was 9). Coverage: `theme_list`, `theme_get`, `config_list`, `config_get`, `verse_graph_scan`, `api_search`, `spline_measure`, and more.

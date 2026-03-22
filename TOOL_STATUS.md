@@ -1,6 +1,6 @@
 # UEFN Toolbelt — Tool Status & Testing
 
-UEFN Toolbelt contains 161 tools across 31 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **the `integration_test.py` suite uses temporary fixtures to automate verification of context-dependent tools.**
+UEFN Toolbelt contains 171 tools across 31 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **the `integration_test.py` suite uses temporary fixtures to automate verification of context-dependent tools.**
 
 ### Phase 21 — Complete AI Return Loop
 As of Phase 21, **every registered tool returns a structured `dict`** — `{"status": "ok"/"error", ...}`. Zero `None` returns remain anywhere in the codebase. This means AI agents using the MCP bridge can act on results programmatically: no log parsing, no guessing. The `describe_tool` MCP command was also added for per-tool manifest lookup.
@@ -11,7 +11,7 @@ As of Phase 21, **every registered tool returns a structured `dict`** — `{"sta
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
-## 🟢 Automated Verification Status: **161 / 161 Tools (100% Coverage)**
+## 🟢 Automated Verification Status: **171 / 171 Tools (100% Coverage)**
 Integration suite health is **100% stable (103/103 sections passed)**.
 
 ## 🟢 Layer 3 Execution Verified (Safe Tools)
@@ -127,7 +127,7 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 4. Verifies the result (properties, file outputs)
 5. Cleans up with a single `undo_transaction`
 
-**Current Integration Coverage (161 / 161 Tools):**
+**Current Integration Coverage (171 / 171 Tools):**
 - Integration suite health is **100% stable (103/103 sections passed)**.
 - **Materials:** `material_apply_preset` (Engine Fallback), `material_randomize_colors`, `material_bulk_swap`, `material_gradient_painter`, `material_team_color_split`, `material_pattern_painter`, `material_glow_pulse_preview`
 - **Bulk Ops:** `align`, `distribute`, `randomize`, `snap`, `stack`, `reset`, `bulk_mirror`, `bulk_normalize_scale`, `bulk_face_camera`
@@ -158,9 +158,9 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 
 ## What the Tests Actually Prove (and Don't)
 
-**What the smoke test (161/161) proves:**
+**What the smoke test (171/171) proves:**
 - All 31 modules import and register without errors
-- All 161 tools register into the registry with valid metadata
+- All 171 tools register into the registry with valid metadata
 - 9 "safe" tools execute end-to-end and return correct results
 - MCP bridge, PySide6, and Verse Book infrastructure all functional
 
@@ -217,12 +217,12 @@ The 100% target requires move coverage in these upcoming batches:
 - [x] **Safety Intelligence**: `core_safety_audit` (Native Protection Layer)
 - [x] **Milestone**: 138 Registered Tools
 
-### **Batch 20: AI-Agent Readiness (Target: 161 Tools - COMPLETE)**
-- [x] **Tool Manifest**: `plugin_export_manifest` — writes `tool_manifest.json` with full parameter signatures for all 161 tools; every AI agent and automation script can now discover and call tools without reading source code
+### **Batch 20: AI-Agent Readiness (Target: 171 Tools - COMPLETE)**
+- [x] **Tool Manifest**: `plugin_export_manifest` — writes `tool_manifest.json` with full parameter signatures for all 171 tools; every AI agent and automation script can now discover and call tools without reading source code
 - [x] **Structured Returns**: 25+ tools across `verse_device_editor`, `level_snapshot`, `selection_utils`, `asset_tagger`, `screenshot_tools` now return `{"status", "count", "data"}` dicts; MCP callers read results directly
 - [x] **Schema-Driven Discovery**: `schema_utils.discover_properties()` and `list_classes()` added; `verse_device_editor` property reader replaced hardcoded list with live schema lookup
 - [x] **Registry `to_manifest()`**: Introspects every tool's `inspect.signature()` at export time; captures type annotations, required/optional, and defaults
-- [x] **Milestone**: 161 Registered Tools, 103/103 integration tests passing, full MCP return loop verified end-to-end
+- [x] **Milestone**: 171 Registered Tools, 103/103 integration tests passing, full MCP return loop verified end-to-end
 
 ### **Batch 21: Complete AI Return Loop (COMPLETE)**
 - [x] **100% Structured Dict Returns**: All remaining `-> None` and primitive-return tools converted. Every `@register_tool` function across all 23 modules now returns `{"status": "ok"/"error", ...data...}`. Zero exceptions remain.
@@ -230,7 +230,7 @@ The 100% target requires move coverage in these upcoming batches:
 - [x] **`describe_tool` MCP Command**: Returns a single tool's full manifest entry by name — no need to load the full `tool_manifest.json`. Ideal for AI agents building dynamic workflows.
 - [x] **Internal Caller Safety**: `run_measure_travel_time` and `run_enforce_conventions(dry_run=True)` updated to handle the new dict returns from their internal callees.
 - [x] **Type annotation cleanup**: All `-> list[str]`, `-> int`, `-> bool`, `-> str`, `-> Optional[unreal.TextRenderActor]` return annotations on registered tools replaced with `-> dict`.
-- [x] **Milestone**: 161 tools, 23 modules, 0 `None` returns — full AI-agent readiness achieved
+- [x] **Milestone**: 171 tools, 23 modules, 0 `None` returns — full AI-agent readiness achieved
 
 > **Future potential:** In theory, an automated integration test could use the crawler data to generate validation scripts — spawn actors, apply tool operations, then verify properties changed. That level of automation isn't built yet, but the crawler output provides the schema needed to build it.
 
