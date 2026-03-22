@@ -1116,18 +1116,20 @@ import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")
 
 > **UEFN Python console tip:** The console only accepts **one line at a time** — no multi-line pastes. Chain multiple statements on the same line using semicolons (`;`). A space before and after the semicolon works fine: `import UEFN_Toolbelt as tb; tb.run("toolbelt_smoke_test")`
 
-Expected result: **85/85 passinLogPython:   - **90% Automation:** The new `toolbelt_integration_test` programmatically spawns, selects, and verifies tools that previously required manual human interaction.
-LogPython:   ✓ All systems healthy — Toolbelt is ready.
+Expected output in the log:
+```
+✓ All systems healthy — Toolbelt is ready.
+```
 
 | Layer | What It Verifies | Checks |
 |---|---|---|
 | **Layer 1** — Python Environment | stdlib, threading, sockets, HTTP server, file I/O | 13 |
 | **Layer 2** — UEFN API Surface | `unreal` module, subsystems, AutomationLibrary, Materials | 13 |
-| **Layer 3** — Toolbelt Core | All 31 modules loaded, 143 tools registered, 9 safe tools executed | 40 |
-| **Layer 7** — Integration | **NEW:** Automated fixture-based verification of context-aware tools | 10 |
+| **Layer 3** — Toolbelt Core | All 31 modules loaded, 171 tools registered, 23 safe tools executed | 40 |
 | **Layer 4** — MCP Bridge | 31 command handlers, HTTP listener state | 4 |
 | **Layer 5** — Dashboard (PySide6) | PySide6 importable, QApplication, ToolbeltDashboard | 3 |
 | **Layer 6** — Verse Book | clone present, git reachable, 22 chapters parsed | 12 |
+| **Layer 7** — Integration | Fixture-based verification of context-aware tools (materials, snapshots, scatter) | 10 |
 
 > If you haven't installed PySide6 or cloned the verse-book yet, you may see a few non-critical failures.
 > Complete Steps 2 and 7 in the Getting Started guide above to resolve them.
@@ -2025,7 +2027,7 @@ tb.run("verse_gen_custom",
 
 `CLAUDE.md` in the project root is auto-loaded by Claude Code every time you open the project. It contains:
 
-- Every tool name, parameter, and usage example for all 143 tools
+- Every tool name, parameter, and usage example for all 171 tools
 - MCP bridge command reference
 - UEFN Python critical rules (main thread, undo transactions, API gotchas)
 - Common patterns and troubleshooting
@@ -2061,7 +2063,7 @@ UEFN Toolbelt is not just a collection of scripts; it is a **secure platform** f
 The UEFN Toolbelt includes a professional-grade testing suite to ensure stability across UEFN updates.
 
 ### 1. Smoke Test (Healthy Schema Check)
-Verifies all 31 modules are loaded, all 165 tool schemas are valid (descriptions, tags, `**kwargs` compliance), and UEFN API access is healthy.
+Verifies all 31 modules are loaded, all 171 tool schemas are valid (descriptions, tags, `**kwargs` compliance), and UEFN API access is healthy.
 ```python
 import UEFN_Toolbelt as tb
 tb.run("toolbelt_smoke_test")
@@ -2115,6 +2117,14 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 ---
 
 ## Patch Notes
+
+### v1.5.3 — March 2026 (Audit Fixes + MCP Auto-Start)
+
+- **Version string corrected**: `__version__` bumped from stale `1.2.0` to `1.5.2` (now `1.5.3`). Dashboard About tab now shows `v1.5.2 · 171 tools`.
+- **MCP listener auto-starts** when the dashboard opens — no more manual `tb.run("mcp_start")`. If Claude Code is already configured, it connects automatically on first dashboard open. Silent if already running; never blocks the UI if MCP fails.
+- **Smoke test threshold corrected**: `MIN_TOOL_COUNT` updated from stale `155` to `171`. Smoke test now catches regressions at the real tool count.
+- **Safe tool execution expanded**: 23 no-argument tools now verified at smoke-test time (was 9). Coverage: `theme_list`, `theme_get`, `config_list`, `config_get`, `verse_graph_scan`, `api_search`, `spline_measure`, and more.
+- **Coverage report tool upgraded** (`list_untested.py`): Fixed repo root path resolution, improved string literal detection, categorized output, CI-friendly exit codes (0 = all covered, 1 = gaps). Run `python Content/Python/UEFN_Toolbelt/list_untested.py` any time to see 78% coverage with a grouped gap report.
 
 ### v1.5.2 — March 2026 (Live Theme Switcher + Appearance Tab)
 
@@ -2177,7 +2187,7 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 ### v1.0 — March 2026 (Initial Release)
 
-- **143 tools** across 13 categories: Materials, Procedural, Bulk Ops, Text, Assets, Verse, Project, Screenshot, Tags, MCP, API Explorer, Utilities, and more
+- **171 tools** across 13 categories: Materials, Procedural, Bulk Ops, Text, Assets, Verse, Project, Screenshot, Tags, MCP, API Explorer, Utilities, and more
 - **PySide6 dashboard** — dark-themed floating window with sidebar nav, search across all tools, and per-category pages
 - **Tool Registry** — `@register_tool` decorator system, execute-by-name, tag/category search
 - **MCP bridge** — full two-process architecture letting Claude Code control UEFN over HTTP

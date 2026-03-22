@@ -1667,7 +1667,7 @@ def _tab_about(_R=None) -> "QScrollArea":
     tagline.setAlignment(Qt.AlignCenter)
     L.addWidget(tagline)
 
-    version = QLabel("v1.0  ·  UEFN 40.00+  ·  Python 3.11  ·  March 2026")
+    version = QLabel("v1.5.3  ·  171 tools  ·  UEFN 40.00+  ·  Python 3.11  ·  March 2026")
     version.setStyleSheet("font-size: 11px; color: #555555; padding-bottom: 12px;")
     version.setAlignment(Qt.AlignCenter)
     L.addWidget(version)
