@@ -60,9 +60,27 @@ def validate_property(class_name: str, property_name: str) -> Dict[str, Any]:
     info = get_class_info(class_name)
     if not info:
         return {"exists": False}
-        
+
     meta = info.get("properties", {}).get(property_name)
     if not meta:
         return {"exists": False}
-        
+
     return {"exists": True, "meta": meta}
+
+
+def list_classes() -> list:
+    """Return all class names defined in the reference schema."""
+    schema = load_schema()
+    return list(schema.get("classes", {}).keys())
+
+
+def discover_properties(class_name: str) -> Dict[str, Any]:
+    """
+    Return all schema-known properties for a class as {name: meta_dict}.
+    Returns an empty dict if the class isn't in the reference schema.
+    Useful for replacing hardcoded property name lists with live schema data.
+    """
+    info = get_class_info(class_name)
+    if not info:
+        return {}
+    return info.get("properties", {})

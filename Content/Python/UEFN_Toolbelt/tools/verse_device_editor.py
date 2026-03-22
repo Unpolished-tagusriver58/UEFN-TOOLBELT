@@ -53,6 +53,15 @@ from ..core import (
 from ..registry import register_tool
 from .. import schema_utils
 
+# Fallback property list used when the reference schema has no entry for a class.
+# Covers the most common shared Verse/Creative device properties.
+_FALLBACK_PROPS = [
+    "bIsEnabled", "bVisible", "bCanBeActivated",
+    "TeamIndex", "MaxPlayers", "RespawnTime",
+    "bAutoActivate", "ActivationDelay", "Health",
+    "bShowActivationEffect", "InteractText",
+]
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  Helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -95,19 +104,30 @@ def _get_all_devices() -> List[unreal.Actor]:
 
 def _get_actor_properties(actor: unreal.Actor) -> Dict[str, Any]:
     """
-    Try to read common property names from an actor.
-    Returns a dict of {prop_name: value}.
+    Read all discoverable properties from an actor.
+
+    Property discovery order (most to least authoritative):
+    1. Reference schema — look up the class in uefn_reference_schema.json
+       and iterate its declared properties.
+    2. Project-level schema — try api_level_classes_schema.json via
+       schema_utils (same get_class_info call, falls through automatically).
+    3. Fallback list — the hardcoded _FALLBACK_PROPS baseline when the class
+       is unknown to any schema.
+
+    Uses getattr instead of get_editor_property throughout (Quirk #7).
     """
-    common_props = [
-        "bIsEnabled", "bVisible", "bCanBeActivated",
-        "TeamIndex", "MaxPlayers", "RespawnTime",
-        "bAutoActivate", "ActivationDelay", "Health",
-        "bShowActivationEffect", "InteractText",
-    ]
+    class_name = actor.get_class().get_name()
+
+    # Try schema-driven discovery first
+    schema_props = schema_utils.discover_properties(class_name)
+    if schema_props:
+        prop_names = list(schema_props.keys())
+    else:
+        prop_names = _FALLBACK_PROPS
+
     result: Dict[str, Any] = {}
-    for prop in common_props:
-        # Use getattr instead of get_editor_property — many Verse-driven properties
-        # aren't tagged as editor properties and raise an exception (Quirk #7).
+    for prop in prop_names:
+        # Quirk #7: use getattr — get_editor_property raises on Verse-driven props
         try:
             val = getattr(actor, prop, None)
             if val is not None:
@@ -127,10 +147,13 @@ def _get_actor_properties(actor: unreal.Actor) -> Dict[str, Any]:
     description="List all Verse/Creative device actors in the current level.",
     tags=["verse", "device", "list", "enumerate"],
 )
-def run_list_devices(name_filter: str = "", **kwargs) -> None:
+def run_list_devices(name_filter: str = "", **kwargs) -> dict:
     """
     Args:
         name_filter: Optional substring to filter by actor label.
+
+    Returns:
+        dict: {"status": "ok", "count": int, "devices": [{"label", "class", "location"}]}
     """
     devices = _get_all_devices()
 
@@ -139,16 +162,20 @@ def run_list_devices(name_filter: str = "", **kwargs) -> None:
 
     if not devices:
         log_info("No Verse/Creative devices found in current level.")
-        return
+        return {"status": "ok", "count": 0, "devices": []}
 
+    records = []
     lines = [f"\n=== Verse Devices ({len(devices)}) ==="]
     for d in devices:
         class_name = d.get_class().get_name()
         label = d.get_actor_label()
         loc = d.get_actor_location()
         lines.append(f"  [{class_name:40s}]  '{label}'  @ ({loc.x:.0f}, {loc.y:.0f}, {loc.z:.0f})")
+        records.append({"label": label, "class": class_name,
+                        "location": {"x": loc.x, "y": loc.y, "z": loc.z}})
     lines.append("")
     log_info("\n".join(lines))
+    return {"status": "ok", "count": len(devices), "devices": records}
 
 
 @register_tool(
@@ -162,22 +189,25 @@ def run_bulk_set_property(
     value: Any = True,
     use_all_devices: bool = False,
     **kwargs,
-) -> None:
+) -> dict:
     """
     Args:
         property_name:   The UPROPERTY name to set (e.g. "bIsEnabled", "TeamIndex").
         value:           The value to assign.
         use_all_devices: If True, apply to ALL devices in the level (not just selection).
+
+    Returns:
+        dict: {"status": "ok", "success": int, "failed": int}
     """
     if use_all_devices:
         actors = _get_all_devices()
         if not actors:
             log_warning("No Verse devices found in the level.")
-            return
+            return {"status": "error", "message": "No Verse devices found."}
     else:
         actors = require_selection()
         if actors is None:
-            return
+            return {"status": "error", "message": "No actors selected."}
 
     log_info(f"Setting '{property_name}' = {value!r} on {len(actors)} actor(s)…")
 
@@ -187,14 +217,14 @@ def run_bulk_set_property(
             # SCHEMA HARDENING: Validate property via reference schema
             cls_name = actor.get_class().get_name()
             validation = schema_utils.validate_property(cls_name, property_name)
-            
+
             if validation["exists"]:
                 meta = validation["meta"]
                 if not meta.get("readable", True):
                     log_warning(f"  '{actor.get_actor_label()}': property '{property_name}' is MARKED READ-ONLY in schema.")
                     failed += 1
                     continue
-                
+
                 # Type hint for UX
                 expected_type = meta.get("type", "Any")
                 if expected_type != "Any" and type(value).__name__ != expected_type.lower():
@@ -208,6 +238,7 @@ def run_bulk_set_property(
                 failed += 1
 
     log_info(f"Done. {success} succeeded, {failed} failed.")
+    return {"status": "ok", "success": success, "failed": failed}
 
 
 @register_tool(
@@ -216,21 +247,26 @@ def run_bulk_set_property(
     description="Select all Verse device actors whose label contains a filter string.",
     tags=["verse", "device", "select", "filter"],
 )
-def run_select_by_name(name_filter: str = "Trigger", **kwargs) -> None:
+def run_select_by_name(name_filter: str = "Trigger", **kwargs) -> dict:
     """
     Args:
         name_filter: Case-insensitive substring to match actor labels.
+
+    Returns:
+        dict: {"status": "ok", "count": int, "labels": [str]}
     """
     devices = _get_all_devices()
     matched = [d for d in devices if name_filter.lower() in d.get_actor_label().lower()]
 
     if not matched:
         log_info(f"No devices found matching '{name_filter}'.")
-        return
+        return {"status": "ok", "count": 0, "labels": []}
 
     actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
     actor_sub.set_selected_level_actors(matched)
+    labels = [d.get_actor_label() for d in matched]
     log_info(f"Selected {len(matched)} devices matching '{name_filter}'.")
+    return {"status": "ok", "count": len(matched), "labels": labels}
 
 
 @register_tool(
@@ -239,21 +275,26 @@ def run_select_by_name(name_filter: str = "Trigger", **kwargs) -> None:
     description="Select all Verse device actors of a given class name substring.",
     tags=["verse", "device", "select", "class"],
 )
-def run_select_by_class(class_filter: str = "SpawnPad", **kwargs) -> None:
+def run_select_by_class(class_filter: str = "SpawnPad", **kwargs) -> dict:
     """
     Args:
         class_filter: Case-insensitive substring of the actor's class name.
+
+    Returns:
+        dict: {"status": "ok", "count": int, "labels": [str]}
     """
     devices = _get_all_devices()
     matched = [d for d in devices if class_filter.lower() in d.get_class().get_name().lower()]
 
     if not matched:
         log_info(f"No devices found with class matching '{class_filter}'.")
-        return
+        return {"status": "ok", "count": 0, "labels": []}
 
     actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
     actor_sub.set_selected_level_actors(matched)
+    labels = [d.get_actor_label() for d in matched]
     log_info(f"Selected {len(matched)} devices of class '{class_filter}'.")
+    return {"status": "ok", "count": len(matched), "labels": labels}
 
 
 @register_tool(
@@ -262,24 +303,27 @@ def run_select_by_class(class_filter: str = "SpawnPad", **kwargs) -> None:
     description="Export a JSON report of all Verse device properties to the Saved folder.",
     tags=["verse", "device", "export", "report", "json"],
 )
-def run_export_report(**kwargs) -> None:
+def run_export_report(**kwargs) -> dict:
     """
     Writes a JSON file to:
         {ProjectSaved}/UEFN_Toolbelt/verse_device_report.json
+
+    Returns:
+        dict: {"status": "ok", "path": str, "count": int}
     """
     devices = _get_all_devices()
     if not devices:
         log_info("No Verse devices found to export.")
-        return
+        return {"status": "ok", "path": "", "count": 0}
 
     report = []
     for d in devices:
         entry = {
-            "label":    d.get_actor_label(),
-            "class":    d.get_class().get_name(),
-            "location": {"x": d.get_actor_location().x,
-                         "y": d.get_actor_location().y,
-                         "z": d.get_actor_location().z},
+            "label":      d.get_actor_label(),
+            "class":      d.get_class().get_name(),
+            "location":   {"x": d.get_actor_location().x,
+                           "y": d.get_actor_location().y,
+                           "z": d.get_actor_location().z},
             "properties": _get_actor_properties(d),
         }
         report.append(entry)
@@ -292,3 +336,4 @@ def run_export_report(**kwargs) -> None:
         json.dump(report, f, indent=2, default=str)
 
     log_info(f"Exported {len(report)} device records → {out_path}")
+    return {"status": "ok", "path": out_path, "count": len(report)}

@@ -27,6 +27,7 @@ The ToolRegistry is a singleton. Access it anywhere via:
 from __future__ import annotations
 
 import inspect
+import os
 import traceback
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
@@ -227,6 +228,53 @@ class ToolRegistry:
             }
             for e in entries
         ]
+
+    def to_manifest(self) -> Dict[str, Any]:
+        """
+        Return a full machine-readable manifest of all registered tools.
+        Introspects each function's signature to expose parameter names,
+        types, defaults, and required status. Designed for AI-agent
+        consumption via MCP or tool_manifest.json export.
+        """
+        manifest: Dict[str, Any] = {}
+        for name, entry in self._tools.items():
+            params: Dict[str, Any] = {}
+            try:
+                sig = inspect.signature(entry.fn)
+                for p_name, p in sig.parameters.items():
+                    if p.kind in (
+                        inspect.Parameter.VAR_KEYWORD,
+                        inspect.Parameter.VAR_POSITIONAL,
+                    ):
+                        continue
+                    ann = p.annotation
+                    if ann is inspect.Parameter.empty:
+                        type_str = "Any"
+                    elif hasattr(ann, "__name__"):
+                        type_str = ann.__name__
+                    else:
+                        type_str = str(ann)
+                    params[p_name] = {
+                        "type": type_str,
+                        "required": p.default is inspect.Parameter.empty,
+                        "default": None if p.default is inspect.Parameter.empty else p.default,
+                    }
+            except Exception:
+                pass  # Un-inspectable function; skip params
+
+            manifest[name] = {
+                "name": name,
+                "category": entry.category,
+                "description": entry.description,
+                "tags": entry.tags,
+                "parameters": params,
+                "icon": entry.icon,
+                "shortcut": entry.shortcut,
+                "author": entry.author,
+                "version": entry.version,
+                "source": os.path.basename(entry.source) if entry.source else "",
+            }
+        return manifest
 
     def categories(self) -> List[str]:
         """Return sorted unique category names — used to build sidebar tabs."""
