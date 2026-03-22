@@ -1,27 +1,27 @@
 # UEFN Reference Schema — Deep Dive
 
-> A forensic-level analysis of `uefn_reference_schema.json`.
-> Every insight here was derived by running `api_crawl_level_classes` against a live UEFN level,
-> then systematically cross-referencing all 14 classes, 1,031 properties, and 15 enum types.
+> Forensic analysis of two real UEFN level scans:
+> - **`uefn_reference_schema.json`** — original scan, 76 actors, 14 classes
+> - **`uefn_tutorial_schema.json`** — Epic's tutorial level, 318 actors, 19 classes
+>
+> Run `api_crawl_level_classes` in any level to generate your own. Findings from both scans
+> are combined here — the tutorial scan added 5 new classes, 3 new enum values, and corrected
+> several assumptions from the first scan.
 
 ---
 
 ## Master Stats
 
-| Metric | Count | Notes |
+| Metric | Scan 1 (own level) | Scan 2 (tutorial level) |
 |:---|:---|:---|
-| Total classes | 14 | Unique C++ classes observed in live level |
-| Total actor instances | 76 | Actors scanned across the level |
-| Total properties (all classes) | 1,031 | Across all 14 classes combined |
-| **Readable** | **765** | 74% — can be read via `get_editor_property` or `getattr` |
-| **Restricted** | **266** | 26% — raise on access; mostly C++ delegates + internals |
-| `bool` properties | 368 | 36% of all props — the dominant type |
-| `float` properties | 122 | 12% |
-| `int` properties | 13 | 1% |
-| `str` properties | 1 | `FortPlayerStartCreative.locked_player_name_substring` only |
-| `Array` properties | 29 | Opaque until iterated |
-| `Any` properties | 40 | Type not resolved — needs `getattr()` + runtime check |
-| `Unknown/Restricted` properties | 266 | The 19 blocked entries × 14 classes |
+| Actor instances scanned | 76 | 318 |
+| Unique C++ classes | 14 | 19 |
+| Total properties | 1,031 | ~1,400 (est.) |
+| New enum values discovered | 15 types, partial values | +WALL, +ROOF, +STAIRS, +CONTAINER, +METAL, +WOOD, +DORM_DORMANT_ALL, +SLOT_WALL, +ATTACH_WALL, +FORCE_ENABLED |
+| New device C++ classes | 0 | FortCreativeTeleporter, FortCreativeLockDevice |
+| New building classes | BuildingFloor only | +Wall, +Roof, +Stairs, +Deco, +PropWall |
+| `bool` properties | 368 | dominant type (36%+) |
+| `str` properties | 1 | 1 (same — only `locked_player_name_substring`) |
 
 ---
 
@@ -156,43 +156,63 @@ Every enum type discovered in the schema, with all observed values and their ful
 
 ### `FortBuildingType`
 ```
-FLOOR = 1   BuildingFloor — structural tile in the build grid
-PROP  = 4   BuildingProp / FortCreativeDeviceProp — decorative/device
+WALL      = 0   BuildingWall — structural wall tile
+FLOOR     = 1   BuildingFloor — structural floor tile
+PROP      = 4   BuildingProp / FortCreativeDeviceProp — free prop or device
+STAIRS    = 5   BuildingStairs — staircase tile
+ROOF      = 6   BuildingRoof — roof tile
+CONTAINER = 9   BuildingDeco — decorative attachment (attaches to walls)
 ```
-Note: values 0, 2, 3 (likely NONE, WALL, RAMP) not seen in this level scan.
+Values confirmed across both scans. RAMP (likely 3) and others still not seen.
 
 ### `FortResourceType`
 ```
-WOOD   = 0   (inferred — not in this scan)
-STONE  = 1   BuildingFloor default — drops stone on destroy
-METAL  = 2   (inferred — not in this scan)
-NONE   = 6   BuildingProp / FortCreativeDeviceProp — no material drops
+WOOD  = 0   Confirmed — BuildingFloor in tutorial level defaults to WOOD
+STONE = 1   BuildingRoof, BuildingWall defaults
+METAL = 2   Confirmed — seen in tutorial level
+NONE  = 6   BuildingProp / FortCreativeDeviceProp — no material drops
 ```
 The gap between METAL (2) and NONE (6) suggests values 3–5 are reserved (likely BRICK,
-CONCRETE, or other materials not exposed in Creative).
+CONCRETE, or other materials not used in Creative). `resource_type` is **instance-specific** —
+not a class default. The same `BuildingFloor` class can be WOOD, STONE, or METAL depending
+on which material theme the level designer chose.
 
 ### `NetDormancy`
 ```
-DORM_AWAKE   = 1   Active — sends network updates continuously (gameplay actors, cameras)
-DORM_INITIAL = 4   Dormant — only updates on initial replication (static building pieces)
+DORM_AWAKE        = 1   Active — sends updates continuously (gameplay actors, cameras, spawn points)
+DORM_DORMANT_ALL  = 2   Fully dormant — NEVER sends unsolicited updates to any client
+DORM_INITIAL      = 4   Dormant after first replication (static building tiles)
 ```
-Floor tiles use `DORM_INITIAL` (net_update_frequency=1.0) while gameplay actors use
-`DORM_AWAKE` (net_update_frequency=100.0). **Building a level with dormant floors is a
-performance design decision by Epic** — fewer net ticks means less bandwidth.
+**This is one of the most architecturally significant findings from the tutorial scan.**
+All Creative devices — `FortCreativeDeviceProp`, `FortCreativeTeleporter`, `FortCreativeLockDevice`,
+`BuildingProp_SwitchDevice`, `FortPlaysetRoot` — use `DORM_DORMANT_ALL`.
+
+This means **Creative devices never push network state changes through the C++ actor system**.
+All device state propagation happens through Verse's own network layer (`listenable`, `signalable`,
+channel events). The C++ actor is purely a shell — Verse owns the device's network lifecycle entirely.
+
+Dormancy summary by actor type:
+| Actor type | Dormancy | Implication |
+|:---|:---|:---|
+| Creative devices | `DORM_DORMANT_ALL` | Verse owns all state sync |
+| Building tiles (Floor/Wall/Roof) | `DORM_INITIAL` | Static after first sync |
+| Gameplay actors (spawn points, cameras) | `DORM_AWAKE` | Active state changes |
 
 ### `BuildingAttachmentSlot`
 ```
-SLOT_FLOOR = 0   Attaches to the floor face of a building grid cell
+SLOT_FLOOR = 0   Attaches to the floor face
+SLOT_WALL  = 1   Attaches to the wall face (confirmed — BuildingDeco, BuildingPropWall)
 SLOT_NONE  = 3   Free-floating — no attachment constraint
 ```
-Values 1 and 2 are likely SLOT_WALL and SLOT_CEILING (not in this scan).
+Value 2 is likely SLOT_CEILING (not yet seen in any scan).
 
 ### `BuildingAttachmentType`
 ```
 ATTACH_FLOOR = 0   Connects structurally to floor tiles
+ATTACH_WALL  = 1   Connects to wall tiles (confirmed — BuildingDeco, BuildingPropWall)
 ATTACH_NONE  = 9   No structural connection
 ```
-The gap (0 to 9) indicates other types for walls/ceilings/corners exist in the engine.
+The gap (1 to 9) indicates types for ceilings/corners/etc. exist but weren't seen in scans.
 
 ### `FortBaseWeaponDamage`
 ```
@@ -209,8 +229,11 @@ FREE = 0   No placement constraints — prop can be placed anywhere
 ### `NavigationObstacleOverride`
 ```
 USE_MESH_SETTINGS = 0   Defers to the mesh asset's navmesh settings
+FORCE_ENABLED     = 1   Always blocks navmesh regardless of mesh settings
 ```
-Other values would force override (OBSTACLE_YES / OBSTACLE_NO).
+`FORCE_ENABLED` is used by `FortCreativeLockDevice` and `BuildingProp_SwitchDevice` — both
+devices that players physically interact with. Epic hard-codes navmesh blocking on these so
+NPCs never path through a locked door or interactive switch.
 
 ### `PhysicalSurface`
 ```
@@ -680,12 +703,162 @@ Being forensically honest about the schema's limits:
    The crawler runs in editor mode, so `overlapping_players`, `destroyed`, and
    `player_placed` will always be `None` or `False` in the schema.
 
-5. **Enum full value tables** — only values present in the scanned level's actors appear.
-   `FortBuildingType.WALL` (2) and `FortBuildingType.RAMP` (3) definitely exist but
-   weren't scanned because this level had no wall/ramp tiles.
+5. **Enum full value tables** — only values present in scanned levels appear. RAMP is still
+   unconfirmed across both scans. Running the crawl on a Fortnite BR-style build level with
+   ramps would fill this gap.
 
 ---
 
-*Generated by forensic analysis of `uefn_reference_schema.json`*
-*Produced by UEFN Toolbelt — `api_crawl_level_classes`, 76 actors, 14 classes, UEFN 40.00+*
+## Tutorial Level Scan — New Class Findings
+
+### `FortCreativeTeleporter` — Teleporter Device
+
+The only Creative device with **C++-level teleporter group logic** exposed to Python.
+
+| Property | Type | Value | Notes |
+|:---|:---|:---|:---|
+| `knob_teleporter_group` | `FortCreativeTeleporterGroup` | `GROUP_NONE` (26) | Which group this teleporter belongs to |
+| `knob_target_teleporter_group` | `FortCreativeTeleporterGroup` | `GROUP_F` (5) | Which group it teleports players to |
+| `teleport_to_when_received` | `FortGameplayReceiverMessageComponent` | `None` | Channel-based trigger (the "Receive Channel" knob) |
+| `teleporter_ability` | `BlueprintGeneratedClass` | `None` | Blueprint class run on teleport — Epic override hook |
+
+**`FortCreativeTeleporterGroup` enum:**
+```
+GROUP_A    = 0    (inferred)
+GROUP_B    = 1    (inferred)
+GROUP_C    = 2    (inferred)
+GROUP_D    = 3    (inferred)
+GROUP_E    = 4    (inferred)
+GROUP_F    = 5    (confirmed)
+GROUP_NONE = 26   (confirmed — unassigned)
+```
+The many-to-many group design: a teleporter with `knob_teleporter_group=GROUP_A` will
+receive any player sent by a teleporter whose `knob_target_teleporter_group=GROUP_A`.
+Multiple teleporters can share the same group — creating random destination pools.
+
+**`teleport_to_when_received`** proves the channel system is wired directly into the C++
+teleporter class. When a channel event fires, this component handles the trigger — the
+same component type (`FortGameplayReceiverMessageComponent`) used in the broader messaging
+system.
+
+**Automation — configure a teleporter network:**
+```python
+# Find all teleporters and assign groups
+teleporters = [a for a in unreal.EditorActorSubsystem().get_all_level_actors()
+               if "Teleporter" in a.get_class().get_name()]
+
+# Pair: first half sends to group A, second half receives group A
+mid = len(teleporters) // 2
+for i, t in enumerate(teleporters[:mid]):
+    # GROUP_A = 0
+    t.set_editor_property("knob_target_teleporter_group", 0)
+for t in teleporters[mid:]:
+    t.set_editor_property("knob_teleporter_group", 0)
+```
+
+**Teleporter default differences vs `FortCreativeDeviceProp`:**
+- `net_update_frequency: 5.0` (vs 1.0) — teleporters update 5x more often
+- `allow_hostile_blueprint_interaction: True` — NPCs can trigger teleporters
+- `allow_custom_material: False` — skin can't be overridden
+
+---
+
+### `FortCreativeLockDevice` — Lock Device
+
+One extra C++ property beyond `FortCreativeDeviceProp`:
+
+| Property | Type | Notes |
+|:---|:---|:---|
+| `cached_local_controller` | `Any` | Runtime reference to the player who owns the lock |
+
+**Key default differences vs generic device:**
+- `navigation_obstacle_override: FORCE_ENABLED` — always blocks navmesh (NPCs can't path through locked doors)
+- `block_navigation_links: True` — also blocks nav links specifically
+- `enable_auto_lod_generation: True` — gets LODs unlike generic devices
+
+---
+
+### `BuildingDeco` — Decorative Attachment
+
+Decorations are structurally distinct from props — they attach to **walls** (`ATTACH_WALL`),
+not floors, and are typed as `CONTAINER` (9), not `PROP` (4).
+
+**Unique property (only class with this):**
+```
+cast_shadow: bool = False   — decorations default to no shadow (performance optimization)
+```
+
+**Key characteristics vs `BuildingProp`:**
+- `building_type: CONTAINER` (9) — not a free prop, it's a container/attachment
+- `building_attachment_type: ATTACH_WALL` — snaps to wall faces
+- `building_attachment_slot: SLOT_NONE` — free within the wall attachment
+- `no_camera_collision: True` — camera clips through decorations
+- `destroy_on_player_building_placement: True` — deco is removed when a player builds over it
+- `cast_shadow: False` — no shadow by default
+
+**Automation — enable shadows on all deco:**
+```python
+for a in unreal.EditorActorSubsystem().get_all_level_actors():
+    if "BuildingDeco" in a.get_class().get_name():
+        a.set_editor_property("cast_shadow", True)
+```
+
+---
+
+### The Full Building Family (confirmed)
+
+All building tile types now confirmed with their `FortBuildingType` values and
+distinguishing defaults:
+
+| Class | Type Int | Attachment | Snap Grid | Resource | Nav Modifier |
+|:---|:---|:---|:---|:---|:---|
+| `BuildingWall` | WALL=0 | ATTACH_NONE / SLOT_WALL | 512 | STONE | `False` |
+| `BuildingFloor` | FLOOR=1 | ATTACH_FLOOR / SLOT_FLOOR | 512 / 384 | WOOD | `True` |
+| `BuildingProp` | PROP=4 | ATTACH_FLOOR / SLOT_NONE | 0 | NONE | `False` |
+| `BuildingStairs` | STAIRS=5 | ATTACH_NONE / SLOT_NONE | 512 | STONE | `False` |
+| `BuildingRoof` | ROOF=6 | ATTACH_NONE / SLOT_NONE | 512 | STONE | `False` |
+| `BuildingDeco` | CONTAINER=9 | ATTACH_WALL / SLOT_NONE | 0 | NONE | `False` |
+| `BuildingPropWall` | PROP=4 | ATTACH_WALL / SLOT_WALL | 0 | NONE | `False` |
+| `FortCreativeDeviceProp` | PROP=4 | ATTACH_NONE / SLOT_NONE | 0 | NONE | `False` |
+
+**`BuildingStairs` unique quirk**: `death_particle_socket_name = "Destruction"` — the only
+building type with a named VFX socket. When stairs are destroyed, the engine looks for a
+socket named `"Destruction"` on the mesh to emit the death particle. Other tiles use a
+default destroy location.
+
+---
+
+### `BlockingVolume` — Invisible Blocker
+
+One extra property beyond `Actor`:
+```
+brush_component: BrushComponent = None   — the BSP brush defining the volume shape
+```
+`BlockingVolume` is a BSP-based invisible collision volume. `can_be_damaged: False`,
+`replicates: False`. Used for out-of-bounds walls, invisible floors, and kill zones.
+
+**Automation — find all blocking volumes:**
+```python
+blockers = [a for a in unreal.EditorActorSubsystem().get_all_level_actors()
+            if "BlockingVolume" in a.get_class().get_name()]
+print(f"Found {len(blockers)} blocking volumes")
+```
+
+---
+
+### `FortPlaysetRoot` — Playset Container
+
+Zero unique properties beyond `Actor`. Its role is organizational — it's the root actor
+of a "Playset" (a pre-built Creative content bundle). All props in the playset are
+children of this root.
+
+Key characteristics:
+- `net_dormancy: DORM_DORMANT_ALL` — playset container never pushes state
+- `replicates: False` — pure editor organizational actor
+- No physical presence (root_component = SceneComponent)
+
+---
+
+*Generated from two UEFN level scans: `uefn_reference_schema.json` (14 classes) and `uefn_tutorial_schema.json` (19 classes)*
+*UEFN 40.00+ — Toolbelt `api_crawl_level_classes`*
 *Author: Ocean Bennett — Phase 21*
