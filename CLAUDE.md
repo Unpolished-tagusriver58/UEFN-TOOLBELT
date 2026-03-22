@@ -35,6 +35,20 @@ It runs inside the editor and exposes 143 tools through:
 
 ---
 
+## Git Etiquette (High Priority)
+- **Format**: `type: concise description`
+- **Casing**: All lowercase. NO "Phase:", NO "Update:", NO Title Case.
+- **Types**:
+  - `feat`: New tools or capabilities
+  - `docs`: Documentation, README, CLAUDE.md, Walkthroughs
+  - `fix`: Bug fixes, registration errors, pathing issues
+  - `refactor`: Internal code structure, no behavior changes
+  - `test`: Updates to integration/smoke tests
+  - `perf`: Performance optimizations (CPU/Memory)
+- **Example**: `docs: updated readme and 8 pillars`
+
+---
+
 ## Controlling UEFN from Claude Code (MCP Bridge)
 
 ### First-time setup
