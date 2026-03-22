@@ -92,11 +92,14 @@ def _get_actor_properties(actor: unreal.Actor) -> Dict[str, Any]:
     ]
     result: Dict[str, Any] = {}
     for prop in common_props:
+        # Use getattr instead of get_editor_property — many Verse-driven properties
+        # aren't tagged as editor properties and raise an exception (Quirk #7).
         try:
-            val = actor.get_editor_property(prop)
-            result[prop] = val
+            val = getattr(actor, prop, None)
+            if val is not None:
+                result[prop] = val
         except Exception:
-            pass  # Property doesn't exist on this actor type
+            pass  # Property inaccessible on this actor type
     return result
 
 

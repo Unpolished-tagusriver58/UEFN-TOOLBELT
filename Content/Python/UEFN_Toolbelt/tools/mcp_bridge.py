@@ -381,16 +381,17 @@ def _c_spawn_actor(
     loc = unreal.Vector(*location) if location else unreal.Vector(0, 0, 0)
     rot = unreal.Rotator(*rotation) if rotation else unreal.Rotator(0, 0, 0)
 
+    sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
     if asset_path:
         asset = unreal.EditorAssetLibrary.load_asset(asset_path)
         if asset is None:
             raise ValueError(f"Asset not found: {asset_path}")
-        actor = unreal.EditorLevelLibrary.spawn_actor_from_object(asset, loc, rot)
+        actor = sub.spawn_actor_from_object(asset, loc, rot)
     elif actor_class:
         cls = getattr(unreal, actor_class, None)
         if cls is None:
             raise ValueError(f"Class not found: {actor_class}")
-        actor = unreal.EditorLevelLibrary.spawn_actor_from_class(cls, loc, rot)
+        actor = sub.spawn_actor_from_class(cls, loc, rot)
     else:
         raise ValueError("Provide either asset_path or actor_class")
 

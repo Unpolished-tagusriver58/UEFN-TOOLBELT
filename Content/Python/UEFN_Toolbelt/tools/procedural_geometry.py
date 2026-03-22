@@ -54,25 +54,26 @@ def run_procedural_wire_create(
     mesh_path: str = "/Engine/BasicShapes/Cylinder.Cylinder",
     **kwargs
 ) -> dict:
-    selected = unreal.EditorLevelLibrary.get_selected_level_actors()
+    actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    selected = actor_sub.get_selected_level_actors()
     if len(selected) != 2:
         log_error("You must have exactly 2 actors selected in the Viewport to draw a wire between them.")
         return {"error": "Requires 2 selected actors"}
 
     p0 = selected[0].get_actor_location()
     p2 = selected[1].get_actor_location()
-    
+
     mesh_obj = unreal.load_asset(mesh_path)
     if not mesh_obj or not isinstance(mesh_obj, unreal.StaticMesh):
         log_error(f"Fallback geometry mesh not found: {mesh_path}")
         return {"error": "Invalid mesh shape"}
-        
+
     bounds = mesh_obj.get_bounds().box_extent.x * 2.0
     if bounds <= 0.01: bounds = 1.0
 
     points = _get_wire_curve_points(p0, p2, max(2, segments), sag_amount)
     spawned = []
-    
+
     with unreal.ScopedEditorTransaction("Procedural Wire (Segments)"):
         with with_progress(range(segments), "Drawing Wire Segments...") as bar:
             for i in bar:
@@ -80,13 +81,13 @@ def run_procedural_wire_create(
                 c1 = points[i+1]
                 direction = _vec_sub(c1, c0)
                 length = _vec_len(direction)
-                
+
                 if length <= 0.01: continue
-                
+
                 center = unreal.Vector((c0.x + c1.x)*0.5, (c0.y + c1.y)*0.5, (c0.z + c1.z)*0.5)
                 rot = unreal.MathLibrary.make_rot_from_x(direction)
-                
-                a = unreal.EditorLevelLibrary.spawn_actor_from_class(unreal.StaticMeshActor, center, rot)
+
+                a = actor_sub.spawn_actor_from_class(unreal.StaticMeshActor, center, rot)
                 if a:
                     a.static_mesh_component.set_static_mesh(mesh_obj)
                     a.set_actor_scale3d(unreal.Vector(length / bounds, thickness, thickness))
@@ -121,9 +122,10 @@ def run_procedural_volume_scatter(
         return {"error": f"Asset not found: {asset_path}"}
         
     # Attempt to center around currently selected actor, otherwise absolute zero
-    selected = unreal.EditorLevelLibrary.get_selected_level_actors()
-    center = selected[0].get_actor_location() if selected else unreal.Vector(0,0,0)
-    
+    actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+    selected = actor_sub.get_selected_level_actors()
+    center = selected[0].get_actor_location() if selected else unreal.Vector(0, 0, 0)
+
     spawned = 0
     with unreal.ScopedEditorTransaction(f"Volume Scatter {count}"):
         with with_progress(range(count), "Scattering Assets...") as bar:
@@ -135,18 +137,18 @@ def run_procedural_volume_scatter(
                         random.uniform(-radius, radius),
                         random.uniform(-radius, radius)
                     )
-                else: # Sphere
+                else:  # Sphere
                     dx = random.uniform(-1.0, 1.0)
                     dy = random.uniform(-1.0, 1.0)
                     dz = random.uniform(-1.0, 1.0)
                     length = math.sqrt(dx*dx + dy*dy + dz*dz) or 1.0
                     dist = (random.random() ** (1.0/3.0)) * radius
                     off = unreal.Vector((dx/length)*dist, (dy/length)*dist, (dz/length)*dist)
-                    
+
                 loc = unreal.Vector(center.x + off.x, center.y + off.y, center.z + off.z)
                 sc = random.uniform(scale_min, scale_max)
-                
-                a = unreal.EditorLevelLibrary.spawn_actor_from_class(unreal.StaticMeshActor, loc, unreal.Rotator(0,0,0))
+
+                a = actor_sub.spawn_actor_from_class(unreal.StaticMeshActor, loc, unreal.Rotator(0, 0, 0))
                 if a:
                     a.static_mesh_component.set_static_mesh(asset_obj)
                     a.set_actor_scale3d(unreal.Vector(sc, sc, sc))
