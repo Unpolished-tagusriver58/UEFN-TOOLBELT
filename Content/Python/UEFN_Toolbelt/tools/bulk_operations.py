@@ -300,8 +300,13 @@ def run_stack(gap: float = 0.0, **kwargs) -> dict:
             # Approximate height from bounding box
             origin, box_extent = actor.get_actor_bounds(False)
             height = box_extent.z * 2
+            
+            # SCHEMA HARDENING: Account for pivot_offset (discovered in schema)
+            # pivot_offset is relative to the actor origin.
+            pivot = actor.get_editor_property("pivot_offset") if hasattr(actor, "pivot_offset") else unreal.Vector(0,0,0)
+            
             actor.set_actor_location(
-                unreal.Vector(loc.x, loc.y, current_z + box_extent.z),
+                unreal.Vector(loc.x, loc.y, current_z + box_extent.z - pivot.z),
                 False, False,
             )
             current_z += height + gap

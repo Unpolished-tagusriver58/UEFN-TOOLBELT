@@ -235,10 +235,8 @@ def _all_presets() -> Dict[str, Any]:
 
 def _apply_preset_to_actor(actor: unreal.Actor, preset: Dict[str, Any], instance_suffix: str) -> bool:
     """
-    Create a material instance from the preset and assign it to every mesh
-    component on the actor.
-
-    Returns True on success.
+    Create a material instance from the preset and assign it to every 
+    compatible component on the actor (StaticMesh, SkeletalMesh, Decal, etc.).
     """
     # Determine instance name
     safe_name = f"MI_{instance_suffix}_{actor.get_actor_label().replace(' ', '_')}"
@@ -259,19 +257,27 @@ def _apply_preset_to_actor(actor: unreal.Actor, preset: Dict[str, Any], instance
     set_mi_scalar(mi, "EmissiveIntensity", float(preset.get("emissive_intensity", 0.0)))
 
     # REQUIRED: flush parameter changes to the GPU / viewport.
-    # Without this the material compiles but the viewport won't update.
     unreal.MaterialEditingLibrary.update_material_instance(mi)
-
     save_asset(f"{INSTANCE_OUTPUT_PATH}/{safe_name}")
 
-    # Assign to all static mesh components on this actor
-    smc_class = unreal.StaticMeshComponent.static_class()
-    components = actor.get_components_by_class(smc_class)
-    for smc in components:
-        for slot in range(smc.get_num_materials()):
-            smc.set_material(slot, mi)
+    # HARDENING: Find all components that support materials
+    # This now covers SkeletalMesh, Decals, and custom UEFN primitives
+    components = actor.get_components_by_class(unreal.PrimitiveComponent)
+    touched = False
+    
+    for comp in components:
+        # 1. Standard Mesh Components (Static/Skeletal)
+        if hasattr(comp, "get_num_materials") and hasattr(comp, "set_material"):
+            for slot in range(comp.get_num_materials()):
+                comp.set_material(slot, mi)
+                touched = True
+        
+        # 2. Decal Components (Special case discovered in schema)
+        elif isinstance(comp, unreal.DecalComponent):
+            comp.set_decal_material(mi)
+            touched = True
 
-    return True
+    return touched
 
 
 # ─────────────────────────────────────────────────────────────────────────────

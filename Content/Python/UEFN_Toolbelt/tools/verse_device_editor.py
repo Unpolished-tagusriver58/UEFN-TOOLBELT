@@ -51,6 +51,7 @@ from ..core import (
     log_info, log_warning, log_error,
 )
 from ..registry import register_tool
+from .. import schema_utils
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Helpers
@@ -166,6 +167,22 @@ def run_bulk_set_property(
     success = failed = 0
     with undo_transaction(f"Verse Device Editor: Set {property_name}"):
         for actor in actors:
+            # SCHEMA HARDENING: Validate property via reference schema
+            cls_name = actor.get_class().get_name()
+            validation = schema_utils.validate_property(cls_name, property_name)
+            
+            if validation["exists"]:
+                meta = validation["meta"]
+                if not meta.get("readable", True):
+                    log_warning(f"  '{actor.get_actor_label()}': property '{property_name}' is MARKED READ-ONLY in schema.")
+                    failed += 1
+                    continue
+                
+                # Type hint for UX
+                expected_type = meta.get("type", "Any")
+                if expected_type != "Any" and type(value).__name__ != expected_type.lower():
+                    log_info(f"  Note: Expected {expected_type}, received {type(value).__name__} for {property_name}")
+
             try:
                 actor.set_editor_property(property_name, value)
                 success += 1
