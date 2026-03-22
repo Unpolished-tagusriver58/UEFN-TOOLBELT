@@ -172,8 +172,9 @@ UEFN TOOLBELT ─── UEFN_Toolbelt/__init__.py   (launch, run, registry acces
         ├── project_scaffold.py       Professional folder structure generator (4 templates)
         ├── verse_schema.py           Verse Digest IQ & Universal Schema Search (143th Tool)
         ├── system_build.py           Automated UEFN Build Scraper & Error Monitor
-        ├── measurement_tools.py      Distance Calculator & travel time estimator (Phase 15)
-        └── localization_tools.py     Multi-language text export/import (Phase 15)
+        ├── system_perf.py            Background CPU Optimizer & Monitor
+        ├── measurement_tools.py      Distance Calculator & Travel Time Estimator (Phase 15)
+        └── localization_tools.py     Multi-language Text Export/Import (Phase 15)
 ```
 
 All heavy logic lives in Python. The optional UMG dashboard calls into it via

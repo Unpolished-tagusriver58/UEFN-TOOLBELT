@@ -23,6 +23,8 @@ Toolbelt can automate, what's read-only, and what doesn't exist yet.
 | Screenshots | Full | screenshot_tools | `AutomationLibrary` (58) |
 | Movie Render | Full | — future module | `MovieRenderPipelineCore` (145 classes) |
 | Sequencer | High | — future module | `SequencerScripting`, `MovieScene` (86) |
+| Measurement | High | measurement_tools | `EditorActorSubsystem`, `Vector` math |
+| Localization | High | localization_tools | `TextRenderActor`, `AssetTools` |
 | Niagara VFX | High | — future module | `Niagara` (260 types) |
 | Audio / MetaSound | High | — future module | `AudioMixer`, `MetasoundEngine` |
 | Animation | Good | — future module | `AnimGraph` (97), `AnimGraphRuntime` (152) |
@@ -401,6 +403,8 @@ Things that would take hours manually, now one click:
 - **Orphan cleanup** — find unreferenced assets and delete safely (`ref_audit_orphans`, `ref_delete_orphans`)
 - **Redirector fix** — consolidate stale ObjectRedirectors from renames/moves (`ref_fix_redirectors`)
 - **Prop layouts** — grid, circle, spiral, arc, wave, helix, radial rings in seconds
+- **Measurement** — precise point-to-point distance and player travel time estimates
+- **Localization** — bulk-export/import level text manifest for global map support
 - **Level snapshots** — save/restore/diff actor transforms as JSON checkpoints
 - **Asset tagging** — searchable metadata on any Content Browser asset
 - **MCP bridge** — let Claude Code directly control UEFN: spawn, move, run any of the 123+ tools

@@ -1,6 +1,6 @@
 # UEFN Toolbelt — Tool Status & Testing
 
-UEFN Toolbelt contains 138+ tools across 31 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **the `integration_test.py` suite uses temporary fixtures to automate verification of context-dependent tools.**
+UEFN Toolbelt contains 143 tools across 31 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **the `integration_test.py` suite uses temporary fixtures to automate verification of context-dependent tools.**
 
 ### ⚠️ Architectural Constraints
 *   **Main Thread Lock**: UEFN Python runs on the main render thread. Operations like `time.sleep` in wait loops will **deadlock** the engine, preventing async tasks (like screenshot saves) from completing. Verification logic should avoid blocking waits.
@@ -9,7 +9,7 @@ UEFN Toolbelt contains 138+ tools across 31 modules. Because many tools actively
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
 ## 🟢 Automated Verification Status: **143 / 143 Tools (100% Coverage)**
-Integration suite health is **100% stable (92/92 sections passed)**.
+Integration suite health is **100% stable (94/94 sections passed)**.
 
 ## 🟢 Layer 3 Execution Verified (Safe Tools)
 These tools do not require any actors to be selected or a specific level to be open. They are executed automatically during the `smoke_test.py` run to verify that the toolbelt execution pipeline is fully functional end-to-end.
@@ -124,7 +124,7 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 5. Cleans up with a single `undo_transaction`
 
 **Current Integration Coverage (143 / 143 Tools):**
-- Integration suite health is **100% stable (92/92 sections passed)**.
+- Integration suite health is **100% stable (94/94 sections passed)**.
 - **Materials:** `material_apply_preset` (Engine Fallback), `material_randomize_colors`, `material_bulk_swap`, `material_gradient_painter`, `material_team_color_split`, `material_pattern_painter`, `material_glow_pulse_preview`
 - **Bulk Ops:** `align`, `distribute`, `randomize`, `snap`, `stack`, `reset`, `bulk_mirror`, `bulk_normalize_scale`, `bulk_face_camera`
 - **Patterns:** `grid`, `circle`, `line`, `arc`, `spiral`, `wave`, `pattern_helix`, `pattern_radial_rows` (Geometry & Count verified)
@@ -178,7 +178,7 @@ The `toolbelt_integration_test` tool bridges the gap between pure code checks an
 - **User Experience:** The "feel" of tool interactions and UI responsiveness.
 
 > [!IMPORTANT]
-> The `toolbelt_integration_test` (90/90 sections) is the single most important tool for ensuring the project remains stable as we add more features. **Always run this test before submitting a Pull Request.**
+> The `toolbelt_integration_test` (94/94 sections) is the single most important tool for ensuring the project remains stable as we add more features. **Always run this test before submitting a Pull Request.**
 
 ## 🗺️ Automation Roadmap
 The 100% target requires move coverage in these upcoming batches:

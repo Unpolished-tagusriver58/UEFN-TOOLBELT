@@ -103,7 +103,7 @@ Custom plugins **cannot** overwrite core Toolbelt tools. If your plugin tries to
 Every loaded plugin's SHA-256 hash is computed and written to `Saved/UEFN_Toolbelt/plugin_audit.json` with a timestamp. If a plugin changes between sessions, the hash changes — making tampering instantly detectable.
 
 ### Gate 5 — The Global Safety Gate (`core.safety_gate`)
-As of Phase 14, every plugin has access to the **Safety Gate**. All Toolbelt "Write" operations are now forced to pass through this gate to ensure they only touch assets in `/Game/` and never accidentally corrupt Epic or Fortnite internal assets.
+As of Phase 15, every plugin has access to the **Safety Gate**. All Toolbelt "Write" operations are now forced to pass through this gate to ensure they only touch assets in `/Game/` and never accidentally corrupt Epic or Fortnite internal assets.
 
 **Recommended for Plugin Devs:**
 Always validate your target path at the start of your plugin's `run()` function:
