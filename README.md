@@ -1,5 +1,5 @@
-# UEFN TOOLBELT (Phase 20: AI-Agent Readiness)
-**161+ Professional Tools for UEFN Python Integration.**
+# UEFN TOOLBELT (Phase 21: Complete AI Return Loop)
+**161 Professional Tools for UEFN Python Integration.**
 
 > Built by **Ocean Bennett** — 2026
 
@@ -9,7 +9,7 @@ Automate the tedious, script the impossible, and bridge the gap between Python a
 UEFN Toolbelt is a master utility designed to leverage the **2026 UEFN Python 3.11 Update**,
 allowing creators to manipulate actors, manage assets, and generate boilerplate Verse code
 through a high-level, developer-friendly interface — all from a single persistent menu entry
-in the UEFN editor bar. Reached **161 Registered Tools** in Phase 20.
+in the UEFN editor bar. Reached **161 Registered Tools** in Phase 20, with **complete AI-agent readiness** (100% structured dict returns) in Phase 21.
 
 ## 🤖 AI-Accelerated Development (One-Click Sync + Tool Manifest)
 Toolbelt is built to be used with AI (Claude/Gemini). To give your AI **perfect information** about your project's unique Verse devices and custom props:
@@ -132,6 +132,7 @@ The UEFN Toolbelt exists because manual work doesn't scale, but scripts do. We s
 6. **Bulk Optimization**: Automated LOD generation, memory audits, and cooking pre-flight checks.
 7. **Verse Boilerplate**: Selection-to-code generation and spec-accurate device stubs.
 8. **Component Spam**: Scripted "Quick-Add" macros for entity sets and Niagara effects.
+9. **AI-Agent Readiness**: Every tool returns a structured `dict` — AI agents operate on results, not logs. The MCP bridge, `tool_manifest.json`, and `describe_tool` command let any LLM discover and call every tool autonomously. This is the first UEFN toolkit designed to be equally usable by humans and AI agents.
 
 ---
 
@@ -265,12 +266,17 @@ from UEFN_Toolbelt.registry import register_tool
     description="Does something amazing",
     tags=["procedural", "spawn"],
 )
-def run(**kwargs) -> None:
+def run(**kwargs) -> dict:
     ...
+    return {"status": "ok", "count": placed}
 ```
 
 Calling `tb.run("my_tool")` from anywhere — REPL, Blueprint node, another tool — routes
 through the registry with full error containment. A crashing tool never kills your session.
+
+Every tool returns a structured `dict` with at minimum a `"status"` key. This is the
+**MCP Return Contract**: AI agents calling tools via the bridge read the return dict directly
+from the JSON response. Zero log parsing required.
 
 ---
 
@@ -1324,15 +1330,20 @@ from ..registry import register_tool
     description="Does something amazing",
     tags=["utility", "amazing"],
 )
-def run(**kwargs) -> None:
+def run(**kwargs) -> dict:
     actors = require_selection()
     if actors is None:
-        return
+        return {"status": "error", "count": 0}
     with undo_transaction("My Tool"):
         for actor in actors:
             log_info(f"Processing {actor.get_actor_label()}")
             # your logic here
+    return {"status": "ok", "count": len(actors)}
 ```
+
+> **Return contract:** Every tool must return a `dict` with a `"status"` key. This is what
+> makes tools readable by AI agents via the MCP bridge — they read `result["status"]` and
+> domain keys like `"count"` or `"path"` directly from the JSON response. Never return `None`.
 
 **Step 2** — Add one line to `tools/__init__.py`:
 
@@ -1370,8 +1381,9 @@ from UEFN_Toolbelt.registry import register_tool
 from UEFN_Toolbelt import core
 
 @register_tool(name="my_tool", category="Community", description="Does something cool")
-def run(**kwargs):
+def run(**kwargs) -> dict:
     core.log_info("My custom tool ran!")
+    return {"status": "ok"}   # always return a dict
 ```
 
 ### 🔒 Four-Gate Security Model
@@ -2041,6 +2053,13 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 ---
 
 ## Patch Notes
+
+### v1.3 — March 2026 (Phase 21: Complete AI Return Loop)
+
+- **100% Structured Dict Returns**: Every single `@register_tool` function across all 23 tool modules now returns `{"status": "ok"/"error", ...data...}`. This is the full completion of the MCP return contract — AI agents calling any tool via the bridge receive a machine-readable result. Zero `None` returns, zero bare primitives, zero unreal objects remain.
+- **`describe_tool` MCP Command**: New MCP bridge command that returns a single tool's full manifest entry (`name`, `description`, `parameters`, `tags`, `category`) without loading the entire `tool_manifest.json`. AI agents can query parameter contracts per-tool on demand.
+- **Files updated**: `spline_prop_placer`, `text_painter`, `smart_organizer`, `localization_tools`, `foliage_converter`, `sequencer_tools`, `lighting_mastery`, `verse_schema`, `system_build` — all 15+ remaining `-> None` and primitive-return tools converted.
+- **Internal callers updated**: `run_measure_travel_time`, `run_enforce_conventions (dry_run path)` — callers that expected float/None return values updated to handle the new dict returns.
 
 ### v1.2 — March 2026 (Phase 20: AI-Agent Readiness)
 

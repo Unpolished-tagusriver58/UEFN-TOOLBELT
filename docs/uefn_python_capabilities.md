@@ -22,7 +22,7 @@ Toolbelt can automate, what's read-only, and what doesn't exist yet.
 | PCG | Full | — future module | `PCG` (597 types) |
 | Screenshots | Full | screenshot_tools | `AutomationLibrary` (58) |
 | Movie Render | Full | — future module | `MovieRenderPipelineCore` (145 classes) |
-| Sequencer | High | — future module | `SequencerScripting`, `MovieScene` (86) |
+| Sequencer | High | sequencer_tools | `SequencerScripting`, `MovieScene` (86) |
 | Measurement | High | measurement_tools | `EditorActorSubsystem`, `Vector` math |
 | Localization | High | localization_tools | `TextRenderActor`, `AssetTools` |
 | Niagara VFX | High | — future module | `Niagara` (260 types) |

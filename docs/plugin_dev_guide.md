@@ -29,13 +29,14 @@ from UEFN_Toolbelt import core
     url="https://github.com/johndoe/my_custom_renamer",
     last_updated="2026-03-22"
 )
-def run(**kwargs):
+def run(**kwargs) -> dict:
 
     # 1. Ask the toolbelt core for the current viewport selection
     actors = core.require_selection()
     if not actors:
-        return
-        
+        # Always return a dict — even on early exit
+        return {"status": "error", "renamed": 0}
+
     # 2. Wrap everything in an undo transaction!
     with core.undo_transaction("Apply Cool Prefix"):
         count = 0
@@ -44,13 +45,51 @@ def run(**kwargs):
             new_name = f"Cool_{old_name}_{i}"
             actor.set_actor_label(new_name)
             count += 1
-            
+
         # 3. Trigger a green toast notification in the UI
         core.notify(f"Success! Renamed {count} actors.")
+
+    # 4. Return a structured dict — AI agents and MCP callers read this directly
+    return {"status": "ok", "renamed": count}
 ```
 
 4. Switch back to UEFN. You don't even need to restart! Just close the Dashboard and re-open it via `Toolbelt ▾ -> Open Dashboard`. 
 5. You will see a brand new **"My Custom Tools"** tab containing a clickable button for your tool.
+
+---
+
+## 📦 The Structured Return Contract
+
+Every registered tool — including your custom plugin — **must return a `dict`**. This is not just a style guide; it's the contract that makes every tool readable by AI agents via the MCP bridge.
+
+### Why It Matters
+
+When your tool runs via `tb.run("my_custom_renamer")` in the REPL, the return value is just for you. But when an AI agent calls your tool through the MCP bridge, the return dict is serialized to JSON and sent back — it's how the AI knows what happened without parsing log output.
+
+### The Pattern
+
+```python
+# ✅ Good — machine-readable
+return {"status": "ok", "renamed": count, "folder": folder_name}
+
+# ✅ Good — error case
+return {"status": "error", "renamed": 0}
+
+# ❌ Bad — returns None; AI has no idea what happened
+return
+
+# ❌ Bad — returns a primitive; not extensible
+return count
+```
+
+### Standard Keys
+
+| Key | Required | Value |
+|---|---|---|
+| `"status"` | **Always** | `"ok"` or `"error"` |
+| Domain keys | When useful | Counts, paths, lists of names |
+
+**Tip:** Include a `"count"` key for any tool that creates/modifies/deletes things, and a `"path"` key for any tool that writes a file. These are the fields AI agents query most.
 
 ---
 
@@ -64,6 +103,46 @@ If your tool doesn't show up, or you want to make sure you followed our schema c
 4. Check the **Output Log** in UEFN. It will flag if your plugin name has spaces in it, if you forgot a description, or if your function signature doesn't correctly accept `**kwargs`.
 
 To see a list of all currently loaded third-party plugins, click **plugin_list_custom**.
+
+---
+
+## 🤖 AI & MCP Integration
+
+Once the Toolbelt's MCP bridge is running (`tb.run("mcp_start")`), every registered tool — including your custom plugin — is instantly callable from Claude Code (or any MCP client) by name.
+
+### Discovering Your Plugin via MCP
+
+```bash
+# From Claude Code, after connecting to the bridge:
+# Ask it to describe your tool's parameter contract:
+describe_tool my_custom_renamer
+# Returns: name, description, tags, params with types/defaults
+
+# Run it directly:
+run_tool my_custom_renamer
+```
+
+### Exporting the Full Manifest
+
+To give an AI agent a complete picture of all registered tools (including yours):
+
+```python
+# Inside UEFN:
+tb.run("plugin_export_manifest")
+# → Saves Saved/UEFN_Toolbelt/tool_manifest.json
+# AI can load this file to discover every tool, every param, every default
+```
+
+### Using `describe_tool` Programmatically
+
+From inside another plugin, you can look up any tool's manifest entry:
+
+```python
+import UEFN_Toolbelt as tb
+manifest = tb.registry.to_manifest()
+my_params = manifest.get("my_custom_renamer", {})
+print(my_params)  # → {"name": ..., "description": ..., "parameters": {...}}
+```
 
 ---
 

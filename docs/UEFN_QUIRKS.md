@@ -151,7 +151,51 @@ Wrap heavy loops in `unreal.ScopedSlowTask`. This not only provides a native UI 
 ## 15. The `init_unreal.py` Cold-Boot Requirement
 
 ### The Problem
-UEFN only scans and executes `init_unreal.py` when the project first loads. 
+UEFN only scans and executes `init_unreal.py` when the project first loads.
 
 ### The Solution
 While you can "Nuclear Reload" the Toolbelt modules while the editor is open, changes to the **Top Menu Bar structure** (adding new top-level categories) usually require a full project restart to be correctly picked up by the Slate menu system.
+
+---
+
+## 16. The MCP Return Loop: Tools Must Return Dicts
+
+### The Problem
+A tool that returns `None` (or a bare primitive like `int`, `str`, or a live `unreal.*` object) breaks the MCP return loop. When Claude Code calls a tool via the bridge, the response body is `{"success": true, "result": null}` — the AI has no signal and cannot act on the result.
+
+Even worse, `unreal.*` objects are not JSON-serializable at all and will cause the bridge's `_serialize()` function to silently discard them. The tool "works" locally but fails silently under automation.
+
+### The Rule
+Every `@register_tool` function must return a `dict` with at minimum a `"status"` key:
+
+```python
+# ✅ Correct — readable by any MCP caller
+return {"status": "ok", "placed": len(actors)}
+return {"status": "error", "placed": 0}
+
+# ❌ Wrong — breaks MCP
+return          # None
+return count    # bare int
+return actor    # unreal object — not serializable
+```
+
+### Why It Propagates Through the Full Stack
+The complete chain is: `tool()` → `registry.execute()` → `_serialize(result)` → JSON body → Claude Code reads `result` field. Every link must be JSON-compatible for the agent to read a real signal. This is why the Phase 21 refactor converted every remaining `None`-returning tool to structured dicts.
+
+---
+
+## 17. `_serialize()` Swallows Unreal Objects Silently
+
+### The Problem
+The MCP bridge's `_serialize()` helper converts tool return values to JSON. If a tool returns a live `unreal.Actor` or any `unreal.*` object, `_serialize()` catches the `TypeError` internally and returns `null` — no error is raised, no log line is printed. The tool appears to succeed but the AI gets nothing.
+
+### The Solution
+Never return raw `unreal.*` objects from registered tools. Extract the data you need (labels, paths, counts, properties) into plain Python types before returning:
+
+```python
+# ❌ Returns an unserializable object
+return actor
+
+# ✅ Extract what you actually need
+return {"status": "ok", "label": actor.get_actor_label(), "path": actor.get_path_name()}
+```

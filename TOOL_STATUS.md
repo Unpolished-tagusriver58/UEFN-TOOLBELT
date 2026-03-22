@@ -2,6 +2,9 @@
 
 UEFN Toolbelt contains 161 tools across 31 modules. Because many tools actively modify the viewport, spawn actors, or depend on specific Content Browser selections, **the `integration_test.py` suite uses temporary fixtures to automate verification of context-dependent tools.**
 
+### Phase 21 — Complete AI Return Loop
+As of Phase 21, **every registered tool returns a structured `dict`** — `{"status": "ok"/"error", ...}`. Zero `None` returns remain anywhere in the codebase. This means AI agents using the MCP bridge can act on results programmatically: no log parsing, no guessing. The `describe_tool` MCP command was also added for per-tool manifest lookup.
+
 ### ⚠️ Architectural Constraints
 *   **Main Thread Lock**: UEFN Python runs on the main render thread. Operations like `time.sleep` in wait loops will **deadlock** the engine, preventing async tasks (like screenshot saves) from completing. Verification logic should avoid blocking waits.
 *   **Hot-Reloading**: Use "Nuclear Reload" to clear `sys.modules` cache. **Mandatory**: Must call `tb.register_all_tools()` after reloading to rebuild the registry.
@@ -220,6 +223,14 @@ The 100% target requires move coverage in these upcoming batches:
 - [x] **Schema-Driven Discovery**: `schema_utils.discover_properties()` and `list_classes()` added; `verse_device_editor` property reader replaced hardcoded list with live schema lookup
 - [x] **Registry `to_manifest()`**: Introspects every tool's `inspect.signature()` at export time; captures type annotations, required/optional, and defaults
 - [x] **Milestone**: 161 Registered Tools, 103/103 integration tests passing, full MCP return loop verified end-to-end
+
+### **Batch 21: Complete AI Return Loop (COMPLETE)**
+- [x] **100% Structured Dict Returns**: All remaining `-> None` and primitive-return tools converted. Every `@register_tool` function across all 23 modules now returns `{"status": "ok"/"error", ...data...}`. Zero exceptions remain.
+  - `spline_prop_placer` (2 tools), `text_painter` (7 tools), `smart_organizer` (1), `localization_tools` (2), `foliage_converter` (2), `sequencer_tools` (2), `lighting_mastery` (2), `verse_schema` (2), `system_build` (1), `asset_renamer` (4), `arena_generator` (1)
+- [x] **`describe_tool` MCP Command**: Returns a single tool's full manifest entry by name — no need to load the full `tool_manifest.json`. Ideal for AI agents building dynamic workflows.
+- [x] **Internal Caller Safety**: `run_measure_travel_time` and `run_enforce_conventions(dry_run=True)` updated to handle the new dict returns from their internal callees.
+- [x] **Type annotation cleanup**: All `-> list[str]`, `-> int`, `-> bool`, `-> str`, `-> Optional[unreal.TextRenderActor]` return annotations on registered tools replaced with `-> dict`.
+- [x] **Milestone**: 161 tools, 23 modules, 0 `None` returns — full AI-agent readiness achieved
 
 > **Future potential:** In theory, an automated integration test could use the crawler data to generate validation scripts — spawn actors, apply tool operations, then verify properties changed. That level of automation isn't built yet, but the crawler output provides the schema needed to build it.
 
