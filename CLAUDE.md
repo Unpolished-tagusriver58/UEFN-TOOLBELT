@@ -9,9 +9,9 @@
 ## What This Project Is
 
 **UEFN Toolbelt** is a comprehensive Python automation framework for Unreal Editor for Fortnite (UEFN 40.00+, March 2026).
-It runs inside the editor and exposes 143 tools through:
+It runs inside the editor and exposes 147 tools through:
 - A persistent top-menu entry (`Toolbelt ▾`) in the UEFN editor bar
-- An 13-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
+- An 15-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
 - An MCP HTTP bridge so Claude Code can control UEFN directly
 - A Python client library (`client.py`) for non-MCP scripts
 
@@ -70,7 +70,7 @@ Then restart Claude Code — it connects automatically.
 
 ### What Claude Code can now do
 
-- Run any of the 143 registered tools by name
+- Run any of the 147 registered tools by name
 - Spawn, move, delete actors
 - List/rename/import/tag assets
 - Take screenshots, save level snapshots
@@ -258,6 +258,10 @@ tb.run("bulk_randomize", rot_range=360.0, randomize_rot=True, randomize_scale=Tr
 | `scatter_along_path` | `asset_path`, `points`, `count_per_point=3` | Along path points |
 | `scatter_export_manifest` | — | Export scatter data to JSON |
 | `scatter_clear` | `folder="Scatter"` | Remove all scattered actors |
+| `foliage_convert_selected_to_actor` | — | Convert meshes to foliage actors |
+| `foliage_audit_brushes` | — | List all foliage type meshes |
+| `entity_spawn_kit` | `kit_name` | Spawn pre-made device clusters |
+| `entity_list_kits` | — | View all available quick-spawn kits |
 
 ---
 
@@ -480,7 +484,7 @@ When the listener is running, Claude Code can call these directly:
 |---|---|---|
 | `ping` | — | Health check + command list |
 | `execute_python` | `code` | Run Python in UEFN (pre-populated: `unreal`, `actor_sub`, `asset_sub`, `level_sub`, `tb`) |
-| `run_tool` | `tool_name`, `kwargs={}` | Run any of the 143 registered tools |
+| `run_tool` | `tool_name`, `kwargs={}` | Run any of the 147 registered tools |
 | `list_tools` | `category=""` | List all registered tools |
 | `batch_exec` | `commands=[{command, params}]` | Multiple commands in one tick |
 | `undo` | — | Undo last action |

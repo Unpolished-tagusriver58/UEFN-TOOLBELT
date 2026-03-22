@@ -8,8 +8,8 @@ UEFN Toolbelt contains 143 tools across 31 modules. Because many tools actively 
 
 This document outlines the current testing status of the toolbelt and categorizes which tools are verified by the automated smoke test, and which require manual verification.
 
-## 🟢 Automated Verification Status: **143 / 143 Tools (100% Coverage)**
-Integration suite health is **100% stable (94/94 sections passed)**.
+## 🟢 Automated Verification Status: **147 / 147 Tools (100% Coverage)**
+Integration suite health is **100% stable (98/98 sections passed)**.
 
 ## 🟢 Layer 3 Execution Verified (Safe Tools)
 These tools do not require any actors to be selected or a specific level to be open. They are executed automatically during the `smoke_test.py` run to verify that the toolbelt execution pipeline is fully functional end-to-end.

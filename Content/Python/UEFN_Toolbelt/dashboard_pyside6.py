@@ -1411,6 +1411,28 @@ def _tab_localization(R) -> "QScrollArea":
 
     return scroll
 
+def _tab_environmental(L: QVBoxLayout) -> None:
+    _title(L, "Environmental Mastery", "leaf", "Prop-to-Foliage conversion and brush auditing.")
+    
+    g = _group(L, "Foliage Operations")
+    grid = QGridLayout()
+    g.addLayout(grid)
+    
+    _btn(grid, 0, 0, "  Convert Props", "foliage_convert_selected_to_actor", "recycle")
+    _btn(grid, 0, 1, "  Audit Brushes", "foliage_audit_brushes", "search")
+
+def _tab_entities(L: QVBoxLayout) -> None:
+    _title(L, "Entity Management", "cube", "Quick-Add kits and logical device clusters.")
+    
+    g = _group(L, "Device Kits")
+    grid = QGridLayout()
+    g.addLayout(grid)
+    
+    _btn(grid, 0, 0, "  Lobby Kit", "entity_spawn_kit", "play", kit_name="Lobby Starter")
+    _btn(grid, 0, 1, "  Teleport Link", "entity_spawn_kit", "link", kit_name="Teleport Link")
+    _btn(grid, 1, 0, "  Objective Hub", "entity_spawn_kit", "target", kit_name="Objective Hub")
+    _btn(grid, 1, 1, "  List All Kits", "entity_list_kits", "list")
+
 
 # ─── About page ───────────────────────────────────────────────────────────────
 
@@ -1558,8 +1580,8 @@ def _tab_about(_R=None) -> "QScrollArea":
     g_stats = _group(L, "What's Inside")
 
     stats = [
-        ("143", "registered tools"),
-        ("13",  "categories"),
+        ("147", "registered tools"),
+        ("15",  "categories"),
         ("6",   "smoke-test layers"),
         ("0",   "network calls — fully offline"),
         ("1",   "Ctrl+Z to undo anything"),
@@ -1642,6 +1664,8 @@ class ToolbeltDashboard(QMainWindow):
         ("Procedural",  _tab_procedural),
         ("Measurement", _tab_measurement),
         ("Localization",_tab_localization),
+        ("Environmental",_tab_environmental),
+        ("Entities",    _tab_entities),
         ("Bulk Ops",    _tab_bulk_ops),
         ("Text",        _tab_text),
         ("Assets",      _tab_assets),

@@ -1033,6 +1033,8 @@ def toolbelt_integration_test(**kwargs) -> None:
             _test_bridge_safe()
             _test_measurement()
             _test_localization()
+            _test_environmental()
+            _test_entities()
             
             # Finalize
             _cleanup_fixtures()
@@ -1238,6 +1240,45 @@ def _test_localization() -> None:
     finally:
         if txt_actor:
             txt_actor.destroy_actor()
+
+def _test_environmental() -> None:
+    _header("11. Environmental Tools")
+    import UEFN_Toolbelt as tb
+    try:
+        # Test Audit
+        meshes = tb.run("foliage_audit_brushes")
+        _record("Environmental", "Audit Brushes", isinstance(meshes, list))
+        
+        # Test Convert (Spawn small test actor)
+        a = _spawn_fixture(location=unreal.Vector(0,0,100))
+        _select_fixture([a])
+        
+        converted = tb.run("foliage_convert_selected_to_actor")
+        _record("Environmental", "Convert Props", converted > 0, f"Converted: {converted}")
+    except Exception as e:
+        _record("Environmental", "Error", False, str(e))
+
+def _test_entities() -> None:
+    _header("12. Entity Kits")
+    import UEFN_Toolbelt as tb
+    try:
+        # Test List
+        kits = tb.run("entity_list_kits")
+        _record("Entities", "List Kits", "Lobby Starter" in kits)
+        
+        # Test Spawn Kit
+        spawned = tb.run("entity_spawn_kit", kit_name="Teleport Link")
+        _record("Entities", "Spawn Kit", spawned == 2)
+        
+        # Verify and Cleanup
+        actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+        actors = actor_sub.get_all_level_actors()
+        for a in actors:
+            if "Teleport_" in a.get_actor_label():
+                a.destroy_actor()
+                
+    except Exception as e:
+        _record("Entities", "Error", False, str(e))
 
 if __name__ == "__main__":
     toolbelt_integration_test()
