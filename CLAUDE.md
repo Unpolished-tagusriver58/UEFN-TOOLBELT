@@ -15,6 +15,20 @@ It runs inside the editor and exposes 168 tools through:
 - An MCP HTTP bridge so Claude Code can control UEFN directly
 - A Python client library (`client.py`) for non-MCP scripts
 
+## UI Consistency Rule (Enforced)
+
+> **Any PySide6 window opened by any tool, plugin, or AI-generated feature MUST match the
+> dashboard theme exactly.**
+> Read `docs/ui_style_guide.md` before writing any windowed UI.
+> The short version:
+> 1. `from ..dashboard_pyside6 import _QSS as _DASH_QSS` (with inline fallback)
+> 2. `self.setStyleSheet(_DASH_QSS)` on every `QMainWindow` / `QDialog`
+> 3. Only use hex values from the palette in that guide — no purple, no navy, no off-whites
+> 4. Always include the Slate tick driver (`register_slate_post_tick_callback`) or the window will be invisible
+> 5. Reference implementation: `tools/verse_device_graph.py`
+
+---
+
 ## High-Fidelity Schema (The Gospel)
 The project uses a **Hybrid Schema** model for AI context:
 - **Reference Schema**: `docs/uefn_reference_schema.json` (The Gospel). A 1.6MB baseline reference for all core UEFN/Fortnite classes.
@@ -666,6 +680,7 @@ tb.run("scatter_props", ...)   # N actors
 | `deploy.bat` | Dev workflow tool — deploy + PySide6 check + prints hot-reload command. Use this for active development. |
 | `.mcp.json` | Claude Code MCP server config — already configured |
 | `docs/uefn_python_capabilities.md` | Full UEFN Python API surface reference |
+| `docs/ui_style_guide.md` | **UI Style Guide — MANDATORY** for all windowed tools and plugins. Color palette, QSS import, Slate tick driver, widget recipes. Read this before writing any PySide6 UI. |
 | `docs/plugin_dev_guide.md` | Plugin authorship guide — security model, audit format, version stamp |
 | `tests/smoke_test.py` | 5-layer health check — run `tb.smoke_test()` |
 | `Saved/UEFN_Toolbelt/plugin_audit.json` | Security audit of all loaded custom plugins — includes `toolbelt_version`, SHA-256 hashes, timestamps |

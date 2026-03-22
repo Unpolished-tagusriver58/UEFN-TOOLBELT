@@ -626,6 +626,26 @@ def run_verse_graph_open(verse_path: str = "", **kwargs) -> dict:
         win.show()
         win.raise_()
         win.activateWindow()
+
+        # Drive Qt's event loop via Slate post-tick.
+        # UEFN runs Slate's loop, not Qt's — without this the window
+        # is created but never paints or responds to input.
+        # Same pattern the main dashboard uses.
+        tick_handle: list = [None]
+
+        def _tick(dt: float) -> None:
+            try:
+                if not win.isVisible():
+                    unreal.unregister_slate_post_tick_callback(tick_handle[0])
+                    return
+                app.processEvents()
+            except Exception:
+                try:
+                    unreal.unregister_slate_post_tick_callback(tick_handle[0])
+                except Exception:
+                    pass
+
+        tick_handle[0] = unreal.register_slate_post_tick_callback(_tick)
         return {"status": "ok", "message": "Verse Device Graph window opened."}
     except Exception as exc:
         log_error(f"verse_graph_open: {exc}")
@@ -638,20 +658,49 @@ def run_verse_graph_open(verse_path: str = "", **kwargs) -> dict:
 
 if _PYSIDE6:
 
-    # ── Palette ──────────────────────────────────────────────────────────────
+    # ── Pull the dashboard QSS so the graph window is pixel-identical ─────────
+    # Falls back to a minimal inline copy if the dashboard isn't loaded yet.
+    try:
+        from ..dashboard_pyside6 import _QSS as _DASH_QSS
+    except Exception:
+        _DASH_QSS = (
+            "QMainWindow,QDialog{background:#181818;}"
+            "QWidget{background:#181818;color:#CCCCCC;"
+            "font-family:'Segoe UI','Roboto',sans-serif;font-size:12px;}"
+            "QPushButton{background:#262626;border:1px solid #363636;"
+            "color:#CCCCCC;padding:5px 10px;border-radius:3px;min-height:28px;}"
+            "QPushButton:hover{background:#333333;border-color:#4A4A4A;color:#FFFFFF;}"
+            "QPushButton:pressed{background:#3A3AFF;border-color:#3A3AFF;color:#FFFFFF;}"
+            "QLineEdit{background:#212121;border:1px solid #363636;"
+            "color:#CCCCCC;padding:3px 7px;border-radius:3px;min-height:24px;}"
+            "QLineEdit:focus{border-color:#3A3AFF;}"
+            "QTextEdit{background:#212121;border:1px solid #2A2A2A;color:#CCCCCC;}"
+            "QScrollBar:vertical{background:#1A1A1A;width:8px;border-radius:4px;margin:2px 1px;}"
+            "QScrollBar::handle:vertical{background:#404040;border-radius:4px;min-height:32px;}"
+            "QScrollBar::handle:vertical:hover{background:#606060;}"
+            "QScrollBar::handle:vertical:pressed{background:#3A3AFF;}"
+            "QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{height:0;}"
+            "QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:none;}"
+            "QStatusBar{background:#111111;color:#555555;font-size:11px;"
+            "border-top:1px solid #2A2A2A;}"
+        )
+
+    # ── Palette — exact dashboard values ─────────────────────────────────────
 
     _P = {
-        "bg":     QColor("#080812"),
-        "panel":  QColor("#0f0f22"),
-        "card":   QColor("#141428"),
-        "border": QColor("#222240"),
-        "text":   QColor("#d0d0e0"),
-        "muted":  QColor("#555577"),
-        "accent": QColor("#e94560"),
+        "bg":     QColor("#181818"),
+        "panel":  QColor("#212121"),
+        "card":   QColor("#1E1E1E"),
+        "border": QColor("#2A2A2A"),
+        "border2":QColor("#363636"),
+        "text":   QColor("#CCCCCC"),
+        "muted":  QColor("#555555"),
+        "accent": QColor("#3A3AFF"),   # dashboard blue
+        "brand":  QColor("#e94560"),   # toolbelt red (used for title only)
         "warn":   QColor("#f1c40f"),
-        "error":  QColor("#e74c3c"),
-        "ok":     QColor("#27ae60"),
-        "grid":   QColor("#10101e"),
+        "error":  QColor("#FF4444"),
+        "ok":     QColor("#44FF88"),
+        "grid":   QColor("#1A1A1A"),
     }
 
     # ── NodeItem ──────────────────────────────────────────────────────────────
@@ -718,12 +767,12 @@ if _PYSIDE6:
             p.setPen(Qt.NoPen)
             p.drawRoundedRect(3, 4, w, h, r, r)
 
-            # Body gradient
+            # Body gradient — dashboard card colors
             grad = QLinearGradient(0, 0, 0, h)
-            grad.setColorAt(0, QColor("#1c1c32"))
-            grad.setColorAt(1, QColor("#0e0e1e"))
+            grad.setColorAt(0, QColor("#242424"))
+            grad.setColorAt(1, QColor("#1A1A1A"))
             p.setBrush(QBrush(grad))
-            outline = col if sel else (QColor("#ffffaa") if self._hovered else QColor("#24244a"))
+            outline = col if sel else (QColor("#FFFFFF") if self._hovered else QColor("#363636"))
             p.setPen(QPen(outline, 1.5 if sel else 1.0))
             p.drawRoundedRect(0, 0, w, h, r, r)
 
@@ -847,7 +896,7 @@ if _PYSIDE6:
 
             # Label at midpoint
             mid = path.pointAtPercent(0.5)
-            p.setPen(QPen(QColor("#3a3a5a")))
+            p.setPen(QPen(QColor("#2A2A2A")))
             p.setFont(QFont("Segoe UI", 6))
             p.drawText(QRectF(mid.x() + 4, mid.y() - 9, 90, 12),
                        Qt.AlignLeft | Qt.AlignVCenter, self.data.label)
@@ -862,8 +911,9 @@ if _PYSIDE6:
             self.setDragMode(QGraphicsView.ScrollHandDrag)
             self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
             self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-            self.setBackgroundBrush(QBrush(_P["bg"]))
+            self.setBackgroundBrush(QBrush(QColor("#181818")))
             self.setFrameStyle(0)
+            self.setStyleSheet("background: #181818; border: none;")
 
         def wheelEvent(self, e):
             factor = 1.12 if e.angleDelta().y() > 0 else 0.89
@@ -892,7 +942,7 @@ if _PYSIDE6:
             lay.setContentsMargins(12, 12, 12, 8)
             lay.setSpacing(5)
 
-            def lbl(text, bold=False, color="#d0d0e0", sz=9):
+            def lbl(text, bold=False, color="#CCCCCC", sz=9):
                 w = QLabel(text)
                 w.setFont(QFont("Segoe UI", sz, QFont.Bold if bold else QFont.Normal))
                 w.setStyleSheet(f"color:{color}; background:transparent;")
@@ -902,7 +952,7 @@ if _PYSIDE6:
             def div():
                 f = QFrame()
                 f.setFrameShape(QFrame.HLine)
-                f.setStyleSheet("color:#2a2a45;")
+                f.setStyleSheet("color:#363636;")
                 return f
 
             def txt(h=52, fg="#cccccc"):
@@ -910,27 +960,27 @@ if _PYSIDE6:
                 t.setReadOnly(True)
                 t.setFixedHeight(h)
                 t.setStyleSheet(
-                    f"background:#0a0a1a; color:{fg}; border:none; "
+                    f"background:#212121; color:{fg}; border:1px solid #2A2A2A; "
                     f"font-family:Consolas; font-size:8pt; padding:4px;"
                 )
                 return t
 
             lay.addWidget(lbl("DEVICE INFO", bold=True, color="#e94560", sz=11))
             self.w_name  = lbl("No device selected", bold=True, color="white", sz=10)
-            self.w_cls   = lbl("", color="#888899")
-            self.w_loc   = lbl("", color="#444466", sz=8)
+            self.w_cls   = lbl("", color="#888888")
+            self.w_loc   = lbl("", color="#555555", sz=8)
             for w in (self.w_name, self.w_cls, self.w_loc):
                 lay.addWidget(w)
 
             lay.addWidget(div())
 
             # Health bar
-            lay.addWidget(lbl("ARCHITECTURE HEALTH", bold=True, color="#888899", sz=8))
+            lay.addWidget(lbl("ARCHITECTURE HEALTH", bold=True, color="#888888", sz=8))
             self.w_hbar = QLabel()
             self.w_hbar.setFixedHeight(5)
-            self.w_hbar.setStyleSheet("background:#1a1a30; border-radius:2px;")
+            self.w_hbar.setStyleSheet("background:#2A2A2A; border-radius:2px;")
             lay.addWidget(self.w_hbar)
-            self.w_hval = lbl("", color="#888899", sz=8)
+            self.w_hval = lbl("", color="#888888", sz=8)
             lay.addWidget(self.w_hval)
 
             lay.addWidget(div())
@@ -953,11 +1003,11 @@ if _PYSIDE6:
 
             lay.addWidget(div())
 
-            lay.addWidget(lbl("NOTES", bold=True, color="#888899"))
+            lay.addWidget(lbl("NOTES", bold=True, color="#888888"))
             self.w_note = QTextEdit()
             self.w_note.setFixedHeight(52)
             self.w_note.setStyleSheet(
-                "background:#0a0a1a; color:#cccccc; border:none; "
+                "background:#212121; color:#cccccc; border:1px solid #2A2A2A; "
                 "font-family:'Segoe UI'; font-size:9pt; padding:4px;"
             )
             lay.addWidget(self.w_note)
@@ -977,7 +1027,7 @@ if _PYSIDE6:
             self.w_hbar.setStyleSheet(
                 f"background:qlineargradient(x1:0,y1:0,x2:1,y2:0,"
                 f"stop:0 {hcol},stop:{pct:.3f} {hcol},"
-                f"stop:{min(pct+0.001,1):.3f} #1a1a30,stop:1 #1a1a30);"
+                f"stop:{min(pct+0.001,1):.3f} #2A2A2A,stop:1 #2A2A2A);"
                 f"border-radius:2px;"
             )
             self.w_hval.setText(f"This device: {node_h}/100  ·  Project: {project_health}/100")
@@ -1016,7 +1066,7 @@ if _PYSIDE6:
             super().__init__()
             self.setWindowTitle("UEFN Toolbelt — Verse Device Graph")
             self.resize(1400, 860)
-            self.setStyleSheet("background:#080812; color:#d0d0e0;")
+            self.setStyleSheet(_DASH_QSS)   # identical theme to the main dashboard
 
             self._verse_path   = verse_path
             self._graph: Optional[GraphData] = None
@@ -1050,26 +1100,22 @@ if _PYSIDE6:
             # Top bar
             bar = QWidget()
             bar.setFixedHeight(46)
-            bar.setStyleSheet("background:#0f0f22; border-bottom:1px solid #1a1a35;")
+            bar.setStyleSheet("background:#111111; border-bottom:1px solid #2A2A2A;")
             bl = QHBoxLayout(bar)
             bl.setContentsMargins(12, 0, 12, 0)
             bl.setSpacing(6)
 
             title = QLabel("VERSE DEVICE GRAPH")
             title.setFont(QFont("Segoe UI", 12, QFont.Bold))
-            title.setStyleSheet("color:#e94560;")
+            title.setStyleSheet("color:#e94560;")   # toolbelt brand red
             bl.addWidget(title)
             bl.addSpacing(8)
 
             def btn(text, accent=False, cb=None):
                 b = QPushButton(text)
                 b.setFixedHeight(28)
-                bg = "#e94560" if accent else "#1a1a40"
-                b.setStyleSheet(
-                    f"background:{bg}; color:{'white' if accent else '#d0d0e0'}; "
-                    f"border:none; padding:0 12px; border-radius:4px; "
-                    f"font-family:'Segoe UI'; font-size:8pt; font-weight:bold;"
-                )
+                if accent:
+                    b.setProperty("accent", "true")
                 b.setCursor(Qt.PointingHandCursor)
                 if cb:
                     b.clicked.connect(cb)
@@ -1081,15 +1127,12 @@ if _PYSIDE6:
             bl.addSpacing(14)
 
             lbl_path = QLabel("Verse Path:")
-            lbl_path.setStyleSheet("color:#444466;")
+            lbl_path.setStyleSheet("color:#555555;")
             bl.addWidget(lbl_path)
 
             self._path_edit = QLineEdit(self._verse_path)
             self._path_edit.setFixedHeight(26)
             self._path_edit.setMinimumWidth(220)
-            self._path_edit.setStyleSheet(
-                "background:#1a1a35; color:#d0d0e0; border:none; padding:0 6px; border-radius:3px; font-size:8pt;"
-            )
             bl.addWidget(self._path_edit)
 
             browse = btn("…", cb=self._do_browse)
@@ -1099,34 +1142,31 @@ if _PYSIDE6:
             bl.addSpacing(12)
 
             lbl_s = QLabel("Search:")
-            lbl_s.setStyleSheet("color:#444466;")
+            lbl_s.setStyleSheet("color:#555555;")
             bl.addWidget(lbl_s)
 
             self._search = QLineEdit()
             self._search.setFixedHeight(26)
             self._search.setFixedWidth(140)
             self._search.setPlaceholderText("filter nodes…")
-            self._search.setStyleSheet(
-                "background:#1a1a35; color:#d0d0e0; border:none; padding:0 6px; border-radius:3px; font-size:8pt;"
-            )
             self._search.textChanged.connect(self._on_search)
             bl.addWidget(self._search)
             bl.addStretch()
 
             self._status = QLabel("Click SCAN to begin")
-            self._status.setStyleSheet("color:#444466; font-size:8pt;")
+            self._status.setStyleSheet("color:#555555; font-size:11px;")
             bl.addWidget(self._status)
             vl.addWidget(bar)
 
-            # Health bar (full-width, 5px)
+            # Health bar (full-width, 4px)
             self._hbar = QLabel()
-            self._hbar.setFixedHeight(5)
-            self._hbar.setStyleSheet("background:#1a1a30;")
+            self._hbar.setFixedHeight(4)
+            self._hbar.setStyleSheet("background:#2A2A2A;")
             vl.addWidget(self._hbar)
 
             # Canvas + panel
             split = QSplitter(Qt.Horizontal)
-            split.setStyleSheet("QSplitter::handle{background:#1a1a35; width:1px;}")
+            split.setStyleSheet("QSplitter::handle{background:#2A2A2A; width:1px;}")
 
             self._scene = QGraphicsScene()
             self._view  = _GraphView(self._scene)
@@ -1135,9 +1175,9 @@ if _PYSIDE6:
             scroll = QScrollArea()
             scroll.setWidgetResizable(True)
             scroll.setFixedWidth(314)
-            scroll.setStyleSheet("background:#0f0f22; border:none; border-left:1px solid #1a1a35;")
+            scroll.setStyleSheet("background:#181818; border:none; border-left:1px solid #2A2A2A;")
             self._panel = _InfoPanel()
-            self._panel.setStyleSheet("background:#0f0f22;")
+            self._panel.setStyleSheet("background:#181818;")
             self._panel.w_note.textChanged.connect(self._on_note)
             scroll.setWidget(self._panel)
             split.addWidget(scroll)
@@ -1349,12 +1389,12 @@ if _PYSIDE6:
 
         def _paint_hbar(self) -> None:
             s = self._health_score
-            c = "#27ae60" if s >= 70 else ("#f1c40f" if s >= 40 else "#e74c3c")
+            c = "#44FF88" if s >= 70 else ("#f1c40f" if s >= 40 else "#FF4444")
             p = s / 100
             self._hbar.setStyleSheet(
                 f"background:qlineargradient(x1:0,y1:0,x2:1,y2:0,"
                 f"stop:0 {c},stop:{p:.3f} {c},"
-                f"stop:{min(p+0.001,1):.3f} #1a1a30,stop:1 #1a1a30);"
+                f"stop:{min(p+0.001,1):.3f} #2A2A2A,stop:1 #2A2A2A);"
             )
 
 else:
