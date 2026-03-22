@@ -80,10 +80,17 @@ def run_foliage_audit_brushes(**kwargs) -> dict:
     """
     # This involves scanning /Game/ for FoliageType assets
     asset_registry = unreal.AssetRegistryHelpers.get_asset_registry()
-    # In UEFN, get_assets_by_class often requires a TopLevelAssetPath struct
-    class_path = unreal.TopLevelAssetPath("/Script/Foliage", "FoliageType_InstancedStaticMesh")
-    assets = asset_registry.get_assets_by_class(class_path)
-    
+    assets = []
+    try:
+        # TopLevelAssetPath is available in UEFN 40.00+ — fall back to string form for older builds
+        class_path = unreal.TopLevelAssetPath("/Script/Foliage", "FoliageType_InstancedStaticMesh")
+        assets = asset_registry.get_assets_by_class(class_path)
+    except (AttributeError, TypeError):
+        try:
+            assets = asset_registry.get_assets_by_class("FoliageType_InstancedStaticMesh")
+        except Exception as e:
+            log_warning(f"[FoliageAudit] Could not query asset registry: {e}")
+
     paths = [str(a.package_name) for a in assets]
     log_info(f"Found {len(paths)} Foliage Types in project.")
     return {"status": "ok", "count": len(paths), "meshes": paths}

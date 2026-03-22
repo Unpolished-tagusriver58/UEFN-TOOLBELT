@@ -98,7 +98,7 @@ def _introspect_object(obj: unreal.Object) -> Dict[str, Any]:
     description="Deep introspect selected actors, components, and properties to JSON.",
     tags=["crawler", "fuzz", "reflection", "deep scan", "capabilities"],
 )
-def crawl_selection(**kwargs) -> str:
+def crawl_selection(**kwargs) -> dict:
     """
     Reads the deeply nested exposed properties of the currently selected
     actor(s) and writes a comprehensive JSON graph to disk.
@@ -106,10 +106,10 @@ def crawl_selection(**kwargs) -> str:
     """
     actors = core.require_selection()
     if not actors:
-        return ""
+        return {"status": "error", "message": "No actors selected.", "path": ""}
 
     core.log_info(f"Crawling capabilities for {len(actors)} actor(s)...")
-    
+
     report = {
         "scan_target": "selection",
         "actor_count": len(actors),
@@ -126,12 +126,12 @@ def crawl_selection(**kwargs) -> str:
     saved_dir = os.path.join(unreal.Paths.project_saved_dir(), "UEFN_Toolbelt")
     os.makedirs(saved_dir, exist_ok=True)
     out_path = os.path.join(saved_dir, "api_selection_crawl.json")
-    
+
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
 
     core.log_info(f"✓ Selection crawl saved: {out_path}")
-    return out_path
+    return {"status": "ok", "path": out_path, "count": len(actors)}
 
 
 def _sync_to_repo(src_path: str, filename: str) -> str:
@@ -171,7 +171,7 @@ def _sync_to_repo(src_path: str, filename: str) -> str:
     description="Headless map of all unique classes (and exposed properties) in the current level.",
     tags=["crawler", "fuzz", "level", "deep scan", "capabilities"],
 )
-def crawl_level_classes(**kwargs) -> str:
+def crawl_level_classes(**kwargs) -> dict:
     """
     Headlessly scans every actor in the map. Aggregates them by Class.
     Runs deep introspection on exactly one instance of each class.
@@ -182,7 +182,7 @@ def crawl_level_classes(**kwargs) -> str:
     all_actors = actor_sub.get_all_level_actors()
     if not all_actors:
         core.log_warning("No actors in the level.")
-        return ""
+        return {"status": "error", "message": "No actors in the level.", "path": ""}
 
     class_map: Dict[str, unreal.Actor] = {}
     for a in all_actors:
@@ -216,13 +216,13 @@ def crawl_level_classes(**kwargs) -> str:
         json.dump(report, f, indent=2)
 
     core.log_info(f"✓ Level class schema saved: {out_path}")
-    
-    # NEW: Sync to repo docs for AI context
+
+    # Sync to repo docs for AI context
     repo_path = _sync_to_repo(out_path, "api_level_classes_schema.json")
     if repo_path:
         core.log_info(f"✓ Auto-synced to repo: {repo_path}")
-        
-    return out_path
+
+    return {"status": "ok", "path": out_path, "unique_classes": len(class_map), "total_actors": len(all_actors)}
 
 
 @register_tool(
@@ -231,7 +231,7 @@ def crawl_level_classes(**kwargs) -> str:
     description="The Ultimate One-Click Sync: Combines Level Crawling + Verse Schema IQ and updates docs/DEVICE_API_MAP.md.",
     tags=["sync", "docs", "master", "capabilities", "automation"],
 )
-def api_sync_master(**kwargs) -> str:
+def api_sync_master(**kwargs) -> dict:
     """
     Unifies all Toolbelt intelligence into one command.
     1. Scans live actors for Python API methods.
@@ -239,12 +239,13 @@ def api_sync_master(**kwargs) -> str:
     3. Merges and updates DEVICE_API_MAP.md automatically.
     """
     from .verse_schema import _parser as verse_parser
-    
+
     # 1. Run Level Crawler
     core.log_info("Step 1/3: Crawling live level actors...")
-    level_schema_path = crawl_level_classes()
+    crawl_result = crawl_level_classes()
+    level_schema_path = crawl_result.get("path", "") if isinstance(crawl_result, dict) else crawl_result
     if not level_schema_path or not os.path.exists(level_schema_path):
-        return "Failed to crawl level classes."
+        return {"status": "error", "message": "Failed to crawl level classes."}
         
     with open(level_schema_path, 'r', encoding='utf-8') as f:
         level_data = json.load(f)
@@ -313,4 +314,4 @@ def api_sync_master(**kwargs) -> str:
         f.write("\n".join(md_content))
         
     core.log_info(f"✓ Master Sync Complete! Document updated: {doc_path}")
-    return doc_path
+    return {"status": "ok", "path": doc_path}

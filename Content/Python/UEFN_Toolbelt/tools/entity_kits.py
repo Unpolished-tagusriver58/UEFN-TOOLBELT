@@ -49,13 +49,13 @@ def _load_uefn_class(name: str) -> unreal.Class | None:
     description="Spawns a pre-configured 'Standard Kit' of devices in one click.",
     tags=["entity", "kit", "device", "quickadd", "spawn"]
 )
-def run_entity_spawn_kit(kit_name: str = "Lobby Starter", **kwargs) -> int:
+def run_entity_spawn_kit(kit_name: str = "Lobby Starter", **kwargs) -> dict:
     """
     Spawns a named kit from the pre-defined dictionary.
     """
     if kit_name not in KITS:
         log_error(f"Kit not found: {kit_name}. Available: {list(KITS.keys())}")
-        return 0
+        return {"status": "error", "message": f"Kit '{kit_name}' not found.", "available": list(KITS.keys())}
 
     kit_data = KITS[kit_name]
     
@@ -105,7 +105,7 @@ def run_entity_spawn_kit(kit_name: str = "Lobby Starter", **kwargs) -> int:
                 spawned_count += 1
 
     log_info(f"✓ Successfully spawned entity kit '{kit_name}' with {spawned_count} devices.")
-    return spawned_count
+    return {"status": "ok", "kit": kit_name, "count": spawned_count}
 
 @register_tool(
     name="entity_list_kits",
@@ -113,8 +113,8 @@ def run_entity_spawn_kit(kit_name: str = "Lobby Starter", **kwargs) -> int:
     description="List all available 'Standard Kits' for the quick-spawn tool.",
     tags=["list", "kit", "entity"]
 )
-def run_entity_list_kits(**kwargs) -> list[str]:
+def run_entity_list_kits(**kwargs) -> dict:
     kits = list(KITS.keys())
     for k in kits:
         log_info(f"  • {k}")
-    return kits
+    return {"status": "ok", "count": len(kits), "kits": kits}

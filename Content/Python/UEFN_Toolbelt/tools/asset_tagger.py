@@ -359,7 +359,7 @@ def tag_add(
     value: str = "1",
     asset_paths: list[str] = None,
     **kwargs,
-) -> None:
+) -> dict:
     """
     Apply a metadata tag to all assets currently selected in the Content Browser.
 
@@ -376,8 +376,9 @@ def tag_add(
             "[AssetTagger] Provide a tag_name. "
             "Example: tb.run('tag_add', tag_name='hero_prop')"
         )
-        return
+        return {"status": "error", "message": "tag_name is required."}
     _do_tag_add(tag_name, value, manual_paths=asset_paths)
+    return {"status": "ok", "tag": tag_name, "value": value}
 
 
 @register_tool(
@@ -387,7 +388,7 @@ def tag_add(
     icon="🏷",
     tags=["tag", "metadata", "remove", "cleanup"],
 )
-def tag_remove(tag_name: str = "", asset_paths: list[str] = None, **kwargs) -> None:
+def tag_remove(tag_name: str = "", asset_paths: list[str] = None, **kwargs) -> dict:
     """
     Remove a tag key from all assets selected in the Content Browser.
 
@@ -396,8 +397,9 @@ def tag_remove(tag_name: str = "", asset_paths: list[str] = None, **kwargs) -> N
     """
     if not tag_name:
         unreal.log_warning("[AssetTagger] Provide a tag_name to remove.")
-        return
+        return {"status": "error", "message": "tag_name is required."}
     _do_tag_remove(tag_name, manual_paths=asset_paths)
+    return {"status": "ok", "tag": tag_name}
 
 
 @register_tool(
@@ -407,12 +409,13 @@ def tag_remove(tag_name: str = "", asset_paths: list[str] = None, **kwargs) -> N
     icon="🔖",
     tags=["tag", "metadata", "inspect", "show"],
 )
-def tag_show(**kwargs) -> None:
+def tag_show(**kwargs) -> dict:
     """
     Print all TB: tags on every asset currently selected in the Content Browser.
     Assets with no Toolbelt tags are shown with a '← no Toolbelt tags' note.
     """
     _do_tag_show()
+    return {"status": "ok"}
 
 
 @register_tool(

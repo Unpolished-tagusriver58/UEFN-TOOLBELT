@@ -71,20 +71,21 @@ def run_measure_travel_time(speed_type: str = "Run", custom_speed: float = 0.0, 
     actors = get_selected_actors()
     if len(actors) < 2:
         log_warning("Select at least 2 actors to measure travel time.")
-        return {}
+        return {"status": "error", "message": "Select at least 2 actors.", "time_seconds": 0.0}
 
     dist_result = run_measure_distance()
     dist = dist_result.get("distance_cm", 0.0) if isinstance(dist_result, dict) else float(dist_result)
     actual_speed = custom_speed if custom_speed > 0 else SPEEDS.get(speed_type, SPEEDS["Run"])
 
     time_sec = dist / actual_speed
-    
+
     log_info(f"Travel Time ({speed_type} @ {actual_speed}cm/s): {time_sec:.2f} seconds")
-    
+
     return {
-        "distance": dist,
-        "speed": actual_speed,
-        "time_seconds": time_sec
+        "status": "ok",
+        "distance_cm": dist,
+        "speed_cms": actual_speed,
+        "time_seconds": time_sec,
     }
 
 

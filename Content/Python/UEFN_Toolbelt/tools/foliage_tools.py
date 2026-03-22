@@ -130,10 +130,10 @@ def _poisson_disk_2d(
     return points
 
 
-def _surface_z(world_x: float, world_y: float, start_z: float = 50000.0) -> float:
+def _surface_z(world_x: float, world_y: float, start_z: float = 50000.0, fallback_z: float = 0.0) -> float:
     """
     Attempt a line trace downward to find the surface Z under (x, y).
-    Returns start_z (passes through) if no hit is found.
+    Returns fallback_z if no hit is found (caller should pass center Z).
 
     Note: unreal.SystemLibrary.line_trace_single requires a world context
     object. In editor context this may not be available — the function
@@ -159,7 +159,7 @@ def _surface_z(world_x: float, world_y: float, start_z: float = 50000.0) -> floa
             return hit_result.location.z
     except Exception:
         pass
-    return 0.0  # fallback: place at Z=0
+    return fallback_z  # fallback: use caller's center Z, not hardcoded 0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -220,7 +220,7 @@ def run_scatter_props(
         for i, (ox, oy) in enumerate(points):
             world_x = cx + ox
             world_y = cy + oy
-            world_z = _surface_z(world_x, world_y) if snap_to_surface else cz
+            world_z = _surface_z(world_x, world_y, fallback_z=cz) if snap_to_surface else cz
 
             loc = unreal.Vector(world_x, world_y, world_z)
             rot = unreal.Rotator(0, rng.uniform(-rot_yaw_range / 2, rot_yaw_range / 2), 0)
