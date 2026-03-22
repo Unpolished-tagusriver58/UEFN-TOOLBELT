@@ -1,5 +1,5 @@
-# UEFN TOOLBELT (Phase 17: Power User & Cinematics)
-**155+ Professional Tools for UEFN Python Integration.**
+# UEFN TOOLBELT (Phase 19: Simulation & Sequences)
+**160+ Professional Tools for UEFN Python Integration.**
 
 > Built by **Ocean Bennett** — 2026
 
@@ -9,7 +9,7 @@ Automate the tedious, script the impossible, and bridge the gap between Python a
 UEFN Toolbelt is a master utility designed to leverage the **2026 UEFN Python 3.11 Update**,
 allowing creators to manipulate actors, manage assets, and generate boilerplate Verse code
 through a high-level, developer-friendly interface — all from a single persistent menu entry
-in the UEFN editor bar. Reached **155 Registered Tools** in Phase 17.
+in the UEFN editor bar. Reached **160 Registered Tools** in Phase 19.
 
 ## 🤖 AI-Accelerated Development (One-Click Sync)
 Toolbelt is built to be used with AI (Claude/Gemini). To give your AI **perfect information** about your project's unique Verse devices and custom props:
@@ -2039,6 +2039,15 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 ---
 
 ## Patch Notes
+
+### v1.1 — March 2026 (Phase 19: Simulation & Sequences)
+
+- **160 tools** across 30 categories: Simulation, Sequencer, Verse Helpers, and more
+- **Verse Simulation Proxies**: Generate Python counterparts for @editable Verse properties to test logic without full UEFN sessions.
+- **Named Auto-Link Breakthrough**: Robust fuzzy resolution for `VerseDevice_C` actors—auto-links viewport labels to Verse schema.
+- **Sequencer Automation**: One-click "Actor to Spline" paths and batch keyframe management.
+- **Dashboard v2 Refactor**: Migrated ALL 24 tabs to the modern `builder(R)` pattern; fixed critical `NameError: _title` bug.
+- **Deep Diagnostics**: New `debug_dump_verse_actor` and `debug_audit_verse_assets` tools for troubleshooting hidden API links.
 
 ### v1.0 — March 2026 (Initial Release)
 

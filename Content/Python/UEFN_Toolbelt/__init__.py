@@ -23,6 +23,7 @@ registry: ToolRegistry = get_registry()
 def register_all_tools() -> None:
     """Import every tool module so their @register_tool decorators fire."""
     from . import tools as _tools  # noqa: F401 — triggers all sub-imports
+    from . import diagnostics as _diag  # noqa: F401 — registers debug tools
     from . import dashboard_pyside6 as _dash  # noqa: F401 — registers launch_qt tool
     import unreal
     unreal.log(f"[TOOLBELT] {len(registry)} tools registered across {len(registry.categories())} categories.")

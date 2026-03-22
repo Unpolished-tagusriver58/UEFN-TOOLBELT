@@ -55,5 +55,14 @@ Every time you add a new Verse device, use the **"Sync Level Schema to AI"** but
 
 ---
 
-## 🛤️ Roadmap: Schema-Driven Simulation
-Next, we are using this 3,000+ method database to build **Simulation Proxies**. This will allow you to trigger Verse events (like opening a door) directly from the dashboard by calling the methods discovered in the schema.
+---
+ 
+ ## 🛤️ Simulation & Sequences (Phase 19 COMPLETE)
+ 
+ Phase 19 has successfully operationalized the schema with:
+ - **Simulation Proxies**: Python handlers generated directly from schema method discovery.
+ - **Named Auto-Link**: Robust fuzzy resolution that maps viewport actors to Verse classes when the formal API is invisible.
+ - **Sequencer Automation**: One-click level sequence generation for any schema-validated actor.
+ 
+ > [!IMPORTANT]
+ > For a deep dive into the technical hurdles overcome in this phase, see **[docs/UEFN_QUIRKS.md](docs/UEFN_QUIRKS.md)**.

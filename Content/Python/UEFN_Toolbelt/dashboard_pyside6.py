@@ -497,6 +497,14 @@ def _tab_bulk_ops(R) -> "QScrollArea":
     _btn(g5, "Stack Vertically",     lambda: R("bulk_stack"))
     _btn(g5, "Normalize Scale →1",   lambda: R("bulk_normalize_scale"))
 
+    # Verse (Schema-Driven)
+    g6 = _group(L, "Verse Property Hardening")
+    prop_inp = _inp("bIsEnabled", "bIsEnabled", width=140)
+    val_inp  = _inp("True", "True", width=100)
+    _btn_inp(g6, "Bulk Set Verse Property", 
+             lambda: R("verse_bulk_set_property", property_name=prop_inp.text(), value=val_inp.text()), 
+             prop_inp, val_inp, tip="Sets a property on all selected Verse devices with schema-validated safety checks.")
+
     return scroll
 
 
@@ -1481,27 +1489,96 @@ def _tab_project_admin(R) -> "QScrollArea":
     L.addStretch()
     return scroll
 
-def _tab_environmental(L: QVBoxLayout) -> None:
-    _title(L, "Environmental Mastery", "leaf", "Prop-to-Foliage conversion and brush auditing.")
+def _tab_environmental(R) -> "QScrollArea":
+    scroll, L = _page()
+    hero = QLabel("Environmental Mastery")
+    hero.setStyleSheet("font-size: 20px; font-weight: bold; color: #FFFFFF; padding: 12px 0 4px 0;")
+    L.addWidget(hero)
+    
+    desc = QLabel("Prop-to-Foliage conversion and brush auditing.")
+    desc.setStyleSheet("font-size: 12px; color: #AAAAAA; padding-bottom: 12px;")
+    desc.setWordWrap(True)
+    L.addWidget(desc)
     
     g = _group(L, "Foliage Operations")
-    grid = QGridLayout()
-    g.addLayout(grid)
+    _btn(g, "Convert Props to Foliage", lambda: R("foliage_convert_selected_to_actor"), "Converts regular meshes into foliage-capable actors.")
+    _btn(g, "Audit Brushes", lambda: R("foliage_audit_brushes"), "Scans level for non-standard brush transforms.")
     
-    _btn(grid, 0, 0, "  Convert Props", "foliage_convert_selected_to_actor", "recycle")
-    _btn(grid, 0, 1, "  Audit Brushes", "foliage_audit_brushes", "search")
+    L.addStretch()
+    return scroll
 
-def _tab_entities(L: QVBoxLayout) -> None:
-    _title(L, "Entity Management", "cube", "Quick-Add kits and logical device clusters.")
+def _tab_entities(R) -> "QScrollArea":
+    scroll, L = _page()
+    hero = QLabel("Entity Management")
+    hero.setStyleSheet("font-size: 20px; font-weight: bold; color: #FFFFFF; padding: 12px 0 4px 0;")
+    L.addWidget(hero)
     
     g = _group(L, "Device Kits")
-    grid = QGridLayout()
-    g.addLayout(grid)
+    _btn(g, "Spawn Lobby Kit", lambda: R("entity_spawn_kit", kit_name="Lobby Starter"))
+    _btn(g, "Spawn Teleport Link", lambda: R("entity_spawn_kit", kit_name="Teleport Link"))
+    _btn(g, "Spawn Objective Hub", lambda: R("entity_spawn_kit", kit_name="Objective Hub"))
+    _btn(g, "List All Custom Kits", lambda: R("entity_list_kits"))
     
-    _btn(grid, 0, 0, "  Lobby Kit", "entity_spawn_kit", "play", kit_name="Lobby Starter")
-    _btn(grid, 0, 1, "  Teleport Link", "entity_spawn_kit", "link", kit_name="Teleport Link")
-    _btn(grid, 1, 0, "  Objective Hub", "entity_spawn_kit", "target", kit_name="Objective Hub")
-    _btn(grid, 1, 1, "  List All Kits", "entity_list_kits", "list")
+    L.addStretch()
+    return scroll
+
+
+# ─── Simulation tab ──────────────────────────────────────────────────────────
+
+def _tab_simulation(_R=None) -> "QScrollArea":
+    scroll, L = _page()
+
+    hero = QLabel("Simulation Helpers")
+    hero.setStyleSheet("font-size: 20px; font-weight: bold; color: #00F2FF; padding: 12px 0 4px 0;")
+    L.addWidget(hero)
+
+    desc = QLabel("Test Verse logic in-editor without full sessions using schema-driven proxies.")
+    desc.setStyleSheet("font-size: 12px; color: #AAAAAA; padding-bottom: 12px;")
+    desc.setWordWrap(True)
+    L.addWidget(desc)
+
+    g_sim = _group(L, "Verse Simulation")
+    _btn(g_sim, "Generate Simulation Proxy", lambda: _R("sim_generate_proxy") if _R else None, "Creates a Python 'Shadow' of your Verse device APIs using discovered schema data.")
+    
+    # Method trigger with inline input
+    method_inp = QLineEdit("Show")
+    method_inp.setPlaceholderText("Method name...")
+    method_inp.setFixedWidth(120)
+    _btn_inp(g_sim, "Trigger Dev Method", lambda: _R("sim_trigger_method", method_name=method_inp.text()) if _R else None, 
+             method_inp, tip="Force-fire a Verse method discovered in the schema.")
+
+    L.addStretch()
+    return scroll
+
+
+# ─── Sequencer tab ───────────────────────────────────────────────────────────
+
+def _tab_sequencer(_R=None) -> "QScrollArea":
+    scroll, L = _page()
+
+    hero = QLabel("Sequencer Automation")
+    hero.setStyleSheet("font-size: 20px; font-weight: bold; color: #FF00E4; padding: 12px 0 4px 0;")
+    L.addWidget(hero)
+
+    desc = QLabel("Cinematic fly-throughs and bulk keyframe management.")
+    desc.setStyleSheet("font-size: 12px; color: #AAAAAA; padding-bottom: 12px;")
+    desc.setWordWrap(True)
+    L.addWidget(desc)
+
+    g_seq = _group(L, "Level Sequence Tools")
+    
+    dur_inp = QDoubleSpinBox()
+    dur_inp.setValue(5.0)
+    dur_inp.setRange(0.1, 300.0)
+    dur_inp.setSuffix("s")
+    
+    _btn_inp(g_seq, "Actor to Spline Path", lambda: _R("seq_actor_to_spline", duration=dur_inp.value()) if _R else None,
+             dur_inp, tip="Animate selected actor along a spline path over a set duration.")
+
+    _btn(g_seq, "Bulk Keyframe Selection", lambda: _R("seq_batch_keyframe") if _R else None, "Add transform keys for all selected actors in the active sequence.")
+
+    L.addStretch()
+    return scroll
 
 
 # ─── About page ───────────────────────────────────────────────────────────────
@@ -1748,6 +1825,8 @@ class ToolbeltDashboard(QMainWindow):
         ("Tags",        _tab_tags),
         ("MCP",         _tab_mcp),
         ("API",         _tab_api),
+        ("Simulation",  _tab_simulation),
+        ("Sequencer",   _tab_sequencer),
         ("Verification",_tab_verification),
         ("Plugin Hub",  _tab_plugin_hub),
         ("About",       _tab_about),
