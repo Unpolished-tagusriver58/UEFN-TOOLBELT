@@ -869,6 +869,9 @@ Add the stubs dir to `.vscode/settings.json` in your project:
 | `spline_to_verse_zone_boundary` | Spline → Verse zone boundary array + IsPointInZone helper |
 | `spline_export_json` | Export spline points to JSON (pipe into scatter_along_path) |
 | `verse_list_devices` | Enumerate all devices in current level |
+| `verse_graph_open` | **Interactive force-directed device graph** — nodes self-organize by connection topology, architecture health score 0–100, cluster detection, broken-link warnings |
+| `verse_graph_scan` | Headless scan → full device adjacency dict (MCP-friendly, no UI needed) |
+| `verse_graph_export` | Export device graph to JSON for archiving or external tooling |
 | `verse_bulk_set_property` | Bulk-set any UPROPERTY on selection |
 | `verse_select_by_name` | Select devices matching label substring |
 | `verse_select_by_class` | Select devices matching class name |
@@ -984,7 +987,7 @@ Restart Claude Code — it connects automatically. Then ask Claude things like:
 - *"Scatter 200 props in a 4000cm spiral around the origin"*
 - *"Save a level snapshot, then mirror the selection across X"*
 
-**Available MCP commands:** ping, execute\_python, run\_tool (→ all 165 tools), list\_tools,
+**Available MCP commands:** ping, execute\_python, run\_tool (→ all 168 tools), list\_tools,
 get\_all\_actors, get\_selected\_actors, spawn\_actor, delete\_actors, set\_actor\_transform,
 list\_assets, get\_asset\_info, rename\_asset, save\_current\_level, get\_viewport\_camera,
 set\_viewport\_camera, and more.
@@ -1136,7 +1139,7 @@ After completing Step 2 (PySide6 installed), click **Toolbelt → Open Dashboard
 import UEFN_Toolbelt as tb; tb.launch_qt()
 ```
 
-A dark-themed floating window opens with a left sidebar nav and 165 tools across 31 categories (including an About page).
+A dark-themed floating window opens with a left sidebar nav and 168 tools across 31 categories (including an About page).
 
 ![Global Dashboard Search](docs/dashboard_search.png)
 
@@ -1144,7 +1147,7 @@ A dark-themed floating window opens with a left sidebar nav and 165 tools across
 
 | Search | Where | What it does |
 |---|---|---|
-| **Find any tool…** | Sidebar (top) | Global — searches all 165 tools across every category by name, description, or tag. Results show a category badge so you know where each tool lives. |
+| **Find any tool…** | Sidebar (top) | Global — searches all 168 tools across every category by name, description, or tag. Results show a category badge so you know where each tool lives. |
 | **Filter this page…** | Content header (top-right) | Within-category — hides/shows buttons on the current page as you type. Disappears during global search. |
 
 > **If the dashboard doesn't open after installing PySide6:** The module may be cached from before PySide6 was installed. Paste this single line to clear and reload:
@@ -1211,7 +1214,7 @@ Claude will call `run_toolbelt_tool("toolbelt_smoke_test")` through the bridge a
 > **Note:** The listener must be started in UEFN each session. You can also click **Dashboard → MCP → Start Listener** instead of pasting the command.
 
 **What Claude can do once connected:**
-- Run any of the 165 tools by name
+- Run any of the 168 tools by name
 - Spawn, move, delete actors directly
 - Generate spec-accurate Verse code (pulls from the live verse-book spec)
 - Execute arbitrary Python inside UEFN
@@ -1528,7 +1531,7 @@ tb.run("api_crawl_level_classes")
 
 | Layer | File | What it contains |
 |:---|:---|:---|
-| **Tool Layer** | `Saved/UEFN_Toolbelt/tool_manifest.json` | 165 tools — names, params, types, defaults |
+| **Tool Layer** | `Saved/UEFN_Toolbelt/tool_manifest.json` | 168 tools — names, params, types, defaults |
 | **C++ Layer** | `docs/uefn_reference_schema.json` | 14 actor classes, 1,031 properties with types + defaults |
 | **Verse Layer** | `docs/api_level_classes_schema.json` | Your project's `@editable` device properties (git-ignored) |
 
@@ -2031,7 +2034,7 @@ UEFN Toolbelt is not just a collection of scripts; it is a **secure platform** f
 | Ecosystem Moat | **Rich Plugin Hub, automatic UI generation** | Scattered, undocumented gists |
 | Security Model | **4-Gate Audit (AST scanning, SHA-256)** | Blind execution of untrusted code |
 | Verification | **Automated Integration Test Suite** | Manual testing only |
-| Tool count | **165 tools, 31 modules** | Single-purpose scripts |
+| Tool count | **168 tools, 31 modules** | Single-purpose scripts |
 | AI integration | **Full MCP bridge + model-agnostic HTTP client + tool manifest** | None |
 | Local model support | **LM Studio, Ollama, any HTTP agent** | None |
 | Verse code gen | **Live spec-backed (27K line reference)** | Static templates |
@@ -2103,6 +2106,12 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 ## Patch Notes
 
+### v1.5 — March 2026 (Verse Device Graph + Config Persistence)
+
+- **Verse Device Graph** (`verse_graph_open`, `verse_graph_scan`, `verse_graph_export`): Interactive force-directed node graph of every Creative/Verse device in the current level. Nodes self-organize using the Fruchterman-Reingold algorithm (animated at 60fps via QTimer). Edges drawn from `@editable` device refs and `.Subscribe()` calls. Architecture Health Score (0–100) based on orphan count, broken links, and unused functions. Union-Find cluster detection identifies isolated device groups. Two-pass Verse parser: fast regex scan + `schema_utils` type validation. Fully MCP-callable — `verse_graph_scan` returns the complete adjacency dict so Claude Code can reason about your island's device architecture without opening a window.
+- **Persistent Config System** (`config_list`, `config_get`, `config_set`, `config_reset`): 12 configurable values persisted at `Saved/UEFN_Toolbelt/config.json` — survives `install.py` updates. Tools read from config instead of hardcoded defaults. `verse.project_path` lets you set your Verse root once and never type it again.
+- **Tool count: 168** (up from 165). 103/103 integration tests passing.
+
 ### v1.4 — March 2026 (Deep Schema Documentation)
 
 - **`docs/DEVICE_API_MAP.md` rewrite**: Complete property reference for all 14 C++ actor classes in the reference schema. Every readable property with type, default value, and automation notes. Enum value tables (`FortBuildingType`, `FortResourceType`, `NetDormancy`, etc.). The 19 restricted properties explained. Property access cheatsheet (`get_editor_property` vs `getattr` vs component access).
@@ -2119,9 +2128,9 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 ### v1.2 — March 2026 (Phase 20: AI-Agent Readiness)
 
-- **165 tools** across 30 categories
+- **168 tools** across 30 categories
 - **Tool Manifest Export** (`plugin_export_manifest`): Writes `Saved/UEFN_Toolbelt/tool_manifest.json` — a machine-readable index of every registered tool with its full parameter signature (name, type, required/optional, default). Any AI agent or automation script can load this file and know how to call every tool without reading source code. This is the key artifact for full AI-driven UEFN workflows.
-- **Structured Returns Everywhere (Phase 21 complete)**: All 165 tools return `{"status": "ok"/"error", ...}` dicts. Zero `None` returns remain. MCP callers (Claude Code, `client.py`, scripts) can read every result programmatically — no log parsing required.
+- **Structured Returns Everywhere (Phase 21 complete)**: All 168 tools return `{"status": "ok"/"error", ...}` dicts. Zero `None` returns remain. MCP callers (Claude Code, `client.py`, scripts) can read every result programmatically — no log parsing required.
 - **Schema-Driven Property Discovery** (`schema_utils.discover_properties`): `verse_device_editor`'s property reader now queries the reference schema for each actor's class before falling back to a hardcoded list. It reads whatever properties the schema actually defines for that class, making it correct-by-construction rather than hardcoded.
 - **Registry `to_manifest()`**: New method on `ToolRegistry` that introspects every function's signature via `inspect.signature()` — captures param names, type annotations, required/optional status, and defaults. Powers `plugin_export_manifest` and exposes the full tool catalog programmatically.
 - **`schema_utils` expansion**: Added `list_classes()` (all schema class names) and `discover_properties(class_name)` (schema property dict for a class) — two new helper functions that replace hardcoded property lists with live schema lookups.
