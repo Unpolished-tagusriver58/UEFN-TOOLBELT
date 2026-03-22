@@ -321,6 +321,16 @@ def run_apply_preset(preset: str = "chrome", **kwargs) -> dict:
     if actors is None:
         return {"status": "error", "preset": preset, "applied": 0, "failed": 0}
 
+    # Early check — fail fast if the parent material doesn't exist
+    if not unreal.EditorAssetLibrary.does_asset_exist(PARENT_MATERIAL_PATH):
+        log_error(
+            f"[MaterialMaster] Parent material not found: {PARENT_MATERIAL_PATH}\n"
+            f"  Create M_ToolbeltBase in your project or update PARENT_MATERIAL_PATH "
+            f"in material_master.py to point to an existing master material."
+        )
+        return {"status": "error", "preset": preset, "applied": 0, "failed": len(actors),
+                "message": f"Parent material missing: {PARENT_MATERIAL_PATH}"}
+
     all_p = _all_presets()
     if preset not in all_p:
         log_error(f"Unknown preset '{preset}'. Run material_list_presets to see options.")

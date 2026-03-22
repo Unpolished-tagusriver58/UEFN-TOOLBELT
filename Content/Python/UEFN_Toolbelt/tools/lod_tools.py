@@ -122,6 +122,9 @@ def _build_lod_options(num_lods: int, quality: float = 0.5) -> unreal.EditorScri
 def _apply_lods(mesh: unreal.StaticMesh, asset_path: str, num_lods: int, quality: float) -> bool:
     """Apply auto-generated LODs to one mesh. Returns True on success."""
     mesh_sub = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    if mesh_sub is None:
+        log_error("StaticMeshEditorSubsystem is not available in this UEFN build. LOD tools require it.")
+        return False
     try:
         options = _build_lod_options(num_lods, quality)
         mesh_sub.set_lods_with_notification(mesh, options, True)
@@ -220,11 +223,11 @@ def run_lod_auto_generate_folder(
 
     if skip_existing:
         mesh_sub = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
-        targets = [
-            (p, m) for p, m in targets
-            if mesh_sub.get_lod_count(m) <= 1
-        ]
-        log_info(f"Skipping meshes with existing LODs — {len(targets)} to process.")
+        if mesh_sub is None:
+            log_error("StaticMeshEditorSubsystem unavailable — cannot check existing LODs. Proceeding without skip.")
+        else:
+            targets = [(p, m) for p, m in targets if mesh_sub.get_lod_count(m) <= 1]
+            log_info(f"Skipping meshes with existing LODs — {len(targets)} to process.")
 
     if not targets:
         log_info("All meshes already have LODs.")
