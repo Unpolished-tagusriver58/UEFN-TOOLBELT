@@ -174,8 +174,11 @@ $$T_{\text{save}} = (T_{\text{manual}} \times N) - (T_{\text{script}} + T_{\text
 UEFN Editor
     │
     │  init_unreal.py  ← auto-executed by UEFN on every startup
+    │                     (generic submodule loader — NOT part of the Toolbelt package)
+    │                     If you already have one, add the package-discovery pattern
+    │                     from the provided template instead of overwriting yours.
     ▼
-UEFN TOOLBELT ─── UEFN_Toolbelt/__init__.py   (launch, run, registry accessor)
+UEFN TOOLBELT ─── UEFN_Toolbelt/__init__.py   (register, launch, run, registry accessor)
     │
     ├── core.py           Shared utilities: undo_transaction, get_selected_actors,
     │                     with_progress, color_from_hex, spawn_static_mesh_actor, …
@@ -213,7 +216,11 @@ All heavy logic lives in Python. The optional UMG dashboard calls into it via
 [YourUEFNProject]/
 ├── Content/
 │   ├── Python/
-│   │   ├── init_unreal.py               ← COPY HERE — auto-runs on editor start
+│   │   ├── init_unreal.py               ← COPY HERE if you don't have one yet
+│   │   │                                   (generic loader — not Toolbelt-specific)
+│   │   │                                   ⚠️ If you already have this file, do NOT
+│   │   │                                   overwrite it. Add the package-discovery
+│   │   │                                   loop from the template into your existing file.
 │   │   └── UEFN_Toolbelt/               ← COPY HERE — the full package
 │   │       ├── __init__.py
 │   │       ├── core.py
@@ -1064,7 +1071,10 @@ xcopy /Y "PATH_TO_REPO\init_unreal.py" "C:\Users\YOURNAME\Documents\Fortnite Pro
 xcopy /E /I /Y "PATH_TO_REPO\tests" "C:\Users\YOURNAME\Documents\Fortnite Projects\YOURPROJECT\tests"
 ```
 
-> **Note:** `init_unreal.py` lives in the **repo root**, not inside `Content/Python/`. The destination is `Content\Python\` — that's correct. Every time you update the repo, re-run `deploy.bat` to push the changes to your project.
+> **Note on `init_unreal.py`:** This file is a **generic submodule loader** — it is not part of the `UEFN_Toolbelt/` package and contains no Toolbelt-specific code. It simply scans `Content/Python/` for packages that expose a `register()` function and calls them.
+>
+> - **No existing `init_unreal.py`?** Copy it as shown above — done.
+> - **Already have your own `init_unreal.py`?** Do **not** overwrite it. Instead, open `init_unreal.py` from this repo and copy only the package-discovery `for` loop (the section under `# ── 2. Discover and load all packages`) into your existing file. It is fully self-contained and won't conflict with anything already there.
 
 ---
 

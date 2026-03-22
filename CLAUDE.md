@@ -614,7 +614,7 @@ tb.run("scatter_props", ...)   # N actors
 
 | File | Purpose |
 |---|---|
-| `Content/Python/init_unreal.py` | Auto-runs on editor start, registers all tools, injects Toolbelt menu |
+| `init_unreal.py` (repo root — copy to `Content/Python/`) | Generic submodule loader, auto-runs on editor start. Scans `Content/Python/` for packages with `register()` and calls them. Not Toolbelt-specific — do not overwrite an existing `init_unreal.py`; merge only the discovery loop instead. |
 | `Content/Python/UEFN_Toolbelt/tools/` | All 21 tool modules |
 | `Content/Python/UEFN_Toolbelt/tools/mcp_bridge.py` | HTTP listener (runs inside UEFN) |
 | `mcp_server.py` | External FastMCP bridge (Claude Code connects to this) |
