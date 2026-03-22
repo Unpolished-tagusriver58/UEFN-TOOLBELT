@@ -1283,11 +1283,11 @@ def _test_entities() -> None:
     try:
         # Test List
         kits = tb.run("entity_list_kits")
-        _record("Entities", "List Kits", "Lobby Starter" in kits)
-        
+        _record("Entities", "List Kits", "Lobby Starter" in kits.get("kits", []))
+
         # Test Spawn Kit
         spawned = tb.run("entity_spawn_kit", kit_name="Teleport Link")
-        _record("Entities", "Spawn Kit", spawned == 2)
+        _record("Entities", "Spawn Kit", spawned.get("count") == 2)
         
         # Verify and Cleanup
         actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
