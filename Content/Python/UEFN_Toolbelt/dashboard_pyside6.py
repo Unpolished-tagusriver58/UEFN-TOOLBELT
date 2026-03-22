@@ -232,20 +232,29 @@ def _tab_quick_actions(R) -> "QScrollArea":
     desc.setWordWrap(True)
     L.addWidget(desc)
 
-    # 1. Selection & Visibility
+    # 1. Selection & Utility
     g_sel = _group(L, "Selection & Utility")
     _btn(g_sel, "Print Selected Actors to Log", lambda: R("get_all_actors"), "Prints total count and paths of current selection.")
     _btn(g_sel, "Auto-Generate LODs (Selected)", lambda: R("lod_auto_generate_selection"), "Forces bulk generation of LODs for selected static meshes.")
+    _btn(g_sel, "Bulk Snap Selection to Grid", lambda: R("bulk_snap_to_grid"), "Fixes messy transforms by automatically snapping all selected props to the grid.")
 
-    # 2. Safety & Backups
-    g_snap = _group(L, "Safety & Backups")
+    # 2. Safety & Optimization
+    g_snap = _group(L, "Safety & Optimization")
     _btn(g_snap, "Snapshot: Backup Current Level", lambda: R("snapshot_save"), "Saves the current transforms of all actors to a JSON backup.")
     _btn(g_snap, "Snapshot: Restore Level", lambda: R("snapshot_restore"), "Restores actor positions from the latest snapshot.")
+    _btn(g_snap, "Scan Project Memory Limits", lambda: R("memory_scan"), "Runs a comprehensive memory audit of textures, meshes, and audio to prevent publish failures.")
 
     # 3. Organization
     g_org = _group(L, "Project Organization")
+
+    gen_inp = _inp("MyProject", "Project Name", width=120)
+    gen_combo = QComboBox()
+    gen_combo.addItems(["uefn_standard", "competitive_map", "solo_dev", "verse_heavy"])
+    _btn_inp(g_org, "Generate Professional Folder Tree", 
+             lambda: R("scaffold_generate", template=gen_combo.currentText(), project_name=gen_inp.text()), 
+             gen_combo, gen_inp, tip="Scaffolds a perfectly organized Epic-standard folder hierarchy.")
     
-    org_inp = _inp("MyProject", "Project root folder name", width=120)
+    org_inp = _inp("MyProject", "Project Name", width=120)
     _btn_inp(g_org, "Organize Loose Assets in /Game", 
              lambda: R("scaffold_organize_loose", project_name=org_inp.text(), dry_run=False), 
              org_inp, tip="Moves unstructured loose assets into proper typed folders.")
@@ -267,6 +276,10 @@ def _tab_quick_actions(R) -> "QScrollArea":
 
     _btn(g_mat, "Clear Unused References (Orphans)", lambda: R("ref_delete_orphans"), "Deletes assets that have zero references to free up project space.")
     _btn(g_mat, "Replace Selected with Blueprint/Asset", lambda: R("replace_with_assets"), "Swaps all selected viewport actors with a new mesh from the Content Browser.")
+
+    # 5. Verse Code Generation
+    g_verse = _group(L, "Verse Code Generation")
+    _btn(g_verse, "Generate @editable properties (Selected)", lambda: R("verse_gen_device_declarations"), "Reads the selected actors in the viewport and instantly generates perfectly typed Verse code variables.")
 
     L.addStretch()
     return scroll
