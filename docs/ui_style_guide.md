@@ -253,6 +253,114 @@ outline_color = _P["accent"]     # selected
 
 ---
 
+## Dashboard Widgets — Layout Rules
+
+These rules apply when building tabs in `dashboard_pyside6.py`. Violations cause crowded
+or broken layouts that are hard to fix after the fact.
+
+### Spinboxes (`_spin`)
+
+**Minimum width: 90px.** The `_spin()` helper enforces `max(width, 90)` automatically.
+Never pass a width below 90 — 3-digit numbers (e.g. `400`, `100`) will crowd the arrow
+buttons and become unreadable.
+
+```python
+# ✓ correct
+count_s = _spin(6, 1, 200)           # default width=90
+size_s  = _spin(100, 10, 2000)       # default width=90
+large_s = _spin(5000, 0, 99999, 0, 100)  # explicit 100px for 5-digit values
+
+# ✗ wrong — clips numbers against arrows
+count_s = _spin(6, 1, 200, width=60)
+```
+
+**Width budget by digit count:**
+| Max value | Recommended width |
+|---|---|
+| 1–2 digits (0–99) | 90px |
+| 3 digits (100–999) | 90px |
+| 4 digits (1000–9999) | 90px |
+| 5+ digits (10000+) | 100px |
+| Decimal (e.g. 1.00) | 90px |
+
+**Do NOT style `QSpinBox::up-arrow` or `QDoubleSpinBox::down-arrow` in QSS.**
+Setting `width`/`height` on arrow subcontrols with no image source causes a null-paint
+crash (`EXCEPTION_ACCESS_VIOLATION`) in UEFN's embedded Qt runtime when the user clicks
+the spinbox. Arrow subcontrols must be left at Qt native defaults.
+
+### Rows with multiple inputs (`_btn_inp` groups)
+
+All `_btn_inp` calls in the **same group** must use widgets of the **same width**.
+The button expands to fill remaining space — if one row has a 70px widget and another
+has a 90px widget, the buttons have different widths and the group looks broken.
+
+```python
+# ✓ correct — both widgets same width, buttons align
+vol_sp    = _spin(1.0, 0.0, 4.0, 2)   # 90px (default)
+radius_sp = _spin(2000.0, 0.0, 99999.0, 0)  # 90px (default)
+_btn_inp(g, "Set Volume", lambda *_: ..., vol_sp)
+_btn_inp(g, "Set Radius", lambda *_: ..., radius_sp)
+
+# ✗ wrong — mismatched widgets, unequal button widths
+vol_sp    = _spin(1.0, 0.0, 4.0, 2, 70)   # 70px
+radius_sp = _spin(2000.0, 0.0, 99999.0, 0, 90)  # 90px
+```
+
+### Row density limit
+
+**Max 2 label+widget pairs per `QHBoxLayout` row.** More than 2 pairs causes overflow
+on typical panel widths. Use multiple rows instead:
+
+```python
+# ✓ correct
+_lrow(("Type:", lt_combo), ("Intensity:", intensity_sp))
+_lrow(("Color:", color_inp), ("Radius:", atten_sp))
+
+# ✗ wrong — 4 pairs overflow
+_lrow(("Type:", lt_combo), ("Intensity:", intensity_sp), ("Color:", color_inp), ("Radius:", atten_sp))
+```
+
+---
+
+## Window Identity — Title and Icon
+
+Every Toolbelt window must use the canonical TB icon and a consistent title format.
+This is handled automatically by `ToolbeltWindow` — you just need to pass the right title.
+
+### Icon
+
+`ToolbeltWindow.__init__` calls `make_toolbelt_icon()` from `core/base_window.py` automatically.
+**Never recreate the icon inline.** If you need the icon outside a `ToolbeltWindow` (e.g. the
+main dashboard, which extends `QMainWindow` directly), import from the same source:
+
+```python
+from ..core.base_window import make_toolbelt_icon
+self.setWindowIcon(make_toolbelt_icon())
+```
+
+### Title format
+
+| Window type | Title string |
+|---|---|
+| Main dashboard | `"UEFN Toolbelt"` |
+| Tool sub-window | `"UEFN Toolbelt — Tool Name"` |
+
+```python
+# ✓ correct
+super().__init__(title="UEFN Toolbelt — Verse Device Graph", width=1400, height=860)
+
+# ✗ wrong — no brand prefix
+super().__init__(title="Verse Device Graph")
+
+# ✗ wrong — shape/emoji prefix in title (the icon already serves this purpose)
+self.setWindowTitle("⬡  UEFN Toolbelt")
+```
+
+The icon is a 64×64 blue hexagon with white "TB" text (`#3A3AFF` fill, Segoe UI 16pt Bold).
+Do not use a different icon, a plain `QIcon()`, or no icon at all.
+
+---
+
 ## What NOT to Do
 
 - **No purple, navy, or blue-grey tints.** Banned values: `#0a0a1a`, `#1a1a30`,

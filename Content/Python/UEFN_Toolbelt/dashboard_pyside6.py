@@ -141,7 +141,7 @@ def _spin(value: float = 1.0, mn: float = 0.0, mx: float = 9999.0,
     s.setRange(mn, mx)
     s.setValue(value)
     s.setDecimals(int(decimals))
-    s.setFixedWidth(width)
+    s.setFixedWidth(max(width, 90))  # 90px minimum — narrower clips 3-digit numbers against arrows
     return s
 
 
@@ -298,6 +298,21 @@ def _tab_quick_actions(R) -> "QScrollArea":
     L.addWidget(desc)
 
     _build_setup_status(L)
+
+    # Flagship Tools
+    g_flag = _group(L, "Flagship Tools")
+    _btn(g_flag, "Verse Device Graph  —  visualise island architecture",
+         lambda: R("verse_graph_open"),
+         "Opens the force-directed node graph — devices are nodes, @editable refs are edges. "
+         "Detects clusters, scores architecture health 0–100, exports to JSON.")
+    _btn(g_flag, "World State Export  —  full level snapshot for AI",
+         lambda: R("world_state_export"),
+         "Dumps every actor's transform and readable properties to world_state.json — "
+         "the AI read layer for Claude to reason about your level.")
+    _btn(g_flag, "Device Catalog Scan  —  browse all 4,698 Creative devices",
+         lambda: R("device_catalog_scan"),
+         "Scans the Asset Registry for every placeable Fortnite Creative device. "
+         "Builds Claude's complete placement palette in device_catalog.json.")
 
     # 0. AI Project Setup Demo
     g_demo = _group(L, "AI Project Setup  |  demo.py")
@@ -544,9 +559,11 @@ def _tab_procedural(R) -> "QScrollArea":
     avoid_radius_s = _spin(3000, 100, 20000, width=90)
     row_av = QWidget(); rh_av = QHBoxLayout(row_av); rh_av.setContentsMargins(0,0,0,0); rh_av.setSpacing(4)
     rh_av.addWidget(QLabel("Count:")); rh_av.addWidget(avoid_count_s)
-    rh_av.addWidget(QLabel("Area:")); rh_av.addWidget(avoid_radius_s)
-    rh_av.addWidget(QLabel("AvoidR:")); rh_av.addWidget(avoid_rad_s); rh_av.addStretch()
+    rh_av.addWidget(QLabel("Area:")); rh_av.addWidget(avoid_radius_s); rh_av.addStretch()
     g_pcg.addWidget(row_av)
+    row_av2 = QWidget(); rh_av2 = QHBoxLayout(row_av2); rh_av2.setContentsMargins(0,0,0,0); rh_av2.setSpacing(4)
+    rh_av2.addWidget(QLabel("Avoid Radius:")); rh_av2.addWidget(avoid_rad_s); rh_av2.addStretch()
+    g_pcg.addWidget(row_av2)
     _btn_inp(g_pcg, "Scatter (Avoid Obstacles)",
              lambda: R("scatter_avoid",
                        mesh_path=scatter_inp.text() or "/Engine/BasicShapes/Sphere",
@@ -731,19 +748,21 @@ def _tab_bulk_ops(R) -> "QScrollArea":
     pivot_axis_combo  = QComboBox(); pivot_axis_combo.addItems(["Z","X","Y"]); pivot_axis_combo.setFixedWidth(55)
     pivot_ref_combo   = QComboBox(); pivot_ref_combo.addItems(["center","first"]); pivot_ref_combo.setFixedWidth(70)
     row_adv3 = QWidget(); h_adv3 = QHBoxLayout(row_adv3); h_adv3.setContentsMargins(0,0,0,0); h_adv3.setSpacing(4)
-    h_adv3.addWidget(QLabel("°:")); h_adv3.addWidget(pivot_angle_s)
-    h_adv3.addWidget(QLabel("Axis:")); h_adv3.addWidget(pivot_axis_combo)
-    h_adv3.addWidget(QLabel("Pivot:")); h_adv3.addWidget(pivot_ref_combo); h_adv3.addStretch()
+    h_adv3.addWidget(QLabel("Angle°:")); h_adv3.addWidget(pivot_angle_s)
+    h_adv3.addWidget(QLabel("Axis:")); h_adv3.addWidget(pivot_axis_combo); h_adv3.addStretch()
     g_adv.addWidget(row_adv3)
+    row_adv3b = QWidget(); h_adv3b = QHBoxLayout(row_adv3b); h_adv3b.setContentsMargins(0,0,0,0); h_adv3b.setSpacing(4)
+    h_adv3b.addWidget(QLabel("Pivot:")); h_adv3b.addWidget(pivot_ref_combo); h_adv3b.addStretch()
+    g_adv.addWidget(row_adv3b)
     _btn(g_adv, "Rotate Around Pivot",
          lambda: R("rotate_around_pivot", angle_deg=pivot_angle_s.value(),
                    axis=pivot_axis_combo.currentText(), pivot=pivot_ref_combo.currentText()))
 
-    _row(g_adv,
-         ("Snap to Surface",  lambda: R("align_to_surface")),
-         ("Match Spacing",    lambda: R("match_spacing", axis=adv_axis_combo.currentText())),
-         ("Grid Two Points",  lambda: R("align_to_grid_two_points")),
-    )
+    _grid_btns(g_adv, [
+        ("Snap to Surface",  lambda: R("align_to_surface")),
+        ("Match Spacing",    lambda: R("match_spacing", axis=adv_axis_combo.currentText())),
+        ("Grid Two Points",  lambda: R("align_to_grid_two_points")),
+    ], cols=2)
 
     # ── Actor Organization ─────────────────────────────────────────────────
     g_org = _group(L, "Actor Organization")
@@ -777,11 +796,11 @@ def _tab_bulk_ops(R) -> "QScrollArea":
              lambda: R("actor_select_by_class", class_filter=class_inp.text()),
              class_inp)
 
-    _row(g_org,
-         ("Select Same Folder",   lambda: R("actor_select_same_folder")),
-         ("Attach to Parent",     lambda: R("actor_attach_to_parent")),
-         ("Detach",               lambda: R("actor_detach")),
-    )
+    _grid_btns(g_org, [
+        ("Select Same Folder",   lambda: R("actor_select_same_folder")),
+        ("Attach to Parent",     lambda: R("actor_attach_to_parent")),
+        ("Detach",               lambda: R("actor_detach")),
+    ], cols=2)
 
     loc_chk = QCheckBox("Loc"); loc_chk.setChecked(True)
     rot_chk = QCheckBox("Rot"); rot_chk.setChecked(True)
@@ -805,9 +824,11 @@ def _tab_bulk_ops(R) -> "QScrollArea":
     prox_align_combo = QComboBox(); prox_align_combo.addItems(["center", "keep"]); prox_align_combo.setFixedWidth(70)
     row_pn = QWidget(); h_pn = QHBoxLayout(row_pn); h_pn.setContentsMargins(0,0,0,0); h_pn.setSpacing(4)
     h_pn.addWidget(QLabel("Dir:")); h_pn.addWidget(prox_dir_combo)
-    h_pn.addWidget(QLabel("Gap:")); h_pn.addWidget(prox_gap_s)
-    h_pn.addWidget(QLabel("Align:")); h_pn.addWidget(prox_align_combo); h_pn.addStretch()
+    h_pn.addWidget(QLabel("Gap:")); h_pn.addWidget(prox_gap_s); h_pn.addStretch()
     g_prox.addWidget(row_pn)
+    row_pn2 = QWidget(); h_pn2 = QHBoxLayout(row_pn2); h_pn2.setContentsMargins(0,0,0,0); h_pn2.setSpacing(4)
+    h_pn2.addWidget(QLabel("Align:")); h_pn2.addWidget(prox_align_combo); h_pn2.addStretch()
+    g_prox.addWidget(row_pn2)
     _btn(g_prox, "Place Next To  (2 selected: ref → mover)",
          lambda: R("actor_place_next_to",
                    direction=prox_dir_combo.currentText(),
@@ -830,11 +851,13 @@ def _tab_bulk_ops(R) -> "QScrollArea":
     dup_dy_s     = _spin(0,   -99999, 99999, width=70)
     dup_dz_s     = _spin(0,   -99999, 99999, width=70)
     row_dup = QWidget(); h_dup = QHBoxLayout(row_dup); h_dup.setContentsMargins(0,0,0,0); h_dup.setSpacing(4)
-    h_dup.addWidget(QLabel("×")); h_dup.addWidget(dup_count_s)
-    h_dup.addWidget(QLabel("dX:")); h_dup.addWidget(dup_dx_s)
-    h_dup.addWidget(QLabel("dY:")); h_dup.addWidget(dup_dy_s)
-    h_dup.addWidget(QLabel("dZ:")); h_dup.addWidget(dup_dz_s); h_dup.addStretch()
+    h_dup.addWidget(QLabel("Count×:")); h_dup.addWidget(dup_count_s)
+    h_dup.addWidget(QLabel("dX:")); h_dup.addWidget(dup_dx_s); h_dup.addStretch()
     g_prox.addWidget(row_dup)
+    row_dup2 = QWidget(); h_dup2 = QHBoxLayout(row_dup2); h_dup2.setContentsMargins(0,0,0,0); h_dup2.setSpacing(4)
+    h_dup2.addWidget(QLabel("dY:")); h_dup2.addWidget(dup_dy_s)
+    h_dup2.addWidget(QLabel("dZ:")); h_dup2.addWidget(dup_dz_s); h_dup2.addStretch()
+    g_prox.addWidget(row_dup2)
     _btn(g_prox, "Duplicate with Offset",
          lambda: R("actor_duplicate_offset",
                    count=int(dup_count_s.value()),
@@ -842,28 +865,33 @@ def _tab_bulk_ops(R) -> "QScrollArea":
                    offset_y=dup_dy_s.value(),
                    offset_z=dup_dz_s.value()))
 
-    old_cls_inp  = _inp("old class filter e.g. SM_OldRock", "", width=200)
-    new_ast_inp  = _inp("new asset path /Game/…", "", width=220)
-    _btn_inp(g_prox, "Replace Class  (dry run first →)",
-             lambda: R("actor_replace_class",
-                       old_class_filter=old_cls_inp.text(),
-                       new_asset_path=new_ast_inp.text(),
-                       dry_run=True),
-             old_cls_inp, new_ast_inp, tip="Preview: logs what would be replaced without changing anything.")
-    _btn(g_prox, "Replace Class  (EXECUTE)",
-         lambda: R("actor_replace_class",
-                   old_class_filter=old_cls_inp.text(),
-                   new_asset_path=new_ast_inp.text(),
-                   dry_run=False))
+    old_cls_inp  = _inp("old class filter  e.g. SM_OldRock", "", width=240)
+    new_ast_inp  = _inp("new asset path  /Game/…", "", width=240)
+    row_rc = QWidget(); h_rc = QHBoxLayout(row_rc); h_rc.setContentsMargins(0,0,0,0); h_rc.setSpacing(4)
+    h_rc.addWidget(QLabel("Old:")); h_rc.addWidget(old_cls_inp); h_rc.addStretch()
+    g_prox.addWidget(row_rc)
+    row_rc2 = QWidget(); h_rc2 = QHBoxLayout(row_rc2); h_rc2.setContentsMargins(0,0,0,0); h_rc2.setSpacing(4)
+    h_rc2.addWidget(QLabel("New:")); h_rc2.addWidget(new_ast_inp); h_rc2.addStretch()
+    g_prox.addWidget(row_rc2)
+    _row(g_prox,
+         ("Replace Class  (Preview)",
+          lambda: R("actor_replace_class", old_class_filter=old_cls_inp.text(),
+                    new_asset_path=new_ast_inp.text(), dry_run=True)),
+         ("EXECUTE",
+          lambda: R("actor_replace_class", old_class_filter=old_cls_inp.text(),
+                    new_asset_path=new_ast_inp.text(), dry_run=False)),
+    )
 
     clust_rad_s    = _spin(800, 50, 20000, width=80)
     clust_prefix   = _inp("Cluster", "Cluster", width=80)
     clust_min_s    = _spin(2, 1, 50, width=60)
     row_clust = QWidget(); h_clust = QHBoxLayout(row_clust); h_clust.setContentsMargins(0,0,0,0); h_clust.setSpacing(4)
-    h_clust.addWidget(QLabel("R:")); h_clust.addWidget(clust_rad_s)
-    h_clust.addWidget(QLabel("Prefix:")); h_clust.addWidget(clust_prefix)
+    h_clust.addWidget(QLabel("Radius:")); h_clust.addWidget(clust_rad_s)
     h_clust.addWidget(QLabel("Min:")); h_clust.addWidget(clust_min_s); h_clust.addStretch()
     g_prox.addWidget(row_clust)
+    row_clust2 = QWidget(); h_clust2 = QHBoxLayout(row_clust2); h_clust2.setContentsMargins(0,0,0,0); h_clust2.setSpacing(4)
+    h_clust2.addWidget(QLabel("Folder Prefix:")); h_clust2.addWidget(clust_prefix); h_clust2.addStretch()
+    g_prox.addWidget(row_clust2)
     _btn(g_prox, "Auto-Cluster to Folders  (selection or level)",
          lambda: R("actor_cluster_to_folder",
                    radius=clust_rad_s.value(),
@@ -898,9 +926,11 @@ def _tab_text(R) -> "QScrollArea":
     z_s       = _spin(200, -9999, 9999, width=80)
     row1 = QWidget(); h1 = QHBoxLayout(row1); h1.setContentsMargins(0, 0, 0, 0); h1.setSpacing(4)
     h1.addWidget(QLabel("Text:")); h1.addWidget(text_inp)
-    h1.addWidget(QLabel("Color:")); h1.addWidget(color_inp)
-    h1.addWidget(QLabel("Z offset:")); h1.addWidget(z_s); h1.addStretch()
+    h1.addWidget(QLabel("Color:")); h1.addWidget(color_inp); h1.addStretch()
     g.addWidget(row1)
+    row1b = QWidget(); h1b = QHBoxLayout(row1b); h1b.setContentsMargins(0,0,0,0); h1b.setSpacing(4)
+    h1b.addWidget(QLabel("Z Offset:")); h1b.addWidget(z_s); h1b.addStretch()
+    g.addWidget(row1b)
     _btn(g, "Place Sign at Camera",
          lambda: R("text_place",
                    text=text_inp.text() or "ZONE",
@@ -919,9 +949,11 @@ def _tab_text(R) -> "QScrollArea":
     cell_s = _spin(2000, 100, 50000, width=90)
     row2 = QWidget(); h2 = QHBoxLayout(row2); h2.setContentsMargins(0,0,0,0); h2.setSpacing(4)
     h2.addWidget(QLabel("Cols:")); h2.addWidget(cols_s)
-    h2.addWidget(QLabel("Rows:")); h2.addWidget(rows_s)
-    h2.addWidget(QLabel("Cell cm:")); h2.addWidget(cell_s); h2.addStretch()
+    h2.addWidget(QLabel("Rows:")); h2.addWidget(rows_s); h2.addStretch()
     g2.addWidget(row2)
+    row2b = QWidget(); h2b = QHBoxLayout(row2b); h2b.setContentsMargins(0,0,0,0); h2b.setSpacing(4)
+    h2b.addWidget(QLabel("Cell cm:")); h2b.addWidget(cell_s); h2b.addStretch()
+    g2.addWidget(row2b)
     _btn(g2, "Paint Zone Grid (A1–D4 style)",
          lambda: R("text_paint_grid",
                    cols=int(cols_s.value()), rows=int(rows_s.value()),
@@ -943,17 +975,23 @@ def _tab_text(R) -> "QScrollArea":
 
     row_bb1 = QWidget(); h_bb1 = QHBoxLayout(row_bb1); h_bb1.setContentsMargins(0,0,0,0); h_bb1.setSpacing(4)
     h_bb1.addWidget(QLabel("Text:")); h_bb1.addWidget(bb_text_inp)
-    h_bb1.addWidget(QLabel("Prefix:")); h_bb1.addWidget(bb_prefix_inp)
-    h_bb1.addWidget(QLabel("Color:")); h_bb1.addWidget(bb_color_inp); h_bb1.addStretch()
+    h_bb1.addWidget(QLabel("Prefix:")); h_bb1.addWidget(bb_prefix_inp); h_bb1.addStretch()
     g_bb.addWidget(row_bb1)
+    row_bb1b = QWidget(); h_bb1b = QHBoxLayout(row_bb1b); h_bb1b.setContentsMargins(0,0,0,0); h_bb1b.setSpacing(4)
+    h_bb1b.addWidget(QLabel("Color:")); h_bb1b.addWidget(bb_color_inp); h_bb1b.addStretch()
+    g_bb.addWidget(row_bb1b)
 
     row_bb2 = QWidget(); h_bb2 = QHBoxLayout(row_bb2); h_bb2.setContentsMargins(0,0,0,0); h_bb2.setSpacing(4)
     h_bb2.addWidget(QLabel("Count:")); h_bb2.addWidget(bb_count_s)
-    h_bb2.addWidget(QLabel("Size:")); h_bb2.addWidget(bb_size_s)
-    h_bb2.addWidget(QLabel("Spacing:")); h_bb2.addWidget(bb_spacing_s)
-    h_bb2.addWidget(QLabel("Cols:")); h_bb2.addWidget(bb_cols_s)
-    h_bb2.addWidget(bb_layout_combo); h_bb2.addStretch()
+    h_bb2.addWidget(QLabel("Size:")); h_bb2.addWidget(bb_size_s); h_bb2.addStretch()
     g_bb.addWidget(row_bb2)
+    row_bb3 = QWidget(); h_bb3 = QHBoxLayout(row_bb3); h_bb3.setContentsMargins(0,0,0,0); h_bb3.setSpacing(4)
+    h_bb3.addWidget(QLabel("Spacing:")); h_bb3.addWidget(bb_spacing_s)
+    h_bb3.addWidget(QLabel("Cols:")); h_bb3.addWidget(bb_cols_s); h_bb3.addStretch()
+    g_bb.addWidget(row_bb3)
+    row_bb4 = QWidget(); h_bb4 = QHBoxLayout(row_bb4); h_bb4.setContentsMargins(0,0,0,0); h_bb4.setSpacing(4)
+    h_bb4.addWidget(QLabel("Layout:")); h_bb4.addWidget(bb_layout_combo); h_bb4.addStretch()
+    g_bb.addWidget(row_bb4)
 
     _btn(g_bb, "Spawn Signs at Camera",
          lambda: R("sign_spawn_bulk",
@@ -1020,11 +1058,13 @@ def _tab_text(R) -> "QScrollArea":
 
     row_lbl = QWidget(); h_lbl = QHBoxLayout(row_lbl); h_lbl.setContentsMargins(0,0,0,0); h_lbl.setSpacing(4)
     h_lbl.addWidget(QLabel("Color:")); h_lbl.addWidget(lbl_color_inp)
-    h_lbl.addWidget(QLabel("Size:")); h_lbl.addWidget(lbl_size_s)
-    h_lbl.addWidget(QLabel("Z:")); h_lbl.addWidget(lbl_z_s)
-    h_lbl.addWidget(QLabel("Yaw°:")); h_lbl.addWidget(lbl_yaw_s)
-    h_lbl.addWidget(lbl_name_chk); h_lbl.addStretch()
+    h_lbl.addWidget(QLabel("Size:")); h_lbl.addWidget(lbl_size_s); h_lbl.addStretch()
     g_lbl.addWidget(row_lbl)
+    row_lbl2 = QWidget(); h_lbl2 = QHBoxLayout(row_lbl2); h_lbl2.setContentsMargins(0,0,0,0); h_lbl2.setSpacing(4)
+    h_lbl2.addWidget(QLabel("Z Offset:")); h_lbl2.addWidget(lbl_z_s)
+    h_lbl2.addWidget(QLabel("Yaw°:")); h_lbl2.addWidget(lbl_yaw_s); h_lbl2.addStretch()
+    g_lbl.addWidget(row_lbl2)
+    g_lbl.addWidget(lbl_name_chk)
 
     def _attach_label():
         R("label_attach",
@@ -1685,32 +1725,9 @@ def _tab_verification(R) -> "QScrollArea":
 # ─── Window icon (programmatic hexagon) ───────────────────────────────────────
 
 def _make_icon() -> "QIcon":
-    """Draw a 64×64 hexagon icon for the dashboard window."""
-    import math
-    size = 64
-    pm = QPixmap(size, size)
-    pm.fill(QColor(0, 0, 0, 0))  # transparent
-
-    p = QPainter(pm)
-    p.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-    cx, cy, r = size / 2, size / 2, size / 2 - 3
-    pts = [
-        QPointF(cx + r * math.cos(math.radians(60 * i - 30)),
-                cy + r * math.sin(math.radians(60 * i - 30)))
-        for i in range(6)
-    ]
-    p.setBrush(QBrush(QColor("#3A3AFF")))
-    p.setPen(Qt.NoPen)
-    p.drawPolygon(QPolygonF(pts))
-
-    p.setPen(QColor("#FFFFFF"))
-    font = QFont("Segoe UI", 16, QFont.Weight.Bold)
-    p.setFont(font)
-    p.drawText(pm.rect(), Qt.AlignCenter, "TB")
-    p.end()
-
-    return QIcon(pm)
+    """Canonical TB icon — delegates to core/base_window so there's one source."""
+    from .core.base_window import make_toolbelt_icon
+    return make_toolbelt_icon()
 
 
 # ─── Plugin Hub ───────────────────────────────────────────────────────────────
@@ -2186,24 +2203,140 @@ def _tab_selection(R) -> "QScrollArea":
 
 def _tab_lighting(R) -> "QScrollArea":
     scroll, L = _page()
-    hero = QLabel("Cinematic Lighting")
+    hero = QLabel("Lighting & Post-Process")
     hero.setStyleSheet("font-size: 20px; font-weight: bold; color: #FFFFFF; padding: 12px 0 4px 0;")
     L.addWidget(hero)
-    
-    g = _group(L, "Atmospheric Presets")
-    
-    mood_combo = QComboBox()
-    mood_combo.addItems(["Star Wars", "Cyberpunk", "Vibrant"])
-    mood_combo.setFixedWidth(160)
-    _btn_inp(g, "Apply Lighting Preset", 
-             lambda: R("light_cinematic_preset", mood=mood_combo.currentText()), 
-             mood_combo, tip="Sets Directional Light and Atmosphere for a specific cinematic mood.")
-             
-    _btn(g, "Randomize Sun Orientation", lambda: R("light_randomize_sky"), 
-         "Randomly shifts sun position for environmental look-dev.")
-         
+
+    # ── Place Light ──────────────────────────────────────────────────────────
+    g_place = _group(L, "Place Light at Camera")
+    lt_combo     = QComboBox(); lt_combo.addItems(["point", "spot", "rect", "directional", "sky"]); lt_combo.setFixedWidth(100)
+    intensity_sp = _spin(1000.0, 0.0, 99999.0, 0, 90)
+    color_inp    = _inp("hex color", "#FFFFFF", 90)
+    atten_sp     = _spin(1000.0, 0.0, 99999.0, 0, 90)
+
+    def _lrow(*items):
+        w = QWidget(); h = QHBoxLayout(w); h.setContentsMargins(0,0,0,0); h.setSpacing(4)
+        for lbl, wgt in items:
+            h.addWidget(QLabel(lbl)); h.addWidget(wgt)
+        h.addStretch(); g_place.addWidget(w)
+
+    _lrow(("Type:", lt_combo), ("Intensity:", intensity_sp))
+    _lrow(("Color:", color_inp), ("Radius:", atten_sp))
+    _btn(g_place, "Place Light at Camera",
+         lambda: R("light_place", light_type=lt_combo.currentText(),
+                   intensity=intensity_sp.value(), color=color_inp.text(),
+                   attenuation=atten_sp.value()))
+
+    # ── Adjust Selected Lights ────────────────────────────────────────────────
+    g_set = _group(L, "Adjust Selected Lights")
+    set_int_sp   = _spin(1000.0, 0.0, 99999.0, 0, 90)
+    set_col_inp  = _inp("color #RRGGBB", "", 90)
+    set_atten_sp = _spin(1000.0, 0.0, 99999.0, 0, 90)
+    _btn_inp(g_set, "Set Intensity",
+             lambda *_: R("light_set", intensity=set_int_sp.value()),
+             set_int_sp, tip="Set intensity on all selected light actors")
+    _btn_inp(g_set, "Set Color",
+             lambda *_: R("light_set", color=set_col_inp.text()),
+             set_col_inp, tip="Set hex color on all selected light actors")
+    _btn_inp(g_set, "Set Radius",
+             lambda *_: R("light_set", attenuation=set_atten_sp.value()),
+             set_atten_sp, tip="Set attenuation radius on selected point/spot/rect lights")
+    _btn(g_set, "List All Lights", lambda: R("light_list"),
+         "Audit every light in the level — type, label, intensity, location.")
+
+    # ── Time of Day ───────────────────────────────────────────────────────────
+    g_tod = _group(L, "Time of Day  (needs DirectionalLight in level)")
+    hour_sp = _spin(12.0, 0.0, 24.0, 1, 70)
+    _btn_inp(g_tod, "Set Time of Day",
+             lambda *_: R("sky_set_time", hour=hour_sp.value()),
+             hour_sp, tip="0=midnight  6=sunrise  12=noon  18=sunset")
+    _btn(g_tod, "Randomize Sun", lambda: R("light_randomize_sky"),
+         "Random pitch+yaw on the DirectionalLight — fast look-dev.")
+
+    # ── Atmospheric Presets ───────────────────────────────────────────────────
+    g_mood = _group(L, "Atmospheric Presets")
+    mood_combo = QComboBox(); mood_combo.addItems(["Star Wars", "Cyberpunk", "Vibrant"]); mood_combo.setFixedWidth(130)
+    _btn_inp(g_mood, "Apply Mood Preset",
+             lambda *_: R("light_cinematic_preset", mood=mood_combo.currentText()),
+             mood_combo, tip="Adjusts DirectionalLight intensity+color and fog density.")
+
+    # ── Post-Process ──────────────────────────────────────────────────────────
+    g_pp = _group(L, "Post-Process Volume")
+    _btn(g_pp, "Spawn Global PPV", lambda: R("postprocess_spawn"),
+         "Creates a global PostProcessVolume (infinite extent). Skips if one already exists.")
+
+    pp_preset_combo = QComboBox()
+    pp_preset_combo.addItems(["cinematic", "night", "vibrant", "bleach", "horror", "fantasy", "reset"])
+    pp_preset_combo.setFixedWidth(110)
+    _btn_inp(g_pp, "Apply Visual Preset",
+             lambda *_: R("postprocess_preset", preset=pp_preset_combo.currentText()),
+             pp_preset_combo, tip="Applies bloom/exposure/vignette/saturation preset to the level PPV.")
+
+    bloom_sp    = _spin(0.675, 0.0, 10.0, 2, 90)
+    exposure_sp = _spin(0.0, -10.0, 10.0, 1, 90)
+    _btn_inp(g_pp, "Set Bloom",
+             lambda *_: R("postprocess_set", bloom=bloom_sp.value()),
+             bloom_sp, tip="Bloom intensity (0–10). Default UE value is 0.675.")
+    _btn_inp(g_pp, "Set Exposure",
+             lambda *_: R("postprocess_set", exposure=exposure_sp.value()),
+             exposure_sp, tip="EV bias — negative = darker, positive = brighter.")
+
     L.addStretch()
     return scroll
+
+def _tab_audio(R) -> "QScrollArea":
+    scroll, L = _page()
+    hero = QLabel("Audio Placement")
+    hero.setStyleSheet("font-size: 20px; font-weight: bold; color: #FFFFFF; padding: 12px 0 4px 0;")
+    L.addWidget(hero)
+
+    note = QLabel("Places standard AmbientSound actors (not Fortnite music devices).\nLeave Asset Path blank to assign a sound manually in the Details panel.")
+    note.setStyleSheet("font-size: 11px; color: #AAAAAA; padding-bottom: 10px;")
+    note.setWordWrap(True)
+    L.addWidget(note)
+
+    # ── Place Sound ───────────────────────────────────────────────────────────
+    g_place = _group(L, "Place Sound at Camera")
+    audio_label_inp  = _inp("label", "AmbientSound", 130)
+    audio_vol_sp     = _spin(1.0, 0.0, 4.0, 2, 70)
+    audio_asset_inp  = _inp("/Game/Audio/… (optional)", "", 200)
+    audio_radius_sp  = _spin(0.0, 0.0, 99999.0, 0, 90)
+
+    def _arow(*items):
+        w = QWidget(); h = QHBoxLayout(w); h.setContentsMargins(0,0,0,0); h.setSpacing(4)
+        for lbl, wgt in items:
+            h.addWidget(QLabel(lbl)); h.addWidget(wgt)
+        h.addStretch(); g_place.addWidget(w)
+
+    _arow(("Label:", audio_label_inp), ("Volume:", audio_vol_sp))
+    _arow(("Asset:", audio_asset_inp))
+    _arow(("Radius:", audio_radius_sp))
+    _btn(g_place, "Place Ambient Sound at Camera",
+         lambda: R("audio_place",
+                   label=audio_label_inp.text() or "AmbientSound",
+                   asset_path=audio_asset_inp.text(),
+                   volume=audio_vol_sp.value(),
+                   radius=audio_radius_sp.value()))
+
+    # ── Bulk Adjust ───────────────────────────────────────────────────────────
+    g_bulk = _group(L, "Adjust Selected Sounds")
+    bulk_vol_sp    = _spin(1.0, 0.0, 4.0, 2, 90)
+    bulk_radius_sp = _spin(2000.0, 0.0, 99999.0, 0, 90)
+    _btn_inp(g_bulk, "Set Volume",
+             lambda *_: R("audio_set_volume", volume=bulk_vol_sp.value()),
+             bulk_vol_sp, tip="Set volume multiplier on all selected AmbientSound actors")
+    _btn_inp(g_bulk, "Set Radius",
+             lambda *_: R("audio_set_radius", radius=bulk_radius_sp.value()),
+             bulk_radius_sp, tip="Override attenuation falloff radius on selected sounds")
+
+    # ── Audit ─────────────────────────────────────────────────────────────────
+    g_audit = _group(L, "Audit")
+    _btn(g_audit, "List All Sounds", lambda: R("audio_list"),
+         "List every AmbientSound in the level — label, asset, volume, folder.")
+
+    L.addStretch()
+    return scroll
+
 
 def _tab_project_admin(R) -> "QScrollArea":
     scroll, L = _page()
@@ -2694,6 +2827,7 @@ class ToolbeltDashboard(QMainWindow):
         ("Materials",   _tab_materials),
         ("Procedural",  _tab_procedural),
         ("Lighting",    _tab_lighting),
+        ("Audio",       _tab_audio),
         ("Measurement", _tab_measurement),
         ("Localization",_tab_localization),
         ("Environmental",_tab_environmental),
@@ -2718,7 +2852,7 @@ class ToolbeltDashboard(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("⬡  UEFN Toolbelt")
+        self.setWindowTitle("UEFN Toolbelt")
         self.setWindowIcon(_make_icon())
         self.setMinimumSize(820, 640)
         self.resize(960, 740)

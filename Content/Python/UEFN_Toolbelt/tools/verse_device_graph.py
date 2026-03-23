@@ -1040,71 +1040,63 @@ if _PYSIDE6:
             vl.setContentsMargins(0, 0, 0, 0)
             vl.setSpacing(0)
 
-            # Top bar
+            # Toolbar — window title already identifies the tool, no label needed
             bar = QWidget()
             bar.setFixedHeight(46)
-            bar.setStyleSheet("background:#111111; border-bottom:1px solid #2A2A2A;")
+            bar.setStyleSheet(
+                f"background:{self.hex('topbar')};"
+                f"border-bottom:1px solid {self.hex('border2')};"
+            )
             bl = QHBoxLayout(bar)
             bl.setContentsMargins(12, 0, 12, 0)
             bl.setSpacing(6)
 
-            title = QLabel("VERSE DEVICE GRAPH")
-            title.setFont(QFont("Segoe UI", 12, QFont.Bold))
-            title.setStyleSheet("color:#e94560;")   # toolbelt brand red
-            bl.addWidget(title)
-            bl.addSpacing(8)
-
-            def btn(text, accent=False, cb=None):
+            def _btn(text, accent=False, cb=None, w=0):
                 b = QPushButton(text)
                 b.setFixedHeight(28)
-                if accent:
-                    b.setProperty("accent", "true")
+                if w: b.setFixedWidth(w)
+                if accent: b.setProperty("accent", "true")
                 b.setCursor(Qt.PointingHandCursor)
-                if cb:
-                    b.clicked.connect(cb)
+                if cb: b.clicked.connect(cb)
                 return b
 
-            bl.addWidget(btn("SCAN", accent=True, cb=self._do_scan))
-            bl.addWidget(btn("Re-Layout", cb=self._do_relayout))
-            bl.addWidget(btn("Export JSON", cb=self._do_export))
-            bl.addSpacing(14)
+            bl.addWidget(_btn("SCAN", accent=True, cb=self._do_scan))
+            bl.addWidget(_btn("Re-Layout", cb=self._do_relayout))
+            bl.addWidget(_btn("Export JSON", cb=self._do_export))
+            bl.addSpacing(16)
 
-            lbl_path = QLabel("Verse Path:")
-            lbl_path.setStyleSheet("color:#555555;")
+            lbl_path = QLabel("Path:")
+            lbl_path.setStyleSheet(f"color:{self.hex('muted')};")
             bl.addWidget(lbl_path)
 
             self._path_edit = QLineEdit(self._verse_path)
             self._path_edit.setFixedHeight(26)
-            self._path_edit.setMinimumWidth(220)
+            self._path_edit.setMinimumWidth(260)
             bl.addWidget(self._path_edit)
 
-            browse = btn("…", cb=self._do_browse)
-            browse.setFixedWidth(28)
-            bl.addWidget(browse)
+            bl.addWidget(_btn("…", cb=self._do_browse))
 
-            bl.addSpacing(12)
+            bl.addSpacing(16)
 
             lbl_s = QLabel("Search:")
-            lbl_s.setStyleSheet("color:#555555;")
+            lbl_s.setStyleSheet(f"color:{self.hex('muted')};")
             bl.addWidget(lbl_s)
 
             self._search = QLineEdit()
             self._search.setFixedHeight(26)
-            self._search.setFixedWidth(140)
+            self._search.setFixedWidth(160)
             self._search.setPlaceholderText("filter nodes…")
             self._search.textChanged.connect(self._on_search)
             bl.addWidget(self._search)
             bl.addStretch()
 
             self._status = QLabel("Click SCAN to begin")
-            self._status.setStyleSheet("color:#555555; font-size:11px;")
+            self._status.setStyleSheet(f"color:{self.hex('muted')}; font-size:11px;")
             bl.addWidget(self._status)
             vl.addWidget(bar)
 
             # Health bar (full-width, 4px)
-            self._hbar = QLabel()
-            self._hbar.setFixedHeight(4)
-            self._hbar.setStyleSheet("background:#2A2A2A;")
+            self._hbar = self.make_hbar(4)
             vl.addWidget(self._hbar)
 
             # Canvas + panel
@@ -1181,7 +1173,22 @@ if _PYSIDE6:
         def _on_search(self, text: str) -> None:
             t = text.strip().lower()
             for nid, item in self._node_items.items():
-                item.setVisible(not t or t in item.data.label.lower())
+                visible = (not t or t in item.data.label.lower()
+                           or t in item.data.class_name.lower()
+                           or t in (item.data.category or "").lower())
+                item.setVisible(visible)
+                # Clear selection if the selected node is now hidden
+                if not visible and self._selected and self._selected.id == nid:
+                    self._selected = None
+                    self._panel.clear()
+
+            # Sync edge visibility — only show if both endpoints are visible
+            for edge in self._edge_items:
+                src = self._node_items.get(edge.data.source_id)
+                tgt = self._node_items.get(edge.data.target_id)
+                edge.setVisible(
+                    bool(src and src.isVisible() and tgt and tgt.isVisible())
+                )
 
         def _on_note(self) -> None:
             if self._selected:
@@ -1273,7 +1280,10 @@ if _PYSIDE6:
             self._sync_positions()
 
         def _layout_step(self) -> None:
-            nodes = self._l_nodes
+            # Only physics-simulate visible nodes — hidden nodes cause ghost jitter
+            nodes = [nd for nd in self._l_nodes
+                     if self._node_items.get(nd.id, None) is None
+                     or self._node_items[nd.id].isVisible()]
             edges = self._l_edges
             n     = len(nodes)
             k     = self._l_k

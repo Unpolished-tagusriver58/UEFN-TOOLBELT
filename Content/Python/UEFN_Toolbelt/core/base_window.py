@@ -41,11 +41,41 @@ try:
         QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
         QPushButton, QLabel, QFrame, QTextEdit, QScrollArea,
     )
-    from PySide6.QtGui import QColor, QFont
-    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QColor, QFont, QIcon, QPixmap, QPainter, QBrush, QPolygonF
+    from PySide6.QtCore import Qt, QPointF
     _PYSIDE6 = True
 except ImportError:
     QMainWindow = object  # type: ignore[misc,assignment]
+
+
+def make_toolbelt_icon() -> "QIcon":
+    """
+    Create the canonical UEFN Toolbelt window icon — blue hexagon with 'TB' text.
+    Used by ToolbeltWindow (auto-applied) and ToolbeltDashboard.
+    Import this wherever you need the icon; never recreate it inline.
+    """
+    if not _PYSIDE6:
+        return None  # type: ignore[return-value]
+    import math
+    size = 64
+    pm = QPixmap(size, size)
+    pm.fill(QColor(0, 0, 0, 0))
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    cx, cy, r = size / 2, size / 2, size / 2 - 3
+    pts = [
+        QPointF(cx + r * math.cos(math.radians(60 * i - 30)),
+                cy + r * math.sin(math.radians(60 * i - 30)))
+        for i in range(6)
+    ]
+    p.setBrush(QBrush(QColor("#3A3AFF")))
+    p.setPen(Qt.NoPen)
+    p.drawPolygon(QPolygonF(pts))
+    p.setPen(QColor("#FFFFFF"))
+    p.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+    p.drawText(pm.rect(), Qt.AlignCenter, "TB")
+    p.end()
+    return QIcon(pm)
 
 
 # ── ToolbeltWindow ─────────────────────────────────────────────────────────────
@@ -76,6 +106,7 @@ if _PYSIDE6:
         ) -> None:
             super().__init__(parent)
             self.setWindowTitle(title)
+            self.setWindowIcon(make_toolbelt_icon())
             self.resize(width, height)
             self.setStyleSheet(QSS)
 

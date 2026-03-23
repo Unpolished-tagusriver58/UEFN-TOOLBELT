@@ -260,6 +260,7 @@ QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {{
     background: {p['panel']}; border: 1px solid {p['border2']};
     color: {p['text']}; padding: 3px 7px; border-radius: 3px; min-height: 24px;
 }}
+QSpinBox, QDoubleSpinBox {{ padding: 3px 10px 3px 7px; }}
 QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {{ border-color: {p['accent']}; }}
 QComboBox::drop-down {{ border: none; width: 20px; }}
 QComboBox QAbstractItemView {{
