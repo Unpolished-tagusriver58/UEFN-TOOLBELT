@@ -342,6 +342,55 @@ for asset in assets:
 
 ---
 
+## 21. Verse Compiler Is Lenient With Unknown Identifiers
+
+### The Discovery
+When testing `verse_patch_errors`, a file containing `nonexistent_device_type` and calls
+to `FakeDevice.DoesNotExist()` and `UndeclaredVariable.Enable()` **compiled successfully**
+(`VerseBuild: SUCCESS`). No errors, no warnings.
+
+### Why
+Verse's compiler creates **stub types** for unknown identifiers rather than failing
+immediately. If a type is not resolvable from the `using` declarations, Verse treats it
+as an opaque/unknown type and defers the error — or silently accepts it if no downstream
+type constraint is violated.
+
+This means the Verse type checker only errors on:
+- **Known type violations** — assigning `"string"` to `int`, `999` to `logic`
+- **Wrong argument counts/types on known types** — calling `timer_device.Start(999, "x")`
+- **Syntax errors** — missing colons, wrong indentation, malformed expressions
+- **Missing `using` for types you actually use** — if Verse can't find the module
+
+### What Does NOT cause errors (surprisingly)
+```verse
+# These compile fine — Verse stubs unknown identifiers silently
+@editable
+FakeDevice : nonexistent_device_type = nonexistent_device_type{}
+
+OnBegin<override>()<suspends> : void =
+    FakeDevice.DoesNotExist()       # compiles — FakeDevice is unknown type
+    UndeclaredVariable.Enable()     # compiles — UndeclaredVariable is stubbed
+```
+
+### What DOES cause errors (reliable test targets)
+```verse
+# These fail against known Verse types:
+var Score : int = "this is not an int"    # type mismatch
+var Flag  : logic = 999                   # type mismatch
+MyTimer.Start(999, "wrong", false)        # wrong args on known timer_device type
+```
+
+### Implication for `verse_patch_errors`
+When Claude generates Verse with wrong device type names, the code may silently compile
+but the `@editable` slot will show an unknown type in the editor UI and the device won't
+wire correctly at runtime. Always verify generated type names against the Verse schema
+(`api_verse_get_schema`) rather than relying on compile errors to catch them.
+
+**Takeaway:** A `VerseBuild: SUCCESS` does not guarantee the logic is correct — it only
+guarantees the syntax and known-type constraints are satisfied.
+
+---
+
 ## 17. `_serialize()` Swallows Unreal Objects Silently
 
 ### The Problem
