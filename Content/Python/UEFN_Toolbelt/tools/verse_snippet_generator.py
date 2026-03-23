@@ -291,15 +291,38 @@ prop_spawner_controller := class(creative_device):
 #  Registered Tools
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _find_uefn_project_root() -> str:
+    """
+    Walk up from this file's location to find the UEFN project root.
+    The Toolbelt lives at [ProjectRoot]/Content/Python/UEFN_Toolbelt/
+    so we walk up until we find the 'Content' directory, then return its parent.
+    This is the only reliable way to find the user project root in UEFN —
+    unreal.Paths.project_dir() returns the FortniteGame engine directory, not
+    the user project directory.
+    """
+    curr = os.path.abspath(__file__)
+    while True:
+        parent = os.path.dirname(curr)
+        if parent == curr:
+            # Reached filesystem root without finding Content — fall back
+            return unreal.Paths.project_saved_dir()
+        if os.path.basename(curr) == "Content":
+            return parent
+        curr = parent
+
+
 def _find_verse_project_dir() -> str:
     """
     Auto-detect the Verse source directory for the current UEFN project.
 
     Search order:
     1. config verse.project_path (user override — most reliable)
-    2. [ProjectDir]/Verse/  (standard UEFN layout)
-    3. [ProjectDir]/*.verse/ (Epic's Verse package folder naming)
-    4. Falls back to Saved/UEFN_Toolbelt/snippets/custom/ with a warning
+    2. [ProjectRoot]/Verse/  (standard UEFN layout)
+    3. [ProjectRoot]/*.verse/ (Epic's Verse package folder naming)
+    4. Falls back to Saved/UEFN_Toolbelt/snippets/custom/ with a clear warning
+
+    NOTE: Never uses unreal.Paths.project_dir() — in UEFN that resolves to
+    the FortniteGame engine directory, not the user's project directory.
     """
     from ..core.config import get_config
     cfg = get_config()
@@ -307,19 +330,20 @@ def _find_verse_project_dir() -> str:
     if user_path and os.path.isdir(user_path):
         return user_path
 
-    project_dir = unreal.Paths.project_dir()
+    project_root = _find_uefn_project_root()
 
     # Standard layout
-    standard = os.path.join(project_dir, "Verse")
+    standard = os.path.join(project_root, "Verse")
     if os.path.isdir(standard):
         return standard
 
-    # Epic's .verse package naming
-    for entry in os.listdir(project_dir):
-        if entry.endswith(".verse") and os.path.isdir(os.path.join(project_dir, entry)):
-            return os.path.join(project_dir, entry)
+    # Epic's .verse package folder naming
+    for entry in os.listdir(project_root):
+        full = os.path.join(project_root, entry)
+        if entry.endswith(".verse") and os.path.isdir(full):
+            return full
 
-    # Fallback — create standard path
+    # Fallback — create standard Verse dir in project root
     os.makedirs(standard, exist_ok=True)
     return standard
 
@@ -345,14 +369,14 @@ def run_verse_find_project_path(**kwargs) -> dict:
         log_info(f"Verse project path (from config): {user_path}")
         return {"status": "ok", "path": user_path, "source": "config"}
 
-    project_dir = unreal.Paths.project_dir()
-    standard = os.path.join(project_dir, "Verse")
+    project_root = _find_uefn_project_root()
+    standard = os.path.join(project_root, "Verse")
     if os.path.isdir(standard):
         log_info(f"Verse project path (standard): {standard}")
         return {"status": "ok", "path": standard, "source": "standard"}
 
-    for entry in os.listdir(project_dir):
-        full = os.path.join(project_dir, entry)
+    for entry in os.listdir(project_root):
+        full = os.path.join(project_root, entry)
         if entry.endswith(".verse") and os.path.isdir(full):
             log_info(f"Verse project path (package): {full}")
             return {"status": "ok", "path": full, "source": "package"}

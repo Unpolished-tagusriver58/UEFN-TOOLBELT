@@ -233,8 +233,15 @@ Failed to find property 'bIsEnabled' for attribute 'bIsEnabled' on 'Device_Timer
 ### What IS accessible via Python on V2 devices
 - **Base class properties**: `allow_highlight`, `net_priority`, `net_dormancy`, `actor_guid`, etc.
 - **State enums**: `client_current_state` → e.g., `TimerDeviceState.ENABLED`
-- **Methods**: `timer_start()`, `timer_pause()`, `timer_resume()`, `timer_set_state()`,
-  `timer_clear_handles()` — callable via `getattr(actor, "timer_start")()`
+- **Methods** (discovered via `api_crawl_selection` — always crawl first):
+  - `FortCreativeTimerDevice`: `timer_pause`, `timer_resume`, `timer_set_state`,
+    `timer_clear_handles` (no-arg). `timer_start(tracked_player)` requires a live
+    player reference — **editor-only sessions cannot call it**.
+  - `FortCreativeTimerObjective`: `blueprint_pause`, `blueprint_stop`, `on_reset`,
+    `moderator_set_timer_complete` (no-arg). Read state via `get_is_started()`,
+    `get_is_paused()`, `is_timer_active()`.
+  - **Rule**: methods requiring `player`/`agent` args are runtime-only. Calling them
+    from the editor Python session raises `required argument not found`.
 - **Transforms**: location, rotation, scale — always accessible
 
 ### What is NOT accessible
@@ -245,13 +252,18 @@ Failed to find property 'bIsEnabled' for attribute 'bIsEnabled' on 'Device_Timer
 
 **Option A — Method invocation** (for runtime control):
 ```python
-# Call exposed methods directly — these DO work
-timer_actor = ...  # found via world_state_export or verse_select_by_class
-start_fn = getattr(timer_actor, "timer_start", None)
-if start_fn and callable(start_fn):
-    start_fn()
+# No-arg methods work from the editor session:
+tb.run("device_call_method", class_filter="TimerObjective", method="blueprint_pause")
+tb.run("device_call_method", class_filter="TimerObjective", method="blueprint_stop")
+tb.run("device_call_method", class_filter="TimerDevice",   method="timer_pause")
+
+# Read state (returns value in results list):
+tb.run("device_call_method", class_filter="TimerObjective", method="is_timer_active")
+
+# Methods requiring a player/agent ref WILL FAIL from the editor:
+# timer_start(tracked_player) — runtime only, call from Verse instead
 ```
-Use `tb.run("device_call_method", ...)` for this (see verse_device_editor.py).
+Always run `api_crawl_selection` on a device first to discover its real method list.
 
 **Option B — Verse code generation** (for initial configuration):
 Claude generates a Verse `creative_device` that holds `@editable` references to the target
