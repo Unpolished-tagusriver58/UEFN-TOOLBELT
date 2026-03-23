@@ -714,6 +714,117 @@ def _tab_text(R) -> "QScrollArea":
                    cols=int(cols_s.value()), rows=int(rows_s.value()),
                    cell_size=cell_s.value(), origin=_cam()))
 
+    # ── Sign / Text Actor Bulk Spawner ─────────────────────────────────────
+    g_bb = _group(L, "Sign Spawner  (TextRenderActor — not Billboard device)")
+
+    bb_text_inp   = _inp("Sign text", "SIGN", width=110)
+    bb_prefix_inp = _inp("Label prefix", "Sign", width=90)
+    bb_color_inp  = _inp("#RRGGBB", "#FFFFFF", width=80)
+
+    bb_count_s   = _spin(6,   1, 200,   width=60)
+    bb_size_s    = _spin(100, 10, 2000, width=70)
+    bb_spacing_s = _spin(400, 50, 5000, width=80)
+    bb_cols_s    = _spin(4,   1, 20,   width=60)
+
+    bb_layout_combo = QComboBox(); bb_layout_combo.addItems(["row_x", "row_y", "grid"]); bb_layout_combo.setFixedWidth(80)
+
+    row_bb1 = QWidget(); h_bb1 = QHBoxLayout(row_bb1); h_bb1.setContentsMargins(0,0,0,0); h_bb1.setSpacing(4)
+    h_bb1.addWidget(QLabel("Text:")); h_bb1.addWidget(bb_text_inp)
+    h_bb1.addWidget(QLabel("Prefix:")); h_bb1.addWidget(bb_prefix_inp)
+    h_bb1.addWidget(QLabel("Color:")); h_bb1.addWidget(bb_color_inp); h_bb1.addStretch()
+    g_bb.addWidget(row_bb1)
+
+    row_bb2 = QWidget(); h_bb2 = QHBoxLayout(row_bb2); h_bb2.setContentsMargins(0,0,0,0); h_bb2.setSpacing(4)
+    h_bb2.addWidget(QLabel("Count:")); h_bb2.addWidget(bb_count_s)
+    h_bb2.addWidget(QLabel("Size:")); h_bb2.addWidget(bb_size_s)
+    h_bb2.addWidget(QLabel("Spacing:")); h_bb2.addWidget(bb_spacing_s)
+    h_bb2.addWidget(QLabel("Cols:")); h_bb2.addWidget(bb_cols_s)
+    h_bb2.addWidget(bb_layout_combo); h_bb2.addStretch()
+    g_bb.addWidget(row_bb2)
+
+    _btn(g_bb, "Spawn Signs at Camera",
+         lambda: R("sign_spawn_bulk",
+                   count=int(bb_count_s.value()),
+                   text=bb_text_inp.text() or "SIGN",
+                   prefix=bb_prefix_inp.text() or "Sign",
+                   location=(_cam()[0], _cam()[1], _cam()[2] + 200.0),
+                   layout=bb_layout_combo.currentText(),
+                   spacing=bb_spacing_s.value(),
+                   cols=int(bb_cols_s.value()),
+                   color=bb_color_inp.text() or "#FFFFFF",
+                   world_size=bb_size_s.value()))
+
+    # ── Sign Batch Edit ─────────────────────────────────────────────────────
+    g_bbe = _group(L, "Sign Batch Edit  (select signs first)")
+
+    bbe_text_inp  = _inp("new text (leave blank to skip)", "", width=180)
+    bbe_color_inp = _inp("#RRGGBB (blank = skip)", "", width=130)
+    bbe_size_s    = _spin(0, 0, 2000, width=70)
+    bbe_size_chk  = QCheckBox("Change size"); bbe_size_chk.setChecked(False)
+
+    row_bbe = QWidget(); h_bbe = QHBoxLayout(row_bbe); h_bbe.setContentsMargins(0,0,0,0); h_bbe.setSpacing(4)
+    h_bbe.addWidget(QLabel("Color:")); h_bbe.addWidget(bbe_color_inp)
+    h_bbe.addWidget(bbe_size_chk); h_bbe.addWidget(bbe_size_s); h_bbe.addStretch()
+    g_bbe.addWidget(row_bbe)
+
+    def _batch_edit():
+        R("sign_batch_edit",
+          text=bbe_text_inp.text().strip() or None,
+          color=bbe_color_inp.text().strip() or None,
+          world_size=bbe_size_s.value() if bbe_size_chk.isChecked() else None)
+    _btn_inp(g_bbe, "Apply to Selected Signs", _batch_edit,
+             bbe_text_inp, tip="Edits only the fields you fill in. Leave blank to skip that field.")
+
+    # Batch rename
+    rename_prefix_inp = _inp("prefix", "Sign", width=100)
+    rename_start_s    = _spin(1, 1, 999, width=60)
+    sync_text_chk     = QCheckBox("Sync text to label"); sync_text_chk.setChecked(False)
+    row_ren = QWidget(); h_ren = QHBoxLayout(row_ren); h_ren.setContentsMargins(0,0,0,0); h_ren.setSpacing(4)
+    h_ren.addWidget(QLabel("Prefix:")); h_ren.addWidget(rename_prefix_inp)
+    h_ren.addWidget(QLabel("Start:")); h_ren.addWidget(rename_start_s)
+    h_ren.addWidget(sync_text_chk); h_ren.addStretch()
+    g_bbe.addWidget(row_ren)
+    _btn(g_bbe, "Rename Selected Sequentially",
+         lambda: R("sign_batch_rename",
+                   prefix=rename_prefix_inp.text() or "Sign",
+                   start=int(rename_start_s.value()),
+                   sync_text=sync_text_chk.isChecked()))
+
+    # Utilities
+    _row(g_bbe,
+         ("List All Signs",    lambda: R("sign_list")),
+         ("Clear Signs Folder", lambda: R("sign_clear", dry_run=False)),
+    )
+
+    # ── Floating Label Attach ───────────────────────────────────────────────
+    g_lbl = _group(L, "Floating Label Attach  (select actors first)")
+    lbl_text_inp  = _inp("custom text (blank = actor name)", "", width=180)
+    lbl_color_inp = _inp("#RRGGBB", "#00FFCC", width=80)
+    lbl_size_s    = _spin(60, 10, 500, width=65)
+    lbl_z_s       = _spin(150, 0, 2000, width=75)
+    lbl_yaw_s     = _spin(0, -360, 360, width=65)
+    lbl_name_chk  = QCheckBox("Use actor name"); lbl_name_chk.setChecked(True)
+
+    row_lbl = QWidget(); h_lbl = QHBoxLayout(row_lbl); h_lbl.setContentsMargins(0,0,0,0); h_lbl.setSpacing(4)
+    h_lbl.addWidget(QLabel("Color:")); h_lbl.addWidget(lbl_color_inp)
+    h_lbl.addWidget(QLabel("Size:")); h_lbl.addWidget(lbl_size_s)
+    h_lbl.addWidget(QLabel("Z:")); h_lbl.addWidget(lbl_z_s)
+    h_lbl.addWidget(QLabel("Yaw°:")); h_lbl.addWidget(lbl_yaw_s)
+    h_lbl.addWidget(lbl_name_chk); h_lbl.addStretch()
+    g_lbl.addWidget(row_lbl)
+
+    def _attach_label():
+        R("label_attach",
+          text=lbl_text_inp.text().strip() or "",
+          color=lbl_color_inp.text() or "#00FFCC",
+          world_size=lbl_size_s.value(),
+          offset_z=lbl_z_s.value(),
+          yaw=lbl_yaw_s.value(),
+          use_actor_name=lbl_name_chk.isChecked())
+    _btn_inp(g_lbl, "Attach Floating Label to Selected",
+             _attach_label, lbl_text_inp,
+             tip="Spawns a text actor above each selected actor and parents it — label follows the actor when moved.")
+
     # Manage
     g3 = _group(L, "Manage")
     _btn(g3, "Color Cycle Banner",    lambda: R("text_color_cycle"))
