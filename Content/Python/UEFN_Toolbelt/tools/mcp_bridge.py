@@ -277,7 +277,7 @@ def _c_execute_python(code: str) -> dict:
 def _c_run_tool(tool_name: str, kwargs: dict | None = None) -> dict:
     """
     Run any registered UEFN Toolbelt tool by name.
-    This exposes all 161 toolbelt tools to Claude Code in one command.
+    This exposes all 171 toolbelt tools to Claude Code in one command.
 
     Args:
         tool_name: The registered tool name (e.g. "material_apply_preset").
