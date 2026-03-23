@@ -61,7 +61,7 @@ import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in
 ## What This Project Is
 
 **UEFN Toolbelt** is a comprehensive Python automation framework for Unreal Editor for Fortnite (UEFN 40.00+, March 2026).
-It runs inside the editor and exposes 204 tools through:
+It runs inside the editor and exposes 217 tools through:
 - A persistent top-menu entry (`Toolbelt ▾`) in the UEFN editor bar
 - An 18-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
 - An MCP HTTP bridge so Claude Code can control UEFN directly
@@ -103,7 +103,7 @@ This file contains every registered tool with its full Python parameter signatur
   }
 }
 ```
-All 204 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
+All 217 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
 
 **Schema utility functions** (`schema_utils.py`):
 - `schema_utils.validate_property(class_name, prop)` — check if a property exists and is writable
@@ -236,7 +236,7 @@ Then restart Claude Code — it connects automatically.
 
 ### What Claude Code can now do
 
-- Run any of the 171 registered tools by name
+- Run any of the 217 registered tools by name
 - Spawn, move, delete actors
 - List/rename/import/tag assets
 - Take screenshots, save level snapshots
@@ -487,6 +487,69 @@ tb.run("bulk_randomize", rot_range=360.0, randomize_rot=True, randomize_scale=Tr
 | `actor_select_by_class` | `class_filter` | Select all level actors whose class name contains filter |
 | `actor_folder_list` | — | Full folder map with actor counts — great for auditing level structure |
 | `actor_match_transform` | `copy_location=True`, `copy_rotation=True`, `copy_scale=False` | Copy transform from first selected to all others |
+
+---
+
+### Zone Tools
+
+Zone actors can be any box-shaped actor: the cube markers spawned by `zone_spawn`, Creative Mutator Zone devices placed manually, or any actor you designate as a zone.
+**Convention:** select the zone actor first, then other actors when running resize/snap tools.
+
+| Tool | Key Params | What it does |
+|---|---|---|
+| `zone_spawn` | `width=1000`, `depth=1000`, `height=500`, `label="Zone"` | Spawn a visible cube zone marker at camera position, placed in the "Zones" folder |
+| `zone_resize_to_selection` | `padding=50.0` | Resize zone to exactly contain all other selected actors (+ padding cm on each side) |
+| `zone_snap_to_selection` | — | Move zone center to match combined selection bounds without resizing |
+| `zone_select_contents` | `expand=0.0` | Select every level actor whose pivot is inside the zone's bounds |
+| `zone_move_contents` | `offset_x`, `offset_y`, `offset_z` | Move zone + all actors inside it as a unit by a world-space offset |
+| `zone_fill_scatter` | `asset_path`, `count=20`, `seed=42`, `min_spacing=0`, `folder="ZoneFill"` | Randomly scatter copies of an asset throughout the zone volume |
+| `zone_list` | — | List all actors in the "Zones" folder with center, width, depth, height |
+
+```python
+tb.run("zone_spawn", width=4000, depth=4000, height=800, label="ArenaCenter")
+# select zone, then select your props:
+tb.run("zone_resize_to_selection", padding=200)
+tb.run("zone_select_contents")                          # select everything inside
+tb.run("zone_move_contents", offset_x=5000)             # move zone + contents together
+tb.run("zone_fill_scatter", asset_path="/Engine/BasicShapes/Cube", count=50, min_spacing=300)
+```
+
+---
+
+### Proximity & Relative Placement
+
+| Tool | Key Params | What it does |
+|---|---|---|
+| `actor_place_next_to` | `direction="+X"`, `gap=0.0`, `align="center"` | Move last selected actor flush against the first on the specified face. direction: +X/-X/+Y/-Y/+Z/-Z |
+| `actor_chain_place` | `axis="X"`, `gap=0.0` | Arrange selected actors end-to-end along an axis using bounds — each min face touches the previous max face |
+| `actor_duplicate_offset` | `count=3`, `offset_x=300`, `offset_y=0`, `offset_z=0`, `folder=""` | Duplicate selected actor N times with cumulative offset — stamp rows/arrays without copy-paste |
+| `actor_replace_class` | `old_class_filter`, `new_asset_path`, `dry_run=True`, `scope="level"` | Replace every actor matching old_class_filter with a fresh instance of new_asset_path. Always dry_run=True first |
+| `actor_cluster_to_folder` | `radius=800.0`, `folder_prefix="Cluster"`, `min_cluster_size=2`, `base_folder=""` | Greedy XY-proximity clustering — groups nearby actors into World Outliner subfolders |
+| `actor_copy_to_positions` | `positions=[[x,y,z],...]`, `folder="Stamps"`, `copy_rotation=True`, `copy_scale=True` | Stamp copies of the selected actor at every position in the list |
+
+```python
+# Place second prop flush against the first on +X face, 20cm gap, Y/Z centered
+tb.run("actor_place_next_to", direction="+X", gap=20.0, align="center")
+
+# Build a wall — select all wall pieces, chain them end-to-end on Y axis
+tb.run("actor_chain_place", axis="Y", gap=0.0)
+
+# Stamp 10 copies of a prop, 500cm apart on X
+tb.run("actor_duplicate_offset", count=10, offset_x=500.0)
+
+# Swap all SM_OldCrate actors with new asset (dry run first)
+tb.run("actor_replace_class", old_class_filter="OldCrate",
+       new_asset_path="/Game/Props/SM_NewCrate", dry_run=True)
+tb.run("actor_replace_class", old_class_filter="OldCrate",
+       new_asset_path="/Game/Props/SM_NewCrate", dry_run=False)
+
+# Auto-cluster all selected actors by 1000cm proximity into folders
+tb.run("actor_cluster_to_folder", radius=1000.0, folder_prefix="Island", min_cluster_size=3)
+
+# Copy a tree prop to 50 specific coordinates
+tb.run("actor_copy_to_positions",
+       positions=[[0,0,0],[500,200,0],[1000,-100,50]], folder="Trees")
+```
 
 ---
 
@@ -764,7 +827,7 @@ tb.run("config_reset", key="all")   # wipe all customisations
 |---|---|---|
 | `plugin_validate_all` | — | Validate all registered tools against schema |
 | `plugin_list_custom` | — | List all loaded third-party tools from `Saved/UEFN_Toolbelt/Custom_Plugins` |
-| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 204 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
+| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 217 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
 
 **Online Plugin Hub** — the Plugin Hub dashboard tab fetches `registry.json` live from GitHub.
 - **Core Tools** (green/BUILT-IN): 10 flagship modules by Ocean Bennett, already built in
@@ -794,7 +857,7 @@ When the listener is running, Claude Code can call these directly:
 | `ping` | — | Health check + command list |
 | `get_log` | `last_n=50` | Return last N lines from the MCP command log ring |
 | `execute_python` | `code` | Run Python in UEFN (pre-populated: `unreal`, `actor_sub`, `asset_sub`, `level_sub`, `tb`) |
-| `run_tool` | `tool_name`, `kwargs={}` | Run any of the 171 registered tools |
+| `run_tool` | `tool_name`, `kwargs={}` | Run any of the 217 registered tools |
 | `list_tools` | `category=""` | List all registered tools |
 | `describe_tool` | `tool_name` | Full manifest entry for one tool (name, description, parameters, tags) |
 | `batch_exec` | `commands=[{command, params}]` | Multiple commands in one tick |

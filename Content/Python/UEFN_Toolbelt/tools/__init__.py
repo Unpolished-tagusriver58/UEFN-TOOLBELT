@@ -56,3 +56,5 @@ from . import project_setup
 from . import sign_tools
 from . import actor_org_tools
 from . import advanced_alignment
+from . import zone_tools
+from . import proximity_tools

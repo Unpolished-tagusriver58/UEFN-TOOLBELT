@@ -5,6 +5,45 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.7.0] — 2026-03-23
+
+### feat: zone tools, proximity placement, auto-cluster, class replace (204 → 217 tools)
+
+**New modules — 13 new tools (204 → 217):**
+
+- **`zone_tools.py`** (7 tools) — Full zone lifecycle management.
+  `zone_spawn`: spawn a visible cube zone marker at the camera position with configurable
+  width/depth/height. `zone_resize_to_selection`: resize and reposition a zone actor to
+  exactly contain all other selected actors (with optional padding). `zone_snap_to_selection`:
+  move zone center to match combined bounds without resizing. `zone_select_contents`: select
+  every level actor whose pivot falls inside the zone bounds (with optional expand).
+  `zone_move_contents`: move zone + all actors inside it by a world-space offset as a unit.
+  `zone_fill_scatter`: fill zone volume with scattered copies of an asset using Poisson-style
+  min-spacing. `zone_list`: list all zone actors with their dimensions and world position.
+  Works with any box-shaped actor as the zone reference — mutator zone devices, trigger
+  volumes, or our spawned cube markers.
+
+- **`proximity_tools.py`** (6 tools) — Relative placement and batch automation.
+  `actor_place_next_to`: move the last selected actor flush against the first on any face
+  (+X/-X/+Y/-Y/+Z/-Z) with optional gap and center-alignment. Uses world bounds for accuracy.
+  `actor_chain_place`: arrange selected actors end-to-end along an axis — each actor's min
+  face touches the previous actor's max face (great for walls, corridors, fences).
+  `actor_duplicate_offset`: duplicate selected actors N times with exact cumulative offset —
+  stamp arrays, rows, and grids without manual copy-paste.
+  `actor_replace_class`: replace every actor whose class/label matches a filter with a fresh
+  instance of a new asset — preserves transform, label, folder. Always `dry_run=True` first.
+  `actor_cluster_to_folder`: greedy XY-proximity clustering — groups nearby actors into World
+  Outliner subfolders automatically (great for cleaning up large levels).
+  `actor_copy_to_positions`: stamp copies of a selected actor at every position in a
+  `[[x,y,z],...]` list — batch placement from generated coordinates.
+
+**Dashboard improvements:**
+- Zone Spawner group added to Procedural tab — spawn, fill, resize, snap, select, move
+- Proximity & Duplication group added to Bulk Ops tab — place next to, chain, duplicate
+  offset, replace class (dry run + execute), auto-cluster
+
+---
+
 ## [1.6.0] — 2026-03-23
 
 ### feat: actor organization, advanced alignment, sign tools, PCG scatter, camera-spawn

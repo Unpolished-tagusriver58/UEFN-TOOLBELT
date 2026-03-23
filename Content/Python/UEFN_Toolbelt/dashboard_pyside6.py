@@ -579,6 +579,55 @@ def _tab_procedural(R) -> "QScrollArea":
              road_pts_inp,
              tip="Place props along both shoulders of a path. Paste [[x,y,z],...] or select a SplineActor.")
 
+    # ── Zone Tools ────────────────────────────────────────────────────────────
+    g_zone = _group(L, "Zone Spawner")
+
+    zone_lbl_inp  = _inp("Zone label", "Zone", width=100)
+    zone_w_s      = _spin(2000, 100, 50000, width=80)
+    zone_d_s      = _spin(2000, 100, 50000, width=80)
+    zone_h_s      = _spin(600,  100, 20000, width=80)
+    row_zsize = QWidget(); h_zsize = QHBoxLayout(row_zsize); h_zsize.setContentsMargins(0,0,0,0); h_zsize.setSpacing(4)
+    h_zsize.addWidget(QLabel("W:")); h_zsize.addWidget(zone_w_s)
+    h_zsize.addWidget(QLabel("D:")); h_zsize.addWidget(zone_d_s)
+    h_zsize.addWidget(QLabel("H:")); h_zsize.addWidget(zone_h_s); h_zsize.addStretch()
+    g_zone.addWidget(row_zsize)
+    _btn_inp(g_zone, "Spawn Zone at Camera",
+             lambda: R("zone_spawn",
+                       width=zone_w_s.value(), depth=zone_d_s.value(),
+                       height=zone_h_s.value(), label=zone_lbl_inp.text() or "Zone"),
+             zone_lbl_inp, tip="Spawns a cube zone marker at the camera position.")
+
+    zone_fill_inp = _inp("asset path", "/Engine/BasicShapes/Cube", width=220)
+    zone_fill_cnt = _spin(20, 1, 500, width=70)
+    row_zfill = QWidget(); h_zfill = QHBoxLayout(row_zfill); h_zfill.setContentsMargins(0,0,0,0); h_zfill.setSpacing(4)
+    h_zfill.addWidget(QLabel("Count:")); h_zfill.addWidget(zone_fill_cnt); h_zfill.addStretch()
+    g_zone.addWidget(row_zfill)
+    _btn_inp(g_zone, "Fill Zone with Scatter  (select zone first)",
+             lambda: R("zone_fill_scatter",
+                       asset_path=zone_fill_inp.text() or "/Engine/BasicShapes/Cube",
+                       count=int(zone_fill_cnt.value())),
+             zone_fill_inp, tip="Scatter copies of an asset randomly inside the selected zone actor.")
+
+    _row(g_zone,
+         ("Resize Zone → Selection",  lambda: R("zone_resize_to_selection")),
+         ("Snap Zone → Selection",    lambda: R("zone_snap_to_selection")),
+    )
+    _row(g_zone,
+         ("Select Zone Contents",     lambda: R("zone_select_contents")),
+         ("List Zones",               lambda: R("zone_list")),
+    )
+    zone_dx_s = _spin(0, -99999, 99999, width=70)
+    zone_dy_s = _spin(0, -99999, 99999, width=70)
+    zone_dz_s = _spin(0, -99999, 99999, width=70)
+    row_zmov = QWidget(); h_zmov = QHBoxLayout(row_zmov); h_zmov.setContentsMargins(0,0,0,0); h_zmov.setSpacing(4)
+    h_zmov.addWidget(QLabel("ΔX:")); h_zmov.addWidget(zone_dx_s)
+    h_zmov.addWidget(QLabel("ΔY:")); h_zmov.addWidget(zone_dy_s)
+    h_zmov.addWidget(QLabel("ΔZ:")); h_zmov.addWidget(zone_dz_s); h_zmov.addStretch()
+    g_zone.addWidget(row_zmov)
+    _btn(g_zone, "Move Zone + Contents",
+         lambda: R("zone_move_contents",
+                   offset_x=zone_dx_s.value(), offset_y=zone_dy_s.value(), offset_z=zone_dz_s.value()))
+
     # Spline
     g4 = _group(L, "Spline Prop Placer")
     count2_s = _spin(20, 1, 500, width=80)
@@ -745,6 +794,81 @@ def _tab_bulk_ops(R) -> "QScrollArea":
                    copy_location=loc_chk.isChecked(),
                    copy_rotation=rot_chk.isChecked(),
                    copy_scale=scl_chk2.isChecked()))
+
+    # ── Proximity & Duplication ────────────────────────────────────────────────
+    g_prox = _group(L, "Proximity & Duplication")
+
+    prox_dir_combo = QComboBox()
+    prox_dir_combo.addItems(["+X", "-X", "+Y", "-Y", "+Z", "-Z"])
+    prox_dir_combo.setFixedWidth(60)
+    prox_gap_s = _spin(0, 0, 10000, width=70)
+    prox_align_combo = QComboBox(); prox_align_combo.addItems(["center", "keep"]); prox_align_combo.setFixedWidth(70)
+    row_pn = QWidget(); h_pn = QHBoxLayout(row_pn); h_pn.setContentsMargins(0,0,0,0); h_pn.setSpacing(4)
+    h_pn.addWidget(QLabel("Dir:")); h_pn.addWidget(prox_dir_combo)
+    h_pn.addWidget(QLabel("Gap:")); h_pn.addWidget(prox_gap_s)
+    h_pn.addWidget(QLabel("Align:")); h_pn.addWidget(prox_align_combo); h_pn.addStretch()
+    g_prox.addWidget(row_pn)
+    _btn(g_prox, "Place Next To  (2 selected: ref → mover)",
+         lambda: R("actor_place_next_to",
+                   direction=prox_dir_combo.currentText(),
+                   gap=prox_gap_s.value(),
+                   align=prox_align_combo.currentText()))
+
+    chain_axis_combo = QComboBox(); chain_axis_combo.addItems(["X","Y","Z"]); chain_axis_combo.setFixedWidth(50)
+    chain_gap_s = _spin(0, 0, 10000, width=70)
+    row_ch = QWidget(); h_ch = QHBoxLayout(row_ch); h_ch.setContentsMargins(0,0,0,0); h_ch.setSpacing(4)
+    h_ch.addWidget(QLabel("Axis:")); h_ch.addWidget(chain_axis_combo)
+    h_ch.addWidget(QLabel("Gap:")); h_ch.addWidget(chain_gap_s); h_ch.addStretch()
+    g_prox.addWidget(row_ch)
+    _btn(g_prox, "Chain End-to-End  (selection ordered by axis)",
+         lambda: R("actor_chain_place",
+                   axis=chain_axis_combo.currentText(),
+                   gap=chain_gap_s.value()))
+
+    dup_count_s  = _spin(3, 1, 200, width=60)
+    dup_dx_s     = _spin(300, -99999, 99999, width=70)
+    dup_dy_s     = _spin(0,   -99999, 99999, width=70)
+    dup_dz_s     = _spin(0,   -99999, 99999, width=70)
+    row_dup = QWidget(); h_dup = QHBoxLayout(row_dup); h_dup.setContentsMargins(0,0,0,0); h_dup.setSpacing(4)
+    h_dup.addWidget(QLabel("×")); h_dup.addWidget(dup_count_s)
+    h_dup.addWidget(QLabel("dX:")); h_dup.addWidget(dup_dx_s)
+    h_dup.addWidget(QLabel("dY:")); h_dup.addWidget(dup_dy_s)
+    h_dup.addWidget(QLabel("dZ:")); h_dup.addWidget(dup_dz_s); h_dup.addStretch()
+    g_prox.addWidget(row_dup)
+    _btn(g_prox, "Duplicate with Offset",
+         lambda: R("actor_duplicate_offset",
+                   count=int(dup_count_s.value()),
+                   offset_x=dup_dx_s.value(),
+                   offset_y=dup_dy_s.value(),
+                   offset_z=dup_dz_s.value()))
+
+    old_cls_inp  = _inp("old class filter e.g. SM_OldRock", "", width=200)
+    new_ast_inp  = _inp("new asset path /Game/…", "", width=220)
+    _btn_inp(g_prox, "Replace Class  (dry run first →)",
+             lambda: R("actor_replace_class",
+                       old_class_filter=old_cls_inp.text(),
+                       new_asset_path=new_ast_inp.text(),
+                       dry_run=True),
+             old_cls_inp, new_ast_inp, tip="Preview: logs what would be replaced without changing anything.")
+    _btn(g_prox, "Replace Class  (EXECUTE)",
+         lambda: R("actor_replace_class",
+                   old_class_filter=old_cls_inp.text(),
+                   new_asset_path=new_ast_inp.text(),
+                   dry_run=False))
+
+    clust_rad_s    = _spin(800, 50, 20000, width=80)
+    clust_prefix   = _inp("Cluster", "Cluster", width=80)
+    clust_min_s    = _spin(2, 1, 50, width=60)
+    row_clust = QWidget(); h_clust = QHBoxLayout(row_clust); h_clust.setContentsMargins(0,0,0,0); h_clust.setSpacing(4)
+    h_clust.addWidget(QLabel("R:")); h_clust.addWidget(clust_rad_s)
+    h_clust.addWidget(QLabel("Prefix:")); h_clust.addWidget(clust_prefix)
+    h_clust.addWidget(QLabel("Min:")); h_clust.addWidget(clust_min_s); h_clust.addStretch()
+    g_prox.addWidget(row_clust)
+    _btn(g_prox, "Auto-Cluster to Folders  (selection or level)",
+         lambda: R("actor_cluster_to_folder",
+                   radius=clust_rad_s.value(),
+                   folder_prefix=clust_prefix.text() or "Cluster",
+                   min_cluster_size=int(clust_min_s.value())))
 
     # Verse (Schema-Driven)
     g6 = _group(L, "Verse Property Hardening")
