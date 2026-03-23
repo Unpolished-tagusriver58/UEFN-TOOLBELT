@@ -385,7 +385,7 @@ def _tab_quick_actions(R) -> "QScrollArea":
 
     # 6. Media & Assets
     g_media = _group(L, "Media & Assets")
-    _btn(g_media, "Paste Image from Clipboard", lambda: R("import_image_from_clipboard"), "Instantly imports your current clipboard image as a Texture2D.")
+    _btn(g_media, "Paste Image from Clipboard", lambda: R("import_image_from_clipboard"), "Instantly imports your current clipboard image as a Texture2D into /Game/UEFN_Toolbelt/Textures/.")
 
     L.addStretch()
     return scroll

@@ -58,33 +58,59 @@ def _import_file_task(file_path: str, dest_dir: str, asset_name: str) -> str:
     task.destination_name = asset_name
     task.automated = True
     task.replace_existing = False
-    task.save = True
+    task.save = False  # skip source-control checkout dialog; we save manually below
 
     unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
 
+    # Resolve the imported asset path
     dest_asset = f"{dest_dir}/{asset_name}"
-    if eal.does_asset_exist(dest_asset):
-        eal.sync_browser_to_objects([dest_asset])
-        return dest_asset
+    imported = task.get_editor_property("imported_object_paths") or []
+    asset_path = dest_asset if eal.does_asset_exist(dest_asset) else (imported[0] if imported else "")
 
-    imported = task.get_editor_property("imported_object_paths")
-    if imported:
-        eal.sync_browser_to_objects(imported)
-        return imported[0]
-        
-    return ""
+    if not asset_path:
+        return ""
+
+    # Try to persist to disk; UEFN source control may block this but import is still usable
+    try:
+        eal.save_asset(asset_path, only_if_is_dirty=True)
+    except Exception:
+        pass  # session-only is acceptable -- asset is live in Content Browser
+
+    eal.sync_browser_to_objects([asset_path])
+    return asset_path
 
 def _extract_clipboard_png(temp_path: str) -> bool:
-    """Attempts Pillow, falls back to a hidden native PowerShell invocation."""
+    """
+    Extract the current clipboard image to a PNG file.
+    Tries three methods in order:
+      1. PySide6 (already loaded by the dashboard -- most reliable)
+      2. Pillow ImageGrab
+      3. PowerShell (Windows fallback, no extra deps)
+    """
+    # -- 1. PySide6 (preferred -- already in memory) --
+    try:
+        from PySide6.QtWidgets import QApplication
+        cb = QApplication.clipboard()
+        qimg = cb.image()
+        if not qimg.isNull():
+            qimg.save(temp_path, "PNG")
+            if os.path.exists(temp_path):
+                return True
+    except Exception:
+        pass
+
+    # -- 2. Pillow ImageGrab --
     try:
         from PIL import ImageGrab
         img = ImageGrab.grabclipboard()
         if img is not None and hasattr(img, "save"):
             img.save(temp_path, "PNG")
-            return os.path.exists(temp_path)
+            if os.path.exists(temp_path):
+                return True
     except Exception:
         pass
 
+    # -- 3. PowerShell (no extra deps, Windows only) --
     try:
         import subprocess
         script = (
@@ -99,10 +125,12 @@ def _extract_clipboard_png(temp_path: str) -> bool:
             ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
             check=False, capture_output=True, text=True
         )
-        return os.path.exists(temp_path)
+        if os.path.exists(temp_path):
+            return True
     except Exception as e:
         log_warning(f"Clipboard extraction fallback failed: {e}")
-        return False
+
+    return False
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Registered Tools
@@ -116,7 +144,7 @@ def _extract_clipboard_png(temp_path: str) -> bool:
 )
 def run_import_image_from_url(
     url: str,
-    asset_dir: str = "/Game/Imported/Images",
+    asset_dir: str = "/Game/UEFN_Toolbelt/Textures",
     asset_name: str = "",
     **kwargs
 ) -> dict:
@@ -172,7 +200,7 @@ def run_import_image_from_url(
     tags=["import", "clipboard", "image", "texture", "paste"]
 )
 def run_import_image_from_clipboard(
-    asset_dir: str = "/Game/Imported/Images",
+    asset_dir: str = "/Game/UEFN_Toolbelt/Textures",
     asset_name: str = "",
     **kwargs
 ) -> dict:
