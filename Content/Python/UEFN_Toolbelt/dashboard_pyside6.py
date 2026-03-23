@@ -1403,6 +1403,15 @@ def _tab_plugin_hub(R) -> "QScrollArea":
             )
             hl.addWidget(core_badge)
 
+            tool_count = pm.get("tool_count")
+            if tool_count:
+                tc_badge = QLabel(f"{tool_count} tools")
+                tc_badge.setStyleSheet(
+                    "font-size: 10px; color: #AAAAAA; background: #222222;"
+                    " border: 1px solid #444444; border-radius: 3px; padding: 2px 6px;"
+                )
+                hl.addWidget(tc_badge)
+
         hl.addStretch()
         cl.addWidget(hdr)
 
