@@ -136,7 +136,7 @@ def _find_verse_root() -> str:
     description=(
         "The AI error loop tool. After a failed Verse build, reads the log, "
         "extracts every error with file/line/message, and returns the full content "
-        "of each erroring file — so Claude can fix and redeploy in one shot."
+        "of each erroring file -- so Claude can fix and redeploy in one shot."
     ),
     tags=["verse", "build", "error", "patch", "fix", "loop", "ai", "automation", "recursive"],
 )
@@ -152,19 +152,19 @@ def verse_patch_errors(verse_file: str = "", **kwargs) -> dict:
       5. Returns everything in one structured dict
 
     Claude's complete fix workflow:
-      ┌─────────────────────────────────────────────────────────────┐
-      │  1. User clicks Build Verse → errors appear                 │
-      │  2. tb.run("verse_patch_errors")                            │
-      │     → errors: [{file, line, col, message}, ...]             │
-      │     → files:  {"game_manager.verse": "...content..."}       │
-      │  3. Claude reads errors + file content                      │
-      │  4. Claude generates fixed_content                          │
-      │  5. tb.run("verse_write_file",                              │
-      │            filename="game_manager.verse",                   │
-      │            content=fixed_content, overwrite=True)           │
-      │  6. User clicks Build Verse again                           │
-      │  7. REPEAT until: build_status == "SUCCESS"                 │
-      └─────────────────────────────────────────────────────────────┘
+      +-------------------------------------------------------------+
+      |  1. User clicks Build Verse -> errors appear                |
+      |  2. tb.run("verse_patch_errors")                            |
+      |     -> errors: [{file, line, col, message}, ...]            |
+      |     -> files:  {"game_manager.verse": "...content..."}      |
+      |  3. Claude reads errors + file content                      |
+      |  4. Claude generates fixed_content                          |
+      |  5. tb.run("verse_write_file",                              |
+      |            filename="game_manager.verse",                   |
+      |            content=fixed_content, overwrite=True)           |
+      |  6. User clicks Build Verse again                           |
+      |  7. REPEAT until: build_status == "SUCCESS"                 |
+      +-------------------------------------------------------------+
 
     Args:
         verse_file: Optional. If set, always include this filename's content
@@ -193,11 +193,11 @@ def verse_patch_errors(verse_file: str = "", **kwargs) -> dict:
 
     Example:
         tb.run("verse_patch_errors")
-        # If errors → Claude reads result["errors"] + result["files"],
+        # If errors -> Claude reads result["errors"] + result["files"],
         #             generates fix, calls verse_write_file(overwrite=True)
-        # If success → result["build_status"] == "SUCCESS", nothing to fix
+        # If success -> result["build_status"] == "SUCCESS", nothing to fix
     """
-    # ── 1. Find latest log ────────────────────────────────────────────────────
+    # -- 1. Find latest log --------------------------------------------------
     log_dir = os.path.join(unreal.Paths.project_saved_dir(), "Logs")
     if not os.path.exists(log_dir):
         return {"status": "no_log", "message": "Log directory not found.",
@@ -214,7 +214,7 @@ def verse_patch_errors(verse_file: str = "", **kwargs) -> dict:
     with open(latest_log, "r", encoding="utf-8", errors="ignore") as f:
         log_lines = f.readlines()
 
-    # ── 2. Parse errors and build status ─────────────────────────────────────
+    # -- 2. Parse errors and build status ------------------------------------
     # Error pattern: path/file.verse(line:col): error <message>
     # Also matches: path/file.verse(line): error <message>
     error_pattern = re.compile(
@@ -264,7 +264,7 @@ def verse_patch_errors(verse_file: str = "", **kwargs) -> dict:
         if "warning" in line.lower() and ".verse" in line.lower():
             warning_count += 1
 
-    # ── 3. Read erroring file contents ───────────────────────────────────────
+    # -- 3. Read erroring file contents --------------------------------------
     verse_root = _find_verse_root()
     files_out: dict = {}
 
@@ -300,9 +300,9 @@ def verse_patch_errors(verse_file: str = "", **kwargs) -> dict:
                     except Exception:
                         pass
 
-    # ── 4. Build response ─────────────────────────────────────────────────────
+    # -- 4. Build response ---------------------------------------------------
     if build_status == "SUCCESS":
-        next_step = "Build succeeded — no errors to fix. Run world_state_export to verify the level."
+        next_step = "Build succeeded -- no errors to fix. Run world_state_export to verify the level."
     elif errors:
         next_step = (
             f"Fix {len(errors)} error(s) in the files listed under 'files', "
@@ -310,7 +310,7 @@ def verse_patch_errors(verse_file: str = "", **kwargs) -> dict:
         )
     else:
         next_step = (
-            "No structured errors parsed — check the raw log via "
+            "No structured errors parsed -- check the raw log via "
             "system_get_last_build_log for context."
         )
 

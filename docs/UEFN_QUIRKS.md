@@ -380,14 +380,29 @@ var Flag  : logic = 999                   # type mismatch
 MyTimer.Start(999, "wrong", false)        # wrong args on known timer_device type
 ```
 
+### Addendum: Editor Build vs. Push Changes (discovered March 22, 2026)
+Further testing confirmed that **`Build Verse Code` (editor mode) is even more permissive
+than listed above.** Calling `.Subscribe()` on `GetElapsedTime()` — which returns `float`,
+not an event — compiled with `VerseBuild: SUCCESS`. No error, no warning.
+
+The editor-mode build does **not** run full type checking. It performs:
+1. Syntax parsing
+2. Package registration / UObject type generation
+3. Linking of known modules
+
+Full type checking — including method-not-found, wrong-argument-count on known types, and
+cross-module type violations — only runs during **Push Changes** (the full publish pipeline).
+
+**This means `verse_patch_errors` targets the Push Changes log, not editor builds.**
+The error loop is designed for the real compiler, not the editor's fast-registration pass.
+
 ### Implication for `verse_patch_errors`
 When Claude generates Verse with wrong device type names, the code may silently compile
-but the `@editable` slot will show an unknown type in the editor UI and the device won't
-wire correctly at runtime. Always verify generated type names against the Verse schema
-(`api_verse_get_schema`) rather than relying on compile errors to catch them.
+in editor mode but fail at Push Changes time. Always verify generated type names against
+the Verse schema rather than relying on editor build errors to catch them.
 
-**Takeaway:** A `VerseBuild: SUCCESS` does not guarantee the logic is correct — it only
-guarantees the syntax and known-type constraints are satisfied.
+**Takeaway:** `VerseBuild: SUCCESS` in editor mode only guarantees syntax + package
+registration. Full type correctness is only verified at Push Changes.
 
 ---
 

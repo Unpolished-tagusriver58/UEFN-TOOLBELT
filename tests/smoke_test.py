@@ -237,7 +237,7 @@ EXPECTED_MODULES = [
     "api_capability_crawler", "measurement_tools", "localization_tools",
     "foliage_converter", "entity_kits", "selection_utils", "project_admin", "lighting_mastery"
 ]
-MIN_TOOL_COUNT = 171
+MIN_TOOL_COUNT = 178
 
 
 def _layer_toolbelt() -> None:
