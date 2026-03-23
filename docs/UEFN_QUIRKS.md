@@ -461,6 +461,12 @@ main thread, allowing a tick to occur before the next Python block runs.
 **Takeaway:** After any bulk Asset Registry operation, every subsequent Unreal API
 call must be its own `tb.run()` — never chained in the same Python execution block.
 
+### Known unsafe tools on large projects
+`rename_enforce_conventions` calls `load_asset()` on every asset in the scan path
+recursively. On projects with hundreds of Blueprints and device actors this bulk load
+crashes the engine. Safe only on fresh projects with few assets. Always run with
+`dry_run=True` first to check the scope before committing.
+
 ---
 
 ## 17. `_serialize()` Swallows Unreal Objects Silently
