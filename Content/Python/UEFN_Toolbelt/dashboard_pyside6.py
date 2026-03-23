@@ -311,10 +311,23 @@ def _tab_quick_actions(R) -> "QScrollArea":
     arena_combo = QComboBox()
     arena_combo.addItems(["medium", "small", "large"])
     arena_combo.setFixedWidth(100)
-    _btn_inp(g_demo, "2. Spawn Arena  (run after step 1 returns)",
+    _btn_inp(g_demo, "2a. Spawn Arena at Origin",
              lambda: R("arena_generate", size=arena_combo.currentText()),
              arena_combo,
-             tip="Spawns a symmetrical Red vs Blue arena. Must be a separate call after project_setup completes (Quirk #22).")
+             tip="Spawns arena centered at world origin (0, 0, 0). Run after step 1 returns.")
+
+    def _spawn_at_camera():
+        try:
+            loc, _ = unreal.EditorLevelLibrary.get_level_viewport_camera_info()
+            R("arena_generate", size=arena_combo.currentText(),
+              origin=(loc.x, loc.y, 0.0))
+        except Exception as e:
+            from .core import log_error
+            log_error(f"[Arena] Could not read camera position: {e}")
+
+    _btn(g_demo, "2b. Spawn Arena at Camera  (navigate first, then click)",
+         _spawn_at_camera,
+         "Reads your viewport camera position and spawns the arena there. Navigate to where you want it, then click.")
 
     _btn(g_demo, "3. Check Build Errors  (run after Build Verse Code click)",
          lambda: R("verse_patch_errors"),
