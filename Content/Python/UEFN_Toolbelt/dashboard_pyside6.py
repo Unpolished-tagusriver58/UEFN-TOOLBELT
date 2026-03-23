@@ -461,10 +461,23 @@ def _tab_materials(R) -> "QScrollArea":
 def _tab_procedural(R) -> "QScrollArea":
     scroll, L = _page()
 
+    def _cam():
+        """Return (x, y, z) of the current viewport camera, fallback to origin."""
+        try:
+            import unreal
+            loc, _ = unreal.EditorLevelLibrary.get_level_viewport_camera_info()
+            return (loc.x, loc.y, loc.z)
+        except Exception:
+            return (0.0, 0.0, 0.0)
+
+    def _cam_xy():
+        x, y, z = _cam()
+        return (x, y, 0.0)
+
     # Arena
     g = _group(L, "Arena Generator")
     _row(L if False else g, *[
-        (f"{s.title()} Arena", lambda s=s: R("arena_generate", size=s, apply_team_colors=True))
+        (f"{s.title()} Arena", lambda *_, s=s: R("arena_generate", size=s, apply_team_colors=True, origin=_cam_xy()))
         for s in ("small", "medium", "large")
     ])
 
@@ -482,14 +495,14 @@ def _tab_procedural(R) -> "QScrollArea":
     def _prev():  return preview_chk.isChecked()
 
     _grid_btns(g2, [
-        ("Grid 5×5",      lambda: R("pattern_grid",        mesh_path=_mesh(), preview=_prev())),
-        ("Circle Ring",   lambda: R("pattern_circle",      mesh_path=_mesh(), preview=_prev())),
-        ("Arc 180°",      lambda: R("pattern_arc",         mesh_path=_mesh(), preview=_prev())),
-        ("Spiral",        lambda: R("pattern_spiral",      mesh_path=_mesh(), preview=_prev())),
-        ("Line",          lambda: R("pattern_line",        mesh_path=_mesh(), preview=_prev())),
-        ("Sine Wave",     lambda: R("pattern_wave",        mesh_path=_mesh(), preview=_prev())),
-        ("Helix",         lambda: R("pattern_helix",       mesh_path=_mesh(), preview=_prev())),
-        ("Radial Rings",  lambda: R("pattern_radial_rows", mesh_path=_mesh(), preview=_prev())),
+        ("Grid 5×5",      lambda: R("pattern_grid",        mesh_path=_mesh(), preview=_prev(), origin=_cam_xy())),
+        ("Circle Ring",   lambda: R("pattern_circle",      mesh_path=_mesh(), preview=_prev(), origin=_cam_xy())),
+        ("Arc 180°",      lambda: R("pattern_arc",         mesh_path=_mesh(), preview=_prev(), origin=_cam_xy())),
+        ("Spiral",        lambda: R("pattern_spiral",      mesh_path=_mesh(), preview=_prev(), origin=_cam_xy())),
+        ("Line",          lambda: R("pattern_line",        mesh_path=_mesh(), preview=_prev(), origin=_cam_xy())),
+        ("Sine Wave",     lambda: R("pattern_wave",        mesh_path=_mesh(), preview=_prev(), origin=_cam_xy())),
+        ("Helix",         lambda: R("pattern_helix",       mesh_path=_mesh(), preview=_prev(), origin=_cam_xy())),
+        ("Radial Rings",  lambda: R("pattern_radial_rows", mesh_path=_mesh(), preview=_prev(), origin=_cam_xy())),
     ], cols=4)
     _row(g2,
          ("Clear Preview",  lambda: R("pattern_clear", preview_only=True)),
@@ -513,12 +526,58 @@ def _tab_procedural(R) -> "QScrollArea":
     _row(g3,
          ("Scatter Props",  lambda: R("scatter_props",
                                      mesh_path=scatter_inp.text() or "/Engine/BasicShapes/Sphere",
-                                     count=int(count_s.value()), radius=radius_s.value())),
+                                     count=int(count_s.value()), radius=radius_s.value(),
+                                     center=_cam_xy())),
          ("Scatter HISM",   lambda: R("scatter_hism",
                                      mesh_path=scatter_inp.text() or "/Engine/BasicShapes/Sphere",
-                                     count=int(count_s.value()), radius=radius_s.value())),
+                                     count=int(count_s.value()), radius=radius_s.value(),
+                                     center=_cam_xy())),
          ("Clear Scatter",  lambda: R("scatter_clear")),
     )
+
+    # PCG Scatter
+    g_pcg = _group(L, "PCG Scatter")
+
+    avoid_cls_inp  = QLineEdit(); avoid_cls_inp.setPlaceholderText("avoid_class (e.g. PlayerStart)")
+    avoid_rad_s    = _spin(800, 50, 5000, width=90)
+    avoid_count_s  = _spin(40, 1, 500, width=70)
+    avoid_radius_s = _spin(3000, 100, 20000, width=90)
+    row_av = QWidget(); rh_av = QHBoxLayout(row_av); rh_av.setContentsMargins(0,0,0,0); rh_av.setSpacing(4)
+    rh_av.addWidget(QLabel("Count:")); rh_av.addWidget(avoid_count_s)
+    rh_av.addWidget(QLabel("Area:")); rh_av.addWidget(avoid_radius_s)
+    rh_av.addWidget(QLabel("AvoidR:")); rh_av.addWidget(avoid_rad_s); rh_av.addStretch()
+    g_pcg.addWidget(row_av)
+    _btn_inp(g_pcg, "Scatter (Avoid Obstacles)",
+             lambda: R("scatter_avoid",
+                       mesh_path=scatter_inp.text() or "/Engine/BasicShapes/Sphere",
+                       count=int(avoid_count_s.value()),
+                       radius=avoid_radius_s.value(),
+                       center=_cam_xy(),
+                       avoid_class=avoid_cls_inp.text().strip(),
+                       avoid_radius=avoid_rad_s.value()),
+             avoid_cls_inp,
+             tip="Poisson scatter that skips positions near actors matching avoid_class.")
+
+    road_pts_inp  = QLineEdit(); road_pts_inp.setPlaceholderText("points: [[x,y,z],[x,y,z],...]  (JSON)")
+    road_offset_s = _spin(400, 50, 5000, width=80)
+    road_spread_s = _spin(150, 0, 2000, width=80)
+    row_rd = QWidget(); rh_rd = QHBoxLayout(row_rd); rh_rd.setContentsMargins(0,0,0,0); rh_rd.setSpacing(4)
+    rh_rd.addWidget(QLabel("Offset:")); rh_rd.addWidget(road_offset_s)
+    rh_rd.addWidget(QLabel("Spread:")); rh_rd.addWidget(road_spread_s); rh_rd.addStretch()
+    g_pcg.addWidget(row_rd)
+    def _scatter_road_edge():
+        import json
+        raw = road_pts_inp.text().strip()
+        pts = json.loads(raw) if raw else None
+        R("scatter_road_edge",
+          mesh_path=scatter_inp.text() or "/Engine/BasicShapes/Sphere",
+          points=pts,
+          edge_offset=road_offset_s.value(),
+          spread=road_spread_s.value())
+    _btn_inp(g_pcg, "Scatter Road Edge",
+             _scatter_road_edge,
+             road_pts_inp,
+             tip="Place props along both shoulders of a path. Paste [[x,y,z],...] or select a SplineActor.")
 
     # Spline
     g4 = _group(L, "Spline Prop Placer")
@@ -612,6 +671,14 @@ def _tab_bulk_ops(R) -> "QScrollArea":
 def _tab_text(R) -> "QScrollArea":
     scroll, L = _page()
 
+    def _cam():
+        try:
+            import unreal
+            loc, _ = unreal.EditorLevelLibrary.get_level_viewport_camera_info()
+            return (loc.x, loc.y, loc.z)
+        except Exception:
+            return (0.0, 0.0, 0.0)
+
     g = _group(L, "Place")
     text_inp  = _inp("Sign text", "ZONE", width=120)
     color_inp = _inp("#RRGGBB", "#FFDD00", width=90)
@@ -619,13 +686,13 @@ def _tab_text(R) -> "QScrollArea":
     row1 = QWidget(); h1 = QHBoxLayout(row1); h1.setContentsMargins(0, 0, 0, 0); h1.setSpacing(4)
     h1.addWidget(QLabel("Text:")); h1.addWidget(text_inp)
     h1.addWidget(QLabel("Color:")); h1.addWidget(color_inp)
-    h1.addWidget(QLabel("Z:")); h1.addWidget(z_s); h1.addStretch()
+    h1.addWidget(QLabel("Z offset:")); h1.addWidget(z_s); h1.addStretch()
     g.addWidget(row1)
-    _btn(g, "Place Sign at Origin",
+    _btn(g, "Place Sign at Camera",
          lambda: R("text_place",
                    text=text_inp.text() or "ZONE",
                    color=color_inp.text() or "#FFDD00",
-                   location=(0, 0, z_s.value())))
+                   location=(_cam()[0], _cam()[1], _cam()[2] + z_s.value())))
 
     label_col_inp = _inp("#00FFCC", "#00FFCC", width=90)
     _btn_inp(g, "Label Selection (name each actor)",
@@ -645,7 +712,7 @@ def _tab_text(R) -> "QScrollArea":
     _btn(g2, "Paint Zone Grid (A1–D4 style)",
          lambda: R("text_paint_grid",
                    cols=int(cols_s.value()), rows=int(rows_s.value()),
-                   cell_size=cell_s.value()))
+                   cell_size=cell_s.value(), origin=_cam()))
 
     # Manage
     g3 = _group(L, "Manage")
