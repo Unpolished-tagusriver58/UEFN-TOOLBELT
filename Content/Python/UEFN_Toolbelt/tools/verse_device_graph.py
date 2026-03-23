@@ -132,6 +132,7 @@ class DeviceNode:
     errors:   List[str] = field(default_factory=list)
     note: str = ""
     cluster_id: int = -1
+    folder: str = ""
     # Layout velocity (used by force simulation)
     x: float = 0.0
     y: float = 0.0
@@ -288,6 +289,7 @@ class _GraphBuilder:
             nodes.append(DeviceNode(
                 id=f"d{i}", label=dev["label"], class_name=dev["class"],
                 category=cat, color=color, world_loc=dev["loc"], actor=dev["actor"],
+                folder=dev.get("folder", ""),
             ))
 
         # ── Attach verse data ────────────────────────────────────────────
@@ -651,11 +653,16 @@ def _scan_level() -> List[Dict]:
                 except Exception:
                     label = cn
                 loc = actor.get_actor_location()
+                try:
+                    folder = str(actor.get_folder_path())
+                except Exception:
+                    folder = ""
                 result.append({
-                    "label": label or cn,
-                    "class": cn,
-                    "loc":   (loc.x, loc.y, loc.z),
-                    "actor": actor,
+                    "label":  label or cn,
+                    "class":  cn,
+                    "loc":    (loc.x, loc.y, loc.z),
+                    "actor":  actor,
+                    "folder": folder,
                 })
     except Exception as exc:
         log_error(f"verse_device_graph: level scan failed: {exc}")
@@ -1027,6 +1034,7 @@ if _PYSIDE6:
     # ── Info panel ────────────────────────────────────────────────────────────
 
     class _InfoPanel(QWidget):
+        prop_apply = Signal(str, object)   # (prop_name, value)
 
         def __init__(self) -> None:
             super().__init__()
@@ -1106,6 +1114,50 @@ if _PYSIDE6:
             lay.addWidget(self.w_note)
             self.w_verse = lbl("", color="#e94560", sz=8)
             lay.addWidget(self.w_verse)
+
+            lay.addWidget(div())
+
+            lay.addWidget(lbl("PROPERTIES", bold=True, color="#888888", sz=8))
+
+            row_label = QHBoxLayout()
+            row_label.setSpacing(4)
+            row_label.addWidget(lbl("Label:", sz=8))
+            self.w_prop_label = QLineEdit()
+            self.w_prop_label.setFixedHeight(24)
+            self.w_prop_label.setStyleSheet(
+                "background:#212121; color:#CCCCCC; border:1px solid #363636; "
+                "border-radius:3px; padding:2px 6px; font-size:9pt;"
+            )
+            self.w_prop_label.setEnabled(False)
+            row_label.addWidget(self.w_prop_label)
+            lay.addLayout(row_label)
+
+            row_folder = QHBoxLayout()
+            row_folder.setSpacing(4)
+            row_folder.addWidget(lbl("Folder:", sz=8))
+            self.w_prop_folder = QLineEdit()
+            self.w_prop_folder.setFixedHeight(24)
+            self.w_prop_folder.setStyleSheet(
+                "background:#212121; color:#CCCCCC; border:1px solid #363636; "
+                "border-radius:3px; padding:2px 6px; font-size:9pt;"
+            )
+            self.w_prop_folder.setEnabled(False)
+            row_folder.addWidget(self.w_prop_folder)
+            lay.addLayout(row_folder)
+
+            self.w_apply = QPushButton("Apply Changes")
+            self.w_apply.setFixedHeight(26)
+            self.w_apply.setEnabled(False)
+            self.w_apply.setStyleSheet(
+                "background:#1A1A55; border:1px solid #3A3AFF; color:#8888FF; "
+                "border-radius:3px; font-size:9pt; text-align:center;"
+            )
+            self.w_apply.clicked.connect(self._emit_apply)
+            lay.addWidget(self.w_apply)
+
+            self.w_prop_status = lbl("", color="#555555", sz=8)
+            lay.addWidget(self.w_prop_status)
+
             lay.addStretch()
 
         def show_node(self, nd: DeviceNode, project_health: int) -> None:
@@ -1144,12 +1196,29 @@ if _PYSIDE6:
             self.w_note.setPlainText(nd.note)
             self.w_verse.setText(f"Verse: {nd.verse_file}" if nd.verse_file else "No Verse file linked")
 
+            # Properties — only editable if actor is live in level
+            has_actor = nd.actor is not None
+            self.w_prop_label.setText(nd.label)
+            self.w_prop_folder.setText(nd.folder)
+            self.w_prop_label.setEnabled(has_actor)
+            self.w_prop_folder.setEnabled(has_actor)
+            self.w_apply.setEnabled(has_actor)
+            self.w_prop_status.setText("" if has_actor else "Verse-only device — no live actor")
+
+        def _emit_apply(self) -> None:
+            self.prop_apply.emit("label",  self.w_prop_label.text().strip())
+            self.prop_apply.emit("folder", self.w_prop_folder.text().strip())
+
         def clear(self) -> None:
             self.w_name.setText("No device selected")
-            for w in (self.w_cls, self.w_loc, self.w_hval, self.w_verse):
+            for w in (self.w_cls, self.w_loc, self.w_hval, self.w_verse, self.w_prop_status):
                 w.setText("")
             for w in (self.w_warn, self.w_edit, self.w_evt, self.w_fn, self.w_note):
                 w.setPlainText("")
+            for w in (self.w_prop_label, self.w_prop_folder):
+                w.setText("")
+                w.setEnabled(False)
+            self.w_apply.setEnabled(False)
 
     # ── Main window ───────────────────────────────────────────────────────────
 
@@ -1263,6 +1332,7 @@ if _PYSIDE6:
             self._panel = _InfoPanel()
             self._panel.setStyleSheet("background:#181818;")
             self._panel.w_note.textChanged.connect(self._on_note)
+            self._panel.prop_apply.connect(self._on_prop_apply)
             scroll.setWidget(self._panel)
             split.addWidget(scroll)
             split.setStretchFactor(0, 1)
@@ -1353,6 +1423,32 @@ if _PYSIDE6:
         def _on_note(self) -> None:
             if self._selected:
                 self._selected.note = self._panel.w_note.toPlainText().strip()
+
+        def _on_prop_apply(self, prop: str, value: str) -> None:
+            nd = self._selected
+            if not nd or not nd.actor:
+                return
+            try:
+                if prop == "label" and value and value != nd.label:
+                    sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+                    sub.set_actor_label(nd.actor, value)
+                    nd.label = value
+                    # Refresh the node item label in the graph
+                    item = self._node_items.get(nd.id)
+                    if item:
+                        item.update()
+                    self._panel.w_name.setText(value)
+                    self._panel.w_prop_status.setText(f"Renamed → {value}")
+                    self._status.setText(f"Renamed: {value}")
+                elif prop == "folder":
+                    folder_val = value or "None"
+                    nd.actor.set_folder_path(unreal.Name(value))
+                    nd.folder = value
+                    self._panel.w_prop_status.setText(f"Folder → {folder_val}")
+                    self._status.setText(f"Folder set: {folder_val}")
+            except Exception as exc:
+                self._panel.w_prop_status.setText(f"Error: {exc}")
+                self._status.setText(f"Write-back failed: {exc}")
 
         def _on_node_clicked(self, nd: DeviceNode) -> None:
             self._selected = nd

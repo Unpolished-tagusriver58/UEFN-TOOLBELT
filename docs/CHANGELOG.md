@@ -5,6 +5,38 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.8.1] — 2026-03-23
+
+### feat: verse device graph — write-back, wiring codegen, search + physics fixes
+
+**Write-back from property panel:**
+- PROPERTIES section added to the side panel — Label and Folder fields, pre-filled on node select
+- "Apply Changes" button pushes rename (`set_actor_label`) and folder move (`set_folder_path`) to the live level
+- Disabled with hint for Verse-only devices that have no live actor
+- Inline status feedback in panel and status bar on success or error
+
+**Gen Wiring codegen:**
+- "Gen Wiring" toolbar button generates a full `creative_device` Verse stub from the current graph
+- Produces `@editable` device refs + `OnBegin` subscriptions + handler stubs
+- Copy to clipboard + Write to project via `verse_write_file`
+- Context-aware empty state: distinct messages for "no path set" vs "no connections found"
+- Path field placeholder: `"Verse project path — required for wiring scan"`
+
+**Search + physics fixes:**
+- Search now syncs edge visibility (edges hide if either endpoint is filtered out)
+- Physics sim skips hidden nodes — no more ghost jitter from invisible actors
+- Selected node clears from panel when filtered out by search
+
+**Dashboard + UI polish:**
+- Spinbox minimum width enforced at 90px — no more number clipping against arrows
+- Removed `::up-arrow`/`::down-arrow` CSS — prevented crash in UEFN's embedded Qt
+- Dashboard title: removed `⬡` prefix
+- All tool windows now use canonical TB icon (blue hexagon, white "TB") via `make_toolbelt_icon()`
+- Flagship Tools group added to Quick Actions tab (Verse Graph, World State, Device Catalog)
+- `ToolbeltWindow` title format documented: `"UEFN Toolbelt — Tool Name"`
+
+---
+
 ## [1.8.0] — 2026-03-23
 
 ### feat: lighting, post-process, audio foundation (217 → 229 tools)
