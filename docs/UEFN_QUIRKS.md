@@ -212,6 +212,69 @@ If Epic exposes the mesh reduction pipeline in a future UEFN Python update, re-e
 
 ---
 
+## 19. The V2 Device Property Wall (Discovered: March 2026)
+
+### The Problem
+Fortnite V2 Creative devices (Timer Device, Capture Area, Score Manager, Guard Spawner, etc.)
+appear in the Python layer with specific class names like `FortCreativeTimerDevice`, but their
+underlying Blueprint is a Verse-compiled class (e.g., `Device_Timer_V2_C`).
+
+Their **game-logic settings** — countdown duration, score targets, team assignments, channel
+numbers, enabled state — are stored as Verse `@editable` properties inside the Verse runtime.
+They are **not** UPROPERTYs and cannot be accessed via `get_editor_property` or
+`set_editor_property`. Both will raise:
+
+```
+Failed to find property 'bIsEnabled' for attribute 'bIsEnabled' on 'Device_Timer_V2_C'
+```
+
+`getattr()` also fails for these — they are not reflected into the Python object dictionary.
+
+### What IS accessible via Python on V2 devices
+- **Base class properties**: `allow_highlight`, `net_priority`, `net_dormancy`, `actor_guid`, etc.
+- **State enums**: `client_current_state` → e.g., `TimerDeviceState.ENABLED`
+- **Methods**: `timer_start()`, `timer_pause()`, `timer_resume()`, `timer_set_state()`,
+  `timer_clear_handles()` — callable via `getattr(actor, "timer_start")()`
+- **Transforms**: location, rotation, scale — always accessible
+
+### What is NOT accessible
+- Countdown duration, score-to-win, team index, channel assignments
+- Any setting you would configure via the device's Properties panel in the UEFN editor UI
+
+### The Two Correct Approaches
+
+**Option A — Method invocation** (for runtime control):
+```python
+# Call exposed methods directly — these DO work
+timer_actor = ...  # found via world_state_export or verse_select_by_class
+start_fn = getattr(timer_actor, "timer_start", None)
+if start_fn and callable(start_fn):
+    start_fn()
+```
+Use `tb.run("device_call_method", ...)` for this (see verse_device_editor.py).
+
+**Option B — Verse code generation** (for initial configuration):
+Claude generates a Verse `creative_device` that holds `@editable` references to the target
+devices and sets their properties at `on_begin`. This is the architecturally correct solution —
+UEFN's design intent is that device configuration happens in Verse, not Python.
+
+```verse
+MyGameManager := class(creative_device):
+    @editable TimerDevice : timer_device = timer_device{}
+
+    OnBegin<override>()<suspends> : void =
+        TimerDevice.SetDuration(120.0)
+        TimerDevice.Enable()
+```
+
+### The Crash Companion
+During introspection of V2 devices, **never use PySide6 progress bars** (`with_progress`)
+alongside heavy `get_editor_property` reflection. The Qt Slate tick fires during iteration
+and can dereference null C++ pointers on Verse-backed objects, causing
+`EXCEPTION_ACCESS_VIOLATION`. Use plain `unreal.log()` for progress reporting instead.
+
+---
+
 ## 17. `_serialize()` Swallows Unreal Objects Silently
 
 ### The Problem

@@ -15,25 +15,62 @@
 ## The Python ↔ Verse Bridge Problem
 
 When you place a **Trigger Device**, **Team Settings Device**, or any other Creative device,
-UEFN's Python API sees it as `FortCreativeDeviceProp` — a generic shell.
+UEFN's Python API sees it as `FortCreativeDeviceProp` or a more specific class like
+`FortCreativeTimerDevice` — but both are shells over a Verse-compiled Blueprint.
+
+### V1 Devices (older Creative devices)
+Some older devices expose properties via `getattr()` even when `get_editor_property` fails:
 
 ```python
-# What you want:
-actor.get_editor_property("is_enabled")   # ← works for FortPlayerStartCreative
-# What you get on devices:
-# Exception: Failed to find editor property 'is_enabled' on FortCreativeDeviceProp
-```
-
-**The solution** — two access paths:
-
-```python
-# Path 1: getattr() bypasses the editor property system
+# Path 1: getattr() bypasses the editor property system for V1 devices
 val = getattr(actor, "is_enabled", None)
 
-# Path 2: Use Toolbelt tools that handle this automatically
+# Path 2: Toolbelt tools handle this automatically
 tb.run("verse_bulk_set_property", property_name="is_enabled", value=True)
-tb.run("verse_export_report")   # dumps all properties from all devices to JSON
+tb.run("verse_export_report")   # dumps all device properties to JSON
 ```
+
+### V2 Devices — The Hard Wall (Discovered March 2026)
+**Fortnite V2 Creative devices** (Timer Device, Capture Area, Score Manager, Guard Spawner,
+Vending Machine, etc.) store their game-logic settings exclusively as Verse `@editable`
+properties. **Neither `get_editor_property` nor `getattr` can read or write them.**
+
+```python
+# ALL of these fail on V2 devices:
+actor.get_editor_property("bIsEnabled")   # ❌ property not found
+actor.set_editor_property("bIsEnabled", True)  # ❌ property not found
+getattr(actor, "bIsEnabled", None)        # ❌ returns None silently
+```
+
+**What Python CAN do with V2 devices:**
+- Read base-class properties: `actor_guid`, `allow_highlight`, `net_priority`, state enums
+- Call exposed methods: `timer_start()`, `timer_pause()`, `timer_resume()`, `timer_set_state()`
+- Move/delete/spawn them (transforms always work)
+
+**What Python CANNOT do:**
+- Set countdown duration, score targets, team index, channel assignments
+- Read the values the designer set in the Properties panel
+
+**The two correct approaches for V2 device configuration:**
+
+**Option A — Method calls** (runtime control):
+```python
+tb.run("device_call_method", class_filter="Timer", method="timer_start")
+```
+
+**Option B — Verse code generation** (initial configuration, architecturally correct):
+```verse
+MyGameManager := class(creative_device):
+    @editable TimerDevice : timer_device = timer_device{}
+
+    OnBegin<override>()<suspends> : void =
+        TimerDevice.SetDuration(120.0)
+        TimerDevice.Enable()
+```
+Use `tb.run("verse_gen_game_skeleton")` to scaffold this. Claude can generate the full
+configuration block given the device list from `world_state_export`.
+
+> See `docs/UEFN_QUIRKS.md` Quirk #19 for the full technical breakdown.
 
 ---
 

@@ -236,6 +236,37 @@ import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in
 
 ---
 
+## ⚠️ V2 Device Property Wall — Critical for AI Autonomy
+
+Fortnite V2 Creative devices (Timer Device, Capture Area, Score Manager, Guard Spawner, etc.)
+store their game-logic settings as Verse `@editable` properties — **not UPROPERTYs**.
+`get_editor_property`, `set_editor_property`, and `getattr` all fail silently or raise exceptions.
+
+**DO NOT attempt to set these via `device_set_property`:**
+- Countdown duration, score-to-win, team index, channel assignments, enabled state
+- Anything configurable in the device's Properties panel in the UEFN editor
+
+**What Python CAN do on V2 devices:**
+- Read base-class props: `actor_guid`, `allow_highlight`, `client_current_state`, `net_priority`
+- Call methods: `timer_start()`, `timer_pause()`, `timer_resume()`, `timer_set_state()`
+- Move/delete/spawn (transforms always work)
+
+**How to configure V2 devices programmatically (two paths):**
+
+1. **Method calls** — `tb.run("device_call_method", class_filter="Timer", method="timer_start")`
+2. **Verse code** — generate a `creative_device` with `@editable` refs that configures at `OnBegin`:
+   ```verse
+   @editable TimerDevice : timer_device = timer_device{}
+   OnBegin<override>()<suspends> : void =
+       TimerDevice.SetDuration(120.0)
+       TimerDevice.Enable()
+   ```
+   Use `verse_gen_game_skeleton` to scaffold — Claude fills in the configuration block.
+
+Full technical breakdown: `docs/UEFN_QUIRKS.md` Quirk #19, `docs/FORTNITE_DEVICES.md`.
+
+---
+
 ## ⚠️ Development Quirks & "Main Thread Lock"
 
 UEFN's Python execution environment has a critical architectural quirk: **The Main Thread Lock**.

@@ -124,7 +124,7 @@ def crawl_selection(**kwargs) -> dict:
 
     for actor in actors:
         label = actor.get_actor_label()
-        unreal.log(f"[TOOLBELT] Crawling: {label}")
+        core.log_info(f"Crawling: {label}")
         report["data"][label] = _introspect_object(actor)
 
     # Save to disk
