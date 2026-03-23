@@ -16,6 +16,10 @@ By writing a **Custom Plugin**, you can add your own completely custom tools to 
 3. Paste the following skeleton code and save it:
 
 ```python
+# Declare the minimum Toolbelt version your plugin requires.
+# If a user has an older version, they'll see a warning in the Output Log.
+MIN_TOOLBELT_VERSION = "1.5.3"
+
 from UEFN_Toolbelt.registry import register_tool
 from UEFN_Toolbelt import core
 

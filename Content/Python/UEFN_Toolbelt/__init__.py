@@ -31,6 +31,10 @@ config = get_config()
 # of the platform each plugin was loaded against.
 __version__ = "1.5.3"
 
+# API contract version — plugins declare MIN_TOOLBELT_VERSION = "x.y.z" to
+# signal the oldest platform release they support. Checked at load time.
+TOOLBELT_API_VERSION = __version__
+
 # Singleton registry shared across all imports
 registry: ToolRegistry = get_registry()
 
@@ -159,6 +163,23 @@ def load_custom_plugins() -> None:
                 unreal.log_error(f"  • {v}")
             audit_log.append({"plugin": module_name, "status": "BLOCKED_IMPORTS", "violations": violations})
             continue
+
+        # Gate 2.5: API version compatibility check
+        import re as _re
+        with open(p, "r", encoding="utf-8") as _vf:
+            _src = _vf.read()
+        _ver_match = _re.search(r'^MIN_TOOLBELT_VERSION\s*=\s*["\']([^"\']+)["\']', _src, _re.MULTILINE)
+        if _ver_match:
+            _required = _ver_match.group(1)
+            def _ver_tuple(v):
+                try: return tuple(int(x) for x in v.split("."))
+                except: return (0,)
+            if _ver_tuple(_required) > _ver_tuple(__version__):
+                unreal.log_warning(
+                    f"[TOOLBELT] ⚠ Plugin '{module_name}' requires Toolbelt v{_required} "
+                    f"but platform is v{__version__}. Loading anyway — some features may not work. "
+                    f"Update UEFN Toolbelt to silence this warning."
+                )
 
         # Gate 3: SHA-256 integrity hash
         file_hash = _sha256(p)
