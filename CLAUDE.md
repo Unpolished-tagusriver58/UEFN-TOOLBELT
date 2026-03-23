@@ -61,7 +61,7 @@ import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in
 ## What This Project Is
 
 **UEFN Toolbelt** is a comprehensive Python automation framework for Unreal Editor for Fortnite (UEFN 40.00+, March 2026).
-It runs inside the editor and exposes 171 tools through:
+It runs inside the editor and exposes 204 tools through:
 - A persistent top-menu entry (`Toolbelt ▾`) in the UEFN editor bar
 - An 18-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
 - An MCP HTTP bridge so Claude Code can control UEFN directly
@@ -103,7 +103,7 @@ This file contains every registered tool with its full Python parameter signatur
   }
 }
 ```
-All 171 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
+All 204 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
 
 **Schema utility functions** (`schema_utils.py`):
 - `schema_utils.validate_property(class_name, prop)` — check if a property exists and is writable
@@ -460,12 +460,44 @@ tb.run("bulk_randomize", rot_range=360.0, randomize_rot=True, randomize_scale=Tr
 
 ---
 
+### Advanced Alignment
+
+| Tool | Key Params | What it does |
+|---|---|---|
+| `align_to_reference` | `axis="Z"`, `reference="first\|last"` | Snap axis to first or last selected actor's position |
+| `distribute_with_gap` | `axis="X"`, `gap=0.0` | Exact cm gap between bounding boxes (not pivot-to-pivot) |
+| `rotate_around_pivot` | `angle_deg=90`, `axis="Z"`, `pivot="center\|first"` | Orbit selection around center-of-bounds or first actor |
+| `align_to_surface` | `offset_z=0.0` | Snap selection to floor with optional Z offset |
+| `match_spacing` | `axis="X"` | Even pivot spacing between first and last (endpoints fixed) |
+| `align_to_grid_two_points` | `grid_size=100.0` | Local grid from two anchor actors, snap rest to it |
+
+---
+
+### Actor Organization
+
+| Tool | Key Params | What it does |
+|---|---|---|
+| `actor_attach_to_parent` | — | Last selected becomes parent of all others (Maya-style) |
+| `actor_detach` | — | Detach selection from parent, preserve world transforms |
+| `actor_move_to_folder` | `folder_name` | Move selection to named World Outliner folder |
+| `actor_move_to_root` | — | Strip folder from selection, move to root |
+| `actor_rename_folder` | `old_folder`, `new_folder`, `dry_run=False` | Re-path all actors from one folder to another |
+| `actor_select_by_folder` | `folder_name` | Select all actors in a named folder |
+| `actor_select_same_folder` | — | Expand selection to all actors sharing the first actor's folder |
+| `actor_select_by_class` | `class_filter` | Select all level actors whose class name contains filter |
+| `actor_folder_list` | — | Full folder map with actor counts — great for auditing level structure |
+| `actor_match_transform` | `copy_location=True`, `copy_rotation=True`, `copy_scale=False` | Copy transform from first selected to all others |
+
+---
+
 ### Foliage / Scatter
 
 | Tool | Key Params | What it does |
 |---|---|---|
-| `scatter_props` | `asset_path`, `count`, `radius`, `folder="Scatter"` | Individual actor scatter |
-| `scatter_hism` | `asset_path`, `count`, `radius`, `folder="Scatter"` | HISM (use for 100+) |
+| `scatter_props` | `asset_path`, `count`, `radius`, `center`, `folder="Scatter"` | Individual actor scatter at center |
+| `scatter_hism` | `asset_path`, `count`, `radius`, `center`, `folder="Scatter"` | HISM (use for 100+) at center |
+| `scatter_avoid` | `asset_path`, `count`, `radius`, `center`, `avoid_class`, `avoid_radius` | Poisson scatter — skips positions within avoid_radius of matching actors |
+| `scatter_road_edge` | `asset_path`, `points=[[x,y,z],...]`, `edge_offset`, `spread` | Props along both shoulders of a path. Pass waypoints or select SplineActor |
 | `scatter_along_path` | `asset_path`, `points`, `count_per_point=3` | Along path points |
 | `scatter_export_manifest` | — | Export scatter data to JSON |
 | `scatter_clear` | `folder="Scatter"` | Remove all scattered actors |
@@ -598,13 +630,20 @@ tb.run("screenshot_focus_selection", width=1920, height=1080, name="prop_focus")
 
 | Tool | Key Params | What it does |
 |---|---|---|
-| `text_place` | `text`, `location`, `color="#FFFFFF"`, `world_size=100.0` | Place 3D text actor |
+| `text_place` | `text`, `location`, `color="#FFFFFF"`, `world_size=100.0` | Place a single 3D text actor |
 | `text_label_selection` | `color`, `world_size` | Label each selected actor with its name |
 | `text_paint_grid` | `cols=4`, `rows=4`, `cell_size=2000.0` | A1–D4 coordinate grid |
 | `text_color_cycle` | — | Row of team/color labels |
 | `text_save_style` | `name`, `color`, `size` | Save a named text style |
 | `text_list_styles` | — | Print saved styles |
 | `text_clear_folder` | — | Delete all toolbelt text actors |
+| `sign_spawn_bulk` | `count`, `text`, `prefix`, `location`, `layout="row_x\|row_y\|grid"`, `spacing`, `cols`, `color`, `world_size` | Spawn N TextRenderActor signs in a row/grid. **Not Billboard devices.** |
+| `sign_batch_edit` | `text`, `color`, `world_size` | Edit selected signs — only fields you pass are changed |
+| `sign_batch_set_text` | `texts=[...]` | Assign individual text to each selected sign in order |
+| `sign_batch_rename` | `prefix`, `start=1`, `sync_text=False` | Rename selected signs sequentially |
+| `sign_list` | `folder=""` | List all TextRenderActors with their text |
+| `sign_clear` | `folder="Signs"`, `dry_run=False` | Delete signs in folder |
+| `label_attach` | `offset_z=150`, `yaw=0`, `color`, `world_size`, `use_actor_name=True` | Spawn floating label above each selected actor, parented so it follows. Great for NPC name tags. |
 
 ---
 
@@ -725,7 +764,7 @@ tb.run("config_reset", key="all")   # wipe all customisations
 |---|---|---|
 | `plugin_validate_all` | — | Validate all registered tools against schema |
 | `plugin_list_custom` | — | List all loaded third-party tools from `Saved/UEFN_Toolbelt/Custom_Plugins` |
-| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 171 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
+| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 204 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
 
 **Online Plugin Hub** — the Plugin Hub dashboard tab fetches `registry.json` live from GitHub.
 - **Core Tools** (green/BUILT-IN): 10 flagship modules by Ocean Bennett, already built in

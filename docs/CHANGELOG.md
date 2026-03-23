@@ -5,6 +5,59 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.6.0] — 2026-03-23
+
+### feat: actor organization, advanced alignment, sign tools, PCG scatter, camera-spawn
+
+**New modules — 33 new tools (171 → 204):**
+
+- **`sign_tools.py`** (7 tools) — TextRenderActor signs, NOT Fortnite Billboard devices.
+  `sign_spawn_bulk`: spawn N signs in row/column/grid at camera. `sign_batch_edit`: change
+  text/color/size on all selected signs at once. `sign_batch_set_text`: assign individual
+  strings per sign. `sign_batch_rename`: sequential rename with optional text sync.
+  `sign_list` / `sign_clear`: audit and cleanup. `label_attach`: floating text label above
+  selected actor, parented so it follows — perfect for NPC name tags. Supports yaw rotation.
+
+- **`actor_org_tools.py`** (10 tools) — Full actor organization suite.
+  `actor_attach_to_parent`: last-selected becomes parent, Maya-style. `actor_detach`: detach
+  preserving world transforms. `actor_move_to_folder` / `actor_move_to_root`: one-click folder
+  management. `actor_rename_folder`: re-path all actors in a folder. `actor_select_by_folder` /
+  `actor_select_same_folder` / `actor_select_by_class`: selection helpers. `actor_folder_list`:
+  full folder map with actor counts. `actor_match_transform`: copy loc/rot/scale from first
+  selected to all others.
+
+- **`advanced_alignment.py`** (6 tools) — Beyond the basic bulk_align/bulk_distribute.
+  `align_to_reference`: snap axis to first/last selected actor's position.
+  `distribute_with_gap`: exact cm gap between bounding boxes (not pivot-to-pivot).
+  `rotate_around_pivot`: orbit selection around center-of-bounds or first actor.
+  `align_to_surface`: snap_objects_to_floor with Z offset. `match_spacing`: even pivot
+  spacing between endpoints. `align_to_grid_two_points`: local grid from two anchor actors.
+
+- **`foliage_tools.py`** additions (2 tools) — PCG-style scatter.
+  `scatter_avoid`: Poisson scatter with obstacle rejection (avoid_class / avoid_radius filters).
+  `scatter_road_edge`: place props along both shoulders of a path defined by waypoints or
+  SplineActor — resamples at spacing intervals, offsets perpendicular to tangent.
+
+**Dashboard improvements:**
+- All spawn/scatter/pattern buttons now read viewport camera position at click time
+- Fixed `lambda s=s:` bug: PySide6 `clicked(bool)` signal was overriding loop variable
+- Fixed pattern buttons: was passing `center=` but tools expect `origin=`
+- PCG Scatter group added to Procedural tab
+- Advanced Alignment + Actor Organization groups added to Bulk Ops tab
+- Sign Spawner, Sign Batch Edit, Floating Label Attach groups added to Text tab
+
+**Fixes:**
+- `scatter_avoid` with no filter was treating all 2000 level actors as obstacles — now
+  requires at least one filter to be set
+- `scatter_road_edge` rewritten to accept `points=[[x,y,z],...]` waypoint list — no
+  SplineActor required
+- Arena buttons: `apply_team_colors=True` was landing as `size` arg due to signal bool —
+  fixed with `lambda *_, s=s:`
+- `sign_tools` naming: all tools renamed from `billboard_*` to `sign_*` to avoid confusion
+  with Fortnite Billboard devices (V2, not Python-controllable)
+
+---
+
 ## [1.5.3] — 2026-03-22
 
 ### feat: online plugin hub, describe_tool mcp command, attribution
