@@ -406,6 +406,63 @@ registration. Full type correctness is only verified at Push Changes.
 
 ---
 
+## 22. Chaining Heavy Operations Crashes the Engine (EXCEPTION_ACCESS_VIOLATION)
+
+### The Discovery
+Running multiple heavy Unreal operations back-to-back in a single Python execution block
+caused `EXCEPTION_ACCESS_VIOLATION writing address 0x0000000000000000` — a hard editor crash.
+
+The sequence that triggered it:
+1. `scaffold_generate` (56 folder creates via Asset Registry)
+2. `organize_assets` (Asset Registry move operations)
+3. `rename_enforce_conventions` (more Asset Registry writes)
+4. `arena_generate` (actor spawning immediately after)
+
+Steps 1-3 flood the Asset Registry with state changes. When step 4 tries to spawn
+actors before the engine has yielded and processed those changes, a null pointer
+dereference in the render thread kills the process.
+
+### The Rule
+**Only pure Python file writes are safe to chain after scaffold_generate.**
+Any Unreal C++ API call chained in the same Python execution will crash.
+
+- Safe to chain with scaffold: `verse_write_file`, `verse_gen_game_skeleton` (file ops)
+- Must be separate calls: `organize_assets`, `rename_enforce_conventions`,
+  `snapshot_save`, `arena_generate`, any actor spawn or Asset Registry operation
+
+### The Fix
+Split the workflow across multiple tb.run() calls:
+
+```python
+# Call 1 -- scaffold + Verse file writes only (safe)
+tb.run("project_setup", project_name="MyGame")
+
+# [engine yields after Python call returns]
+
+# Call 2 -- Asset Registry operations (separate)
+tb.run("organize_assets", folder="/Game/")
+
+# [engine yields]
+
+# Call 3 -- more Asset Registry ops (separate)
+tb.run("rename_enforce_conventions", scan_path="/Game/")
+
+# [engine yields]
+
+# Call 4 -- actor spawning (must be last)
+tb.run("arena_generate", size="medium")
+```
+
+**Why:** `scaffold_generate` floods the Asset Registry with 50+ folder creates.
+Any Unreal C++ call made before the engine ticks and flushes that state hits a
+null pointer in the Asset Registry internals. Each `tb.run()` call returns to the
+main thread, allowing a tick to occur before the next Python block runs.
+
+**Takeaway:** After any bulk Asset Registry operation, every subsequent Unreal API
+call must be its own `tb.run()` — never chained in the same Python execution block.
+
+---
+
 ## 17. `_serialize()` Swallows Unreal Objects Silently
 
 ### The Problem

@@ -52,3 +52,4 @@ from . import sequencer_tools
 from . import sim_device_proxy
 from . import config_tools
 from . import verse_device_graph
+from . import project_setup
