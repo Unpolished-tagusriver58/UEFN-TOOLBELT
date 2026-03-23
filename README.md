@@ -96,8 +96,9 @@ from live level state in under 60 seconds.
 
 Place the device in your level, drag your real actors into the `@editable` slots, and play.
 
-> See [docs/AI_AUTONOMY.md](docs/AI_AUTONOMY.md) for the full technical breakdown, the complete
-> generated file, and the hard limits of what Claude can and cannot do in UEFN today.
+> See [docs/PIPELINE.md](docs/PIPELINE.md) for the complete 6-phase industrial pipeline —
+> every tool, every phase, Claude's full execution script, and the recursive build+fix loop.
+> See [docs/AI_AUTONOMY.md](docs/AI_AUTONOMY.md) for the live run technical breakdown.
 
 ---
 
@@ -2236,6 +2237,7 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 | File | What it covers |
 |:---|:---|
+| [docs/PIPELINE.md](docs/PIPELINE.md) | **The Industrialization Pipeline** — the master document. Every phase (0–6), every tool, current status, Claude's full execution script, the recursive build+fix loop, and the one remaining human step |
 | [docs/AI_AUTONOMY.md](docs/AI_AUTONOMY.md) | **AI autonomy loop** — complete live run walkthrough, generated Verse file, how `world_state_export` + `verse_write_file` work, hard limits, roadmap to full headless builds |
 | [docs/SCHEMA_DEEP_DIVE.md](docs/SCHEMA_DEEP_DIVE.md) | **Forensic schema analysis** — type taxonomy, inheritance evidence, enum full tables, network architecture, collision mask system, naming conventions, read-only vs writable |
 | [docs/DEVICE_API_MAP.md](docs/DEVICE_API_MAP.md) | All 14 C++ actor classes — property tables, enums, automation patterns, access cheatsheet |

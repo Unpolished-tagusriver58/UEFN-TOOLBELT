@@ -306,31 +306,92 @@ clicks required at all.
 
 ---
 
+---
+
+## Phase 5 — The Recursive Build + Fix Loop
+
+This is the piece that makes the pipeline industrial. After any Verse build failure,
+Claude calls one tool and gets back everything it needs to fix the code and redeploy.
+
+```python
+# After user clicks Build Verse and errors appear:
+result = tb.run("verse_patch_errors")
+
+# What Claude gets back:
+{
+  "build_status":  "FAILED",
+  "error_count":   3,
+  "errors": [
+    {"file": "game_manager.verse", "line": 42, "col": 7,
+     "message": "identifier 'capture_area_device' not found"},
+    {"file": "game_manager.verse", "line": 87, "col": 4,
+     "message": "no overload of 'Subscribe' takes 1 argument"},
+  ],
+  "files": {
+    "game_manager.verse": "...full current content of the file..."
+  },
+  "next_step": "Fix 3 errors in the files listed, then call verse_write_file(overwrite=True) and rebuild."
+}
+
+# Claude reads errors + file, generates fix:
+tb.run("verse_write_file", filename="game_manager.verse",
+       content=fixed_content, overwrite=True)
+
+# User clicks Build Verse again → repeat until:
+# {"build_status": "SUCCESS", "error_count": 0}
+```
+
+### How `verse_patch_errors` works internally
+
+1. Finds the most recent `.log` file in UEFN's `Saved/Logs/` directory
+2. Scans every line for the Verse error pattern: `path/file.verse(line:col): error message`
+3. Also scans for `VerseBuild SUCCESS/FAILED` summary lines
+4. Deduplicates errors (same file+line+message appear multiple times in the log)
+5. For each erroring filename, walks the project Verse directory to find and read the file
+6. Returns errors + file contents + `next_step` instruction in one structured dict
+
+### Common errors Claude will encounter
+
+| Error message | Root cause | Fix |
+|---|---|---|
+| `identifier 'X' not found` | Wrong Verse device type name | Look up correct type in api_verse_get_schema |
+| `no overload of 'Subscribe' takes 1 argument` | Event handler wrong signature | Add `(Agent : agent)` parameter |
+| `'X' is not a member of 'Y'` | Method doesn't exist on device | Run api_crawl_selection to find real methods |
+| `expected expression` | Indentation or syntax error in generated code | Fix whitespace / missing colon |
+| `type mismatch: expected X, got Y` | Wrong type passed to method | Cast or use correct Verse type |
+
+---
+
 ## The Roadmap to Full Autonomy
 
 ```
-TODAY (working):
-  world_state_export          ← Claude reads what's IN the level (521 actors, proven)
-  device_catalog_scan         ← Claude reads what's AVAILABLE to place (full Fortnite palette)
-  verse_gen_*                 ← Claude writes Verse code
-  verse_write_file            ← Claude deploys to project (6187 bytes, VerseBuild SUCCESS)
-  [manual: Build Verse]       ← human clicks once
-  device_call_method          ← Claude controls devices at editor time
+TODAY (fully operational):
+  Phase 0: scaffold_generate, organize_assets
+  Phase 1: world_state_export (521 actors), device_catalog_scan (4,698 devices)
+  Phase 2: Claude reasoning (no tool)
+  Phase 3: spawn_actor + set_actor_transform via MCP
+  Phase 4: verse_gen_* + verse_write_file (6,187 bytes, VerseBuild SUCCESS proven)
+  Phase 5: verse_patch_errors → Claude fixes → verse_write_file → [click Build] → repeat
+  Phase 6: world_state_export + snapshot_save
 
-NEXT:
-  system_build_verse          ← waiting for Epic to expose compiler Python API
-  verse_error_loop            ← Claude reads build errors, patches, redeploys
+  ONE HUMAN ACTION: clicking Build Verse (once per iteration)
 
-FUTURE (with Epic API expansion):
-  Full headless game build — zero human clicks:
-    device_catalog_scan  → Claude picks devices for the game concept
-    world_state_export   → Claude reads current level
-    verse_gen_*          → Claude writes complete Verse game logic
-    verse_write_file     → Claude deploys
-    system_build_verse   → Claude compiles
-    [read errors]        → Claude patches and retries
-    done                 → playable game, no human in the loop
+NEXT (waiting for Epic):
+  system_build_verse     ← expose BuildVerseCode to Python → Phase 5 becomes headless
+
+FUTURE (zero human clicks):
+  device_catalog_scan    → Claude designs the game from scratch
+  world_state_export     → Claude reads the current level
+  spawn_actor (MCP)      → Claude places all needed devices
+  verse_write_file       → Claude deploys the code
+  system_build_verse     → Claude triggers the compiler
+  verse_patch_errors     → Claude reads errors + fixes + redeploys
+  LOOP                   → until VerseBuild: SUCCESS
+  snapshot_save          → checkpoint
+  DONE                   → playable Fortnite Creative game, no human in the loop
 ```
+
+The full pipeline reference: **[docs/PIPELINE.md](PIPELINE.md)**
 
 ---
 

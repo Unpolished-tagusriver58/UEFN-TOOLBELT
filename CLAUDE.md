@@ -150,55 +150,68 @@ All 171 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as 
 
 ---
 
-## AI Autonomy Loop — How Claude Builds a Full Game
+## The Industrialization Pipeline — How Claude Builds a Full Game
 
-The long-term goal: Claude receives a game brief and autonomously builds a complete UEFN project.
-Here is the full loop as it stands today and what remains:
+> Full reference: **[docs/PIPELINE.md](docs/PIPELINE.md)** — read this before starting any
+> autonomous build task. It has every tool, every phase, Claude's execution script, and
+> the recursive error loop in detail.
+
+The 6-phase pipeline for autonomous UEFN game development:
 
 ```
-PHASE 1 — READ THE LEVEL          ✅ COMPLETE
-  world_state_export               → full actor list + all readable properties
-  device_catalog_scan              → ALL available Creative devices in Fortnite (not just placed)
-  api_crawl_level_classes          → property schema for every class in the level
-  api_sync_master                  → merged Python + Verse schema → DEVICE_API_MAP.md
-  verse_find_project_path          → locate where to write Verse files
+PHASE 0 — SETUP                   ✅
+  scaffold_generate                → folder structure from template
+  organize_assets                  → sort loose assets by type
 
-PHASE 2 — PLACE & CONFIGURE       ✅ COMPLETE (with known limits)
-  spawn_actor                      → place any asset by path
-  set_actor_transform              → position, rotate, scale
-  delete_actors                    → remove by path or label
-  device_set_property              → set base-class properties (not V2 game-logic props)
-  device_call_method               → call V2 runtime methods (timer_start, Enable, etc.)
-  bulk_*, pattern_*, scatter_*     → layout tools
+PHASE 1 — RECONNAISSANCE          ✅
+  world_state_export               → every actor in the level (transforms + properties)
+  device_catalog_scan              → 4,698 Creative devices available to place
+  api_crawl_level_classes          → Python property schema for every class in level
+  verse_find_project_path          → locate the correct Verse source directory
 
-PHASE 3 — GENERATE & DEPLOY VERSE ✅ COMPLETE
-  verse_gen_game_skeleton          → full game manager stub
-  verse_gen_device_declarations    → @editable refs from level actors
-  verse_gen_elimination_handler    → elimination event handler
-  verse_gen_scoring_tracker        → zone scoring tracker
-  verse_write_file                 → write generated Verse to project source dir
-  system_build_verse               → trigger compilation + parse errors as JSON
-  system_get_last_build_log        → read full build log for diagnosis
+PHASE 2 — DESIGN                  ✅ (Claude reasoning, no tool calls)
+  Read world_state.json + device_catalog.json
+  Select game mode, devices, win condition, round flow
 
-PHASE 4 — ITERATE                 ⚠️ PARTIAL
-  system_build_verse errors        → Claude reads errors, edits the file, retries
-  snapshot_save/restore            → rollback if something goes wrong
-  world_state_export (re-run)      → verify level state after changes
+PHASE 3 — PLACEMENT               ✅
+  spawn_actor (MCP)                → place devices from catalog asset paths
+  set_actor_transform (MCP)        → position them
+  device_set_property              → configure base-class properties
+  device_call_method               → call V2 runtime methods
 
-KNOWN HARD LIMITS (Epic must unlock these):
+PHASE 4 — CODE GENERATION         ✅
+  verse_gen_game_skeleton          → full creative_device Verse stub
+  verse_gen_device_declarations    → @editable refs from live level actors
+  verse_write_file                 → deploy to project Verse source directory
+  [PROVEN: 6187 bytes, VerseBuild SUCCESS, first attempt — March 22 2026]
+
+PHASE 5 — BUILD + FIX LOOP        ✅ (one human click per iteration)
+  [User clicks Build Verse]
+  verse_patch_errors               → errors + file content → Claude fixes → redeploy
+  LOOP until build_status == "SUCCESS"
+  system_build_verse               → ⏳ waiting for Epic Python compiler API (headless)
+
+PHASE 6 — VERIFY                  ✅
+  world_state_export               → confirm level matches design intent
+  snapshot_save                    → checkpoint before publishing
+
+KNOWN HARD LIMITS (Epic must unlock):
   ✗ V2 device game-logic properties (duration, score, team index) — Verse @editable only
+  ✗ Verse compiler trigger from Python — subprocess approach unreliable in sandbox
   ✗ Session launch/stop from Python — no API exposed
-  ✗ Verse compile from inside the editor Python session (system_build_verse uses subprocess)
-  ✗ Channel/event wiring between devices — not exposed to Python
 ```
 
-**The autonomous game build sequence (what Claude should do today):**
-1. `world_state_export` — read what's in the level
-2. `verse_gen_device_declarations` — generate @editable refs from real actors
-3. `verse_gen_game_skeleton` — build the game manager around those refs
-4. `verse_write_file` — deploy to project Verse directory
-5. `system_build_verse` — compile and read errors
-6. If errors: read them, fix the Verse, repeat from step 4
+**Claude's quick-start execution script:**
+```python
+tb.run("device_catalog_scan")        # Phase 1: full device palette
+tb.run("world_state_export")         # Phase 1: current level state
+# [Phase 2: Claude reasons and designs]
+tb.run("verse_write_file", filename="game_manager.verse", content=verse, overwrite=True)
+# [Phase 5: User clicks Build Verse]
+result = tb.run("verse_patch_errors")  # read errors + file content
+# [Claude fixes → verse_write_file → repeat until SUCCESS]
+tb.run("snapshot_save", name="v1")   # Phase 6: checkpoint
+```
 
 ---
 
@@ -619,6 +632,7 @@ tb.run("screenshot_focus_selection", width=1920, height=1080, name="prop_focus")
 | `verse_gen_custom` | `filename`, `code`, `description` | Write arbitrary Verse to snippets folder |
 | `system_build_verse` | — | Trigger Verse compilation + parse errors back as structured JSON |
 | `system_get_last_build_log` | — | Read last 100 lines of the UEFN log for error analysis |
+| `verse_patch_errors` | `verse_file=""` | **Phase 5 error loop** — reads build log, extracts errors with file/line/message, returns full content of every erroring .verse file so Claude can fix and redeploy in one shot |
 | `spline_to_verse_points` | `sample_count=0` | Spline → Verse `vector3` array |
 | `spline_to_verse_patrol` | — | Full patrol AI skeleton from spline |
 | `spline_to_verse_zone_boundary` | — | Zone boundary + IsPointInZone helper |
