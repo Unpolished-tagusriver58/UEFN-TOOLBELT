@@ -151,12 +151,16 @@ def _place_walls(
     cfg: ArenaConfig,
     origin: unreal.Vector,
     placed: List[unreal.Actor],
-) -> None:
+) -> Tuple[List[unreal.Actor], List[unreal.Actor]]:
+    """Place perimeter walls. Returns (red_wall_actors, blue_wall_actors)."""
     mesh = _resolve_mesh(MESH_WALL)
     half_x = (cfg.floor_tiles_x * cfg.tile_size) / 2.0
     half_y = (cfg.floor_tiles_y * cfg.tile_size) / 2.0
     ts = cfg.tile_size
     wall_scale_h = unreal.Vector(ts / 100.0, ts / 100.0, ts / 100.0)
+
+    red_walls: List[unreal.Actor] = []
+    blue_walls: List[unreal.Actor] = []
 
     def place_wall_row(start_x, start_y, count, step_x, step_y, rot_yaw, prefix):
         for i in range(count):
@@ -175,6 +179,10 @@ def _place_walls(
                     actor.set_folder_path("/Arena/Walls")
                     actor.set_actor_label(f"Wall_{prefix}_{i}_{h}")
                     placed.append(actor)
+                    if loc.x >= origin.x:
+                        red_walls.append(actor)
+                    else:
+                        blue_walls.append(actor)
 
     # North / South walls (along X axis)
     place_wall_row(-half_x, -half_y, cfg.floor_tiles_x, ts, 0, 0, "S")
@@ -182,6 +190,8 @@ def _place_walls(
     # East / West walls (along Y axis)
     place_wall_row(-half_x, -half_y, cfg.floor_tiles_y, 0, ts, 90, "W")
     place_wall_row( half_x, -half_y, cfg.floor_tiles_y, 0, ts, 90, "E")
+
+    return red_walls, blue_walls
 
 
 def _place_center_platform(
@@ -245,6 +255,106 @@ def _place_spawns(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  Direct color fallback (no M_ToolbeltBase required)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Paths where auto-generated team materials are stored.
+# Created once on first arena spawn, reused on every subsequent call.
+_MAT_RED_PATH  = "/Game/UEFN_Toolbelt/Materials/M_Arena_TeamRed"
+_MAT_BLUE_PATH = "/Game/UEFN_Toolbelt/Materials/M_Arena_TeamBlue"
+_MAT_FOLDER    = "/Game/UEFN_Toolbelt/Materials"
+
+
+def _create_flat_color_material(asset_path: str, r: float, g: float, b: float):
+    """
+    Create a new simple unlit flat-color Material asset at asset_path.
+    Uses MaterialEditingLibrary -- no custom parent material required.
+    Returns the created/loaded material, or None on failure.
+    """
+    if unreal.EditorAssetLibrary.does_asset_exist(asset_path):
+        return unreal.load_asset(asset_path)
+
+    folder, name = asset_path.rsplit("/", 1)
+    try:
+        asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
+        mat = asset_tools.create_asset(
+            name, folder, unreal.Material, unreal.MaterialFactoryNew()
+        )
+        if mat is None:
+            return None
+
+        mel = unreal.MaterialEditingLibrary
+        # Add a Constant4Vector for the flat color
+        color_expr = mel.create_material_expression(
+            mat, unreal.MaterialExpressionConstant4Vector, -300, 0
+        )
+        color_expr.constant = unreal.LinearColor(r, g, b, 1.0)
+        # Wire it to Base Color
+        mel.connect_material_property(
+            color_expr, "", unreal.MaterialProperty.MP_BASE_COLOR
+        )
+        mel.recompile_material(mat)
+        unreal.EditorAssetLibrary.save_asset(asset_path)
+        log_info(f"[Arena] Created material: {asset_path}")
+        return mat
+    except Exception as e:
+        log_warning(f"[Arena] Could not create material at {asset_path}: {e}")
+        return None
+
+
+def _get_team_materials():
+    """
+    Return (red_mat, blue_mat). Creates them on first call if they don't exist.
+    Falls back to WorldGridMaterial for blue if creation fails.
+    """
+    red_mat  = _create_flat_color_material(_MAT_RED_PATH,  1.0, 0.05, 0.05)
+    blue_mat = _create_flat_color_material(_MAT_BLUE_PATH, 0.05, 0.2,  1.0)
+
+    # Last resort for blue: WorldGridMaterial always exists
+    if blue_mat is None:
+        blue_mat = unreal.load_asset("/Engine/EngineMaterials/WorldGridMaterial")
+
+    return red_mat, blue_mat
+
+
+def _set_material_on_actors(actors: List[unreal.Actor], mat) -> int:
+    """Apply mat to every material slot on every StaticMeshComponent in actors list."""
+    colored = 0
+    for actor in actors:
+        try:
+            comps = actor.get_components_by_class(unreal.StaticMeshComponent)
+            for comp in comps:
+                for slot in range(comp.get_num_materials()):
+                    comp.set_material(slot, mat)
+                colored += 1
+        except Exception:
+            pass
+    return colored
+
+
+def _apply_team_colors(
+    red_actors: List[unreal.Actor],
+    blue_actors: List[unreal.Actor],
+) -> None:
+    """
+    Apply solid red/blue materials to the given actor lists.
+    Creates /Game/UEFN_Toolbelt/Materials/M_Arena_TeamRed|Blue on first run,
+    then reuses them. No custom parent material (M_ToolbeltBase) required.
+    """
+    red_mat, blue_mat = _get_team_materials()
+
+    if red_mat and red_actors:
+        n = _set_material_on_actors(red_actors, red_mat)
+        log_info(f"[Arena] Applied red to {n} components.")
+
+    if blue_mat and blue_actors:
+        n = _set_material_on_actors(blue_actors, blue_mat)
+        log_info(f"[Arena] Applied blue to {n} components.")
+
+    unreal.get_editor_subsystem(unreal.EditorActorSubsystem).set_selected_level_actors([])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  Registered Tool
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -280,37 +390,23 @@ def run_generate(
 
     with undo_transaction(f"Arena Generator: {size.capitalize()} Arena"):
         _place_floor(cfg, origin_vec, all_placed)
-        _place_walls(cfg, origin_vec, all_placed)
+        red_walls, blue_walls = _place_walls(cfg, origin_vec, all_placed)
         _place_center_platform(cfg, origin_vec, all_placed)
-        red_actors, blue_actors = _place_spawns(cfg, origin_vec, all_placed)
+        red_spawns, blue_spawns = _place_spawns(cfg, origin_vec, all_placed)
+
+    red_actors  = red_walls  + red_spawns
+    blue_actors = blue_walls + blue_spawns
 
     log_info(
         f"Arena generated: {len(all_placed)} actors placed "
-        f"({len(red_actors)} Red spawns, {len(blue_actors)} Blue spawns)."
+        f"({len(red_spawns)} Red spawns, {len(blue_spawns)} Blue spawns)."
     )
 
-    # Optional: apply team colors via Material Master
+    # Apply team colors to WALLS + SPAWN PADS (not just pads)
     if apply_team_colors and (red_actors or blue_actors):
         try:
-            from ..core import get_selected_actors
-            import UEFN_Toolbelt as tb
-
-            # Apply red to red spawn actors
-            if red_actors:
-                unreal.get_editor_subsystem(unreal.EditorActorSubsystem) \
-                    .set_selected_level_actors(red_actors)
-                tb.run("material_apply_preset", preset="team_red")
-
-            # Apply blue to blue spawn actors
-            if blue_actors:
-                unreal.get_editor_subsystem(unreal.EditorActorSubsystem) \
-                    .set_selected_level_actors(blue_actors)
-                tb.run("material_apply_preset", preset="team_blue")
-
+            _apply_team_colors(red_actors, blue_actors)
         except Exception as e:
             log_warning(f"Team color auto-apply skipped: {e}")
-
-    # Restore empty selection
-    unreal.get_editor_subsystem(unreal.EditorActorSubsystem).set_selected_level_actors([])
     log_info("Arena generation complete. Undo with Ctrl+Z to remove everything.")
-    return {"status": "ok", "placed": len(all_placed), "red_spawns": len(red_actors), "blue_spawns": len(blue_actors)}
+    return {"status": "ok", "placed": len(all_placed), "red_spawns": len(red_spawns), "blue_spawns": len(blue_spawns)}
