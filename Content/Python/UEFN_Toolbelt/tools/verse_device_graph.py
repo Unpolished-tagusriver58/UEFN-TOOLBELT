@@ -1434,6 +1434,84 @@ TIPS
             self._box.update()
             self.close()
 
+    # ── Activity log overlay ───────────────────────────────────────────────────
+
+    class _ActivityLog(QWidget):
+        """
+        Semi-transparent bottom-left overlay showing the last N activity entries.
+        Pinned to the viewport like the minimap — survives ScrollHandDrag.
+        """
+
+        _W, _H    = 300, 148
+        _MAX      = 8
+        _PAD      = 8
+        _ROW_H    = 16
+        _LEVEL_COLORS = {
+            "info":  "#AAAAAA",
+            "ok":    "#2ecc71",
+            "warn":  "#e67e22",
+            "error": "#e94560",
+            "live":  "#3498db",
+            "scan":  "#9b59b6",
+        }
+
+        def __init__(self, main_view: "QGraphicsView") -> None:
+            super().__init__(main_view)
+            self._entries: list = []   # [(time_str, msg, level), ...]
+            self.setFixedSize(self._W, self._H)
+            self.setStyleSheet(
+                "background: transparent;"
+            )
+            self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
+        def push(self, msg: str, level: str = "info") -> None:
+            from datetime import datetime
+            ts = datetime.now().strftime("%H:%M:%S")
+            self._entries.append((ts, msg, level))
+            if len(self._entries) > self._MAX:
+                self._entries.pop(0)
+            self.update()
+
+        def paintEvent(self, event) -> None:
+            if not self._entries:
+                return
+            p = QPainter(self)
+            p.setRenderHint(QPainter.Antialiasing, False)
+
+            # Background panel
+            p.setBrush(QBrush(QColor(14, 14, 14, 210)))
+            p.setPen(QPen(QColor("#2A2A2A"), 1))
+            p.drawRoundedRect(0, 0, self._W - 1, self._H - 1, 4, 4)
+
+            # Header
+            p.setFont(QFont("Segoe UI", 7, QFont.Bold))
+            p.setPen(QColor("#555555"))
+            p.drawText(self._PAD, self._PAD + 9, "ACTIVITY")
+
+            # Entries — most recent at bottom, older ones dimmer
+            n = len(self._entries)
+            y = self._PAD + 22
+            p.setFont(QFont("Consolas", 8))
+            for i, (ts, msg, level) in enumerate(self._entries):
+                # Opacity: oldest = 35%, newest = 100%
+                alpha = int(90 + (165 * i / max(n - 1, 1)))
+                color = QColor(self._LEVEL_COLORS.get(level, "#AAAAAA"))
+                color.setAlpha(alpha)
+                ts_color = QColor("#444444")
+                ts_color.setAlpha(alpha)
+
+                p.setPen(ts_color)
+                p.drawText(self._PAD, y, ts)
+                p.setPen(color)
+                # Truncate long messages to fit
+                metrics = p.fontMetrics()
+                available = self._W - self._PAD * 2 - 58
+                elided = metrics.elidedText(msg, Qt.ElideRight, available)
+                p.drawText(self._PAD + 58, y, elided)
+                y += self._ROW_H
+
+            p.end()
+
     # ── Canvas view ───────────────────────────────────────────────────────────
 
     class _MiniMap(QWidget):
@@ -1594,19 +1672,26 @@ TIPS
             self.setFrameStyle(0)
             self.setStyleSheet("background: #181818; border: none;")
             self._minimap: Optional["_MiniMap"] = None
+            self._actlog:  Optional["_ActivityLog"] = None
 
         def set_minimap(self, mm: "_MiniMap") -> None:
             self._minimap = mm
-            # Parent to viewport() so it overlays the canvas and receives mouse events.
-            # setParent() hides widgets in Qt — must call show() explicitly after.
             mm.setParent(self.viewport())
             mm.show()
             mm.raise_()
             self._position_minimap()
 
+        def set_actlog(self, al: "_ActivityLog") -> None:
+            self._actlog = al
+            al.setParent(self.viewport())
+            al.show()
+            al.raise_()
+            self._position_actlog()
+
         def resizeEvent(self, e) -> None:
             super().resizeEvent(e)
             self._position_minimap()
+            self._position_actlog()
 
         def _position_minimap(self) -> None:
             if not self._minimap:
@@ -1620,11 +1705,21 @@ TIPS
             self._minimap.show()
             self._minimap.raise_()
 
+        def _position_actlog(self) -> None:
+            if not self._actlog:
+                return
+            margin = 10
+            self._actlog.move(
+                margin,
+                self.viewport().height() - self._actlog.height() - margin,
+            )
+            self._actlog.show()
+            self._actlog.raise_()
+
         def scrollContentsBy(self, dx: int, dy: int) -> None:
             super().scrollContentsBy(dx, dy)
-            # Qt physically moves viewport child widgets when scrolling —
-            # re-pin the minimap to the corner after every scroll tick.
             self._position_minimap()
+            self._position_actlog()
 
         def wheelEvent(self, e):
             factor = 1.12 if e.angleDelta().y() > 0 else 0.89
@@ -2007,6 +2102,8 @@ TIPS
             self._view  = _GraphView(self._scene)
             self._minimap = _MiniMap(self._scene, self._view, lambda: self._node_items)
             self._view.set_minimap(self._minimap)
+            self._actlog = _ActivityLog(self._view)
+            self._view.set_actlog(self._actlog)
             split.addWidget(self._view)
 
             scroll = QScrollArea()
@@ -2025,8 +2122,13 @@ TIPS
 
         # ── Actions ───────────────────────────────────────────────────────
 
+        def _log(self, msg: str, level: str = "info") -> None:
+            """Update toolbar status label AND push to the activity log overlay."""
+            self._status.setText(msg)
+            self._actlog.push(msg, level)
+
         def _do_scan(self) -> None:
-            self._status.setText("Scanning…")
+            self._log("Scanning…")
             QApplication.processEvents()
             try:
                 path = self._path_edit.text().strip()
@@ -2069,14 +2171,16 @@ TIPS
                 ne = len(self._graph.edges)
                 nw = sum(len(n.warnings) for n in self._graph.nodes)
                 nerr = sum(len(n.errors) for n in self._graph.nodes)
-                self._status.setText(
-                    f"{nd} devices · {ne} connections · {len(verse_files)} verse files · "
+                hlvl = "ok" if self._health_score >= 70 else ("warn" if self._health_score >= 40 else "error")
+                self._log(
+                    f"{nd} devices · {ne} edges · {len(verse_files)} verse files · "
                     f"health {self._health_score}/100 · {self._graph.cluster_count} clusters · "
-                    f"{nw}W {nerr}E"
+                    f"{nw}W {nerr}E",
+                    level=hlvl,
                 )
                 self._populate_cat_combo()
             except Exception as exc:
-                self._status.setText(f"Scan error: {exc}")
+                self._log(f"Scan error: {exc}", level="error")
                 log_error(f"verse_graph_open: {exc}")
 
         def _do_help(self) -> None:
@@ -2129,11 +2233,11 @@ TIPS
             )
             if path:
                 run_verse_graph_export(verse_path=self._path_edit.text().strip(), output_path=path)
-                self._status.setText(f"Exported → {path}")
+                self._log(f"Exported → {path}", level="ok")
 
         def _do_generate_wiring(self) -> None:
             if not self._graph:
-                self._status.setText("Run SCAN first.")
+                self._log("Run SCAN first.", level="warn")
                 return
             has_path = bool(self._path_edit.text().strip())
             code = _build_wiring_code(self._graph, has_verse_path=has_path)
@@ -2187,16 +2291,16 @@ TIPS
                         item.update()
                     self._panel.w_name.setText(value)
                     self._panel.w_prop_status.setText(f"Renamed → {value}")
-                    self._status.setText(f"Renamed: {value}")
+                    self._log(f"Renamed: {value}", level="ok")
                 elif prop == "folder":
                     folder_val = value or "None"
                     nd.actor.set_folder_path(unreal.Name(value))
                     nd.folder = value
                     self._panel.w_prop_status.setText(f"Folder → {folder_val}")
-                    self._status.setText(f"Folder set: {folder_val}")
+                    self._log(f"Folder set: {folder_val}", level="ok")
             except Exception as exc:
                 self._panel.w_prop_status.setText(f"Error: {exc}")
-                self._status.setText(f"Write-back failed: {exc}")
+                self._log(f"Write-back failed: {exc}", level="error")
 
         # ── Fit / edge toggles / hover highlight ──────────────────────────
 
@@ -2418,10 +2522,7 @@ TIPS
 
                 self._layout_loaded = True
                 if restored:
-                    self._status.setText(
-                        (self._status.text() or "") +
-                        f"  · layout restored ({restored}/{len(self._graph.nodes)})"
-                    )
+                    self._log(f"Layout restored ({restored}/{len(self._graph.nodes)} nodes)", level="ok")
             except Exception as exc:
                 log_warning(f"verse_graph: layout load failed: {exc}")
 
@@ -2443,7 +2544,7 @@ TIPS
                 self._live_timer = QTimer()
                 self._live_timer.timeout.connect(self._live_check)
                 self._live_timer.start(4000)
-                self._status.setText("● LIVE — watching for changes")
+                self._log("● LIVE — watching for changes", level="live")
                 self._status.setStyleSheet(f"color:{self.hex('ok')}; font-size:11px;")
                 # Build initial fingerprint
                 self._actor_fingerprint = self._build_fingerprint()
@@ -2454,7 +2555,7 @@ TIPS
                 self._live_btn.setProperty("accent", "false")
                 self._live_btn.setStyle(self._live_btn.style())
                 self._status.setStyleSheet(f"color:{self.hex('muted')}; font-size:11px;")
-                self._status.setText("Live sync off")
+                self._log("Live sync off")
 
         def _build_fingerprint(self) -> str:
             """Lightweight level fingerprint — device actor count + sorted labels."""
@@ -2523,8 +2624,9 @@ TIPS
 
                 ndn  = len(self._graph.nodes)
                 nde  = len(self._graph.edges)
-                self._status.setText(
-                    f"● LIVE  {ndn} devices · {nde} connections · health {self._health_score}/100"
+                self._log(
+                    f"● LIVE  {ndn} devices · {nde} edges · health {self._health_score}/100",
+                    level="live",
                 )
                 self._status.setStyleSheet(f"color:{self.hex('ok')}; font-size:11px;")
 
@@ -2541,7 +2643,7 @@ TIPS
                         self._panel.clear()
 
             except Exception as exc:
-                self._status.setText(f"Live sync error: {exc}")
+                self._log(f"Live sync error: {exc}", level="error")
 
         def _on_node_clicked(self, nd: DeviceNode) -> None:
             self._selected = nd
