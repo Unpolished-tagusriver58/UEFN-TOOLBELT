@@ -8,6 +8,30 @@ By writing a **Custom Plugin**, you can add your own completely custom tools to 
 
 ---
 
+## 🔍 Before You Write a Plugin — Check What Already Exists
+
+UEFN Toolbelt ships with 237 built-in tools across 37 categories. Before writing a plugin,
+spend two minutes confirming the capability doesn't already exist.
+
+**Quick registry search (paste into UEFN console):**
+```python
+import UEFN_Toolbelt as tb
+for t in tb.registry.list_tools():
+    if "rename" in t["name"] or "rename" in t.get("description","").lower():
+        print(t["name"], "—", t["description"])
+```
+
+**Or export the full manifest and search it:**
+```python
+tb.run("plugin_export_manifest")
+# → Saved/UEFN_Toolbelt/tool_manifest.json — search name, description, tags
+```
+
+If a built-in tool does 80% of what you need, open a PR to extend it with a new parameter
+instead of shipping a separate plugin. Keeps the ecosystem lean.
+
+---
+
 ## 🚀 The 60-Second Plugin
 
 1. Navigate to: `[Your UE Project]/Saved/UEFN_Toolbelt/Custom_Plugins/`

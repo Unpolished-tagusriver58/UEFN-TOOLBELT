@@ -58,6 +58,45 @@ import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in
 
 ---
 
+## ⚠️ MANDATORY: Check the Registry Before Adding Any Tool
+
+**Never build a new tool without first auditing what already exists.**
+With 237 registered tools, the risk of duplicating or fragmenting existing functionality is high.
+A new tool that overlaps an existing one wastes time, inflates the count, and confuses users.
+
+### Pre-build checklist — required before writing a single line of tool code
+
+1. **Search the registry by keyword:**
+   ```python
+   # In UEFN console:
+   for t in tb.registry.list_tools():
+       if "scatter" in t["name"] or "scatter" in t.get("description","").lower():
+           print(t["name"], "—", t["description"])
+   ```
+
+2. **Check the manifest for related tools:**
+   ```python
+   tb.run("plugin_export_manifest")
+   # Read Saved/UEFN_Toolbelt/tool_manifest.json — search by name, category, and tags
+   ```
+
+3. **Read the CLAUDE.md tool tables** — every tool family has a table in this file.
+   Search for the capability you want to add before writing anything.
+
+4. **Ask: can an existing tool be extended with a new param?**
+   Adding `dry_run=True` or `scope="selection"` to an existing tool is always better
+   than a second tool that does 90% of the same thing.
+
+### The rule
+
+> If a tool already does it — extend it, don't duplicate it.
+> If a tool does 80% of it — extend it with the missing 20%.
+> Only create a new `@register_tool` when the capability is genuinely new.
+
+This keeps the tool count honest, the dashboard scannable, and the MCP manifest small enough for AI agents to reason over.
+
+---
+
 ## What This Project Is
 
 **UEFN Toolbelt** is a comprehensive Python automation framework for Unreal Editor for Fortnite (UEFN 40.00+, March 2026).
