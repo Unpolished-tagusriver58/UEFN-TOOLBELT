@@ -205,9 +205,9 @@ def _build_setup_status(L: "QVBoxLayout") -> None:
         from UEFN_Toolbelt.tools import mcp_bridge as _mcpb
         port = getattr(_mcpb, "_bound_port", 0)
         if port and port > 0:
-            checks.append(("MCP bridge", "ok", f"Listening on port {port}"))
+            checks.append(("MCP bridge", "ok", f"Listening on port {port}  —  Claude Code can now control UEFN"))
         else:
-            checks.append(("MCP bridge", "warn", "Starting… refresh Quick Actions in a moment"))
+            checks.append(("MCP bridge", "warn", "Not running  —  go to the MCP tab to start AI control"))
     except Exception as e:
         checks.append(("MCP bridge", "error", str(e)))
 
@@ -1233,6 +1233,11 @@ def _tab_verse(R) -> "QScrollArea":
     
     # Verse Intelligence (Phase 14)
     g_intel = _group(L, "Verse & Build Intelligence")
+    _btn(g_intel, "▶  Check Build Errors  (run after Build Verse Code click)",
+         lambda: R("verse_patch_errors"),
+         "Reads the Verse build log after you click Build Verse Code in the UEFN menu. "
+         "Returns every error with file path, line number, and full file content — "
+         "paste into Claude to fix and redeploy in one shot.")
     _btn(g_intel, "Compile Verse & Scrape Errors",
          lambda: R("system_build_verse"),
          "Triggers a background UEFN build and returns formatted Verse errors (file/line).")
@@ -1657,22 +1662,69 @@ def _tab_mcp(R) -> "QScrollArea":
     """MCP Bridge tab — start/stop/status, connection info, quick tool runner."""
     scroll, L = _page()
 
+    # ── Live status indicator ──────────────────────────────────────────────
+    def _read_mcp_state():
+        try:
+            from UEFN_Toolbelt.tools import mcp_bridge as _mcpb
+            port = getattr(_mcpb, "_bound_port", 0)
+            if port and port > 0:
+                return "running", f"● RUNNING  —  port {port}  —  Claude Code is connected"
+            else:
+                return "stopped", "● NOT RUNNING  —  click Start to enable AI control"
+        except Exception:
+            return "stopped", "● NOT RUNNING"
+
+    status_lbl = QLabel()
+    status_lbl.setContentsMargins(4, 10, 4, 6)
+
+    def _refresh_status():
+        state, text = _read_mcp_state()
+        col = "#44FF88" if state == "running" else "#FF5555"
+        status_lbl.setText(text)
+        status_lbl.setStyleSheet(
+            f"color: {col}; font-size: 13px; font-weight: bold;"
+            " background: #141414; padding: 10px 14px; border-radius: 4px;"
+            " border: 1px solid #2A2A2A;"
+        )
+
+    _refresh_status()
+    L.addWidget(status_lbl)
+
+    # Expose refresh fn so _select_category can call it on tab navigation
+    status_lbl.setProperty("mcp_refresh_fn", _refresh_status)
+
     # ── Status & controls ─────────────────────────────────────────────────
     g = _group(L, "Listener Controls")
 
+    def _start():
+        R("mcp_start")
+        _refresh_status()
+
+    def _stop():
+        R("mcp_stop")
+        _refresh_status()
+
+    def _restart():
+        R("mcp_restart")
+        _refresh_status()
+
     _btn(g, "▶  Start Listener",
-         lambda: R("mcp_start"),
+         _start,
          "Start the HTTP listener so Claude Code can control UEFN directly")
 
     _btn(g, "■  Stop Listener",
-         lambda: R("mcp_stop"),
+         _stop,
          "Stop the MCP HTTP listener")
 
     _btn(g, "↺  Restart Listener",
-         lambda: R("mcp_restart"),
+         _restart,
          "Restart after hot-reload or port conflict")
 
-    _btn(g, "📡  Print Status",
+    _btn(g, "↺  Refresh Status",
+         _refresh_status,
+         "Re-read the bridge state and update the status indicator above")
+
+    _btn(g, "📡  Print Status to Log",
          lambda: R("mcp_status"),
          "Print port, running state, and command count to Output Log")
 
@@ -1697,20 +1749,22 @@ def _tab_mcp(R) -> "QScrollArea":
          _run_tool,
          "Calls the tool through mcp_bridge.run_tool so you can test the bridge")
 
-    _btn(g2, "List All Tools → Output Log",
-         lambda: R("mcp_status"),
-         "Print every registered toolbelt tool name")
-
     # ── Setup info ────────────────────────────────────────────────────────
     g3 = _group(L, "Claude Code Setup (.mcp.json)")
     info = QLabel(
-        "1. Start Listener above (port 8765)\n"
-        "2. Place mcp_server.py next to .mcp.json\n"
+        "1. Click Start Listener above\n"
+        "2. Place mcp_server.py next to .mcp.json in this repo\n"
         "3. Add to .mcp.json:\n"
         '   {"mcpServers": {"uefn-toolbelt":\n'
         '     {"command": "python",\n'
         '      "args": ["<path>/mcp_server.py"]}}}\n'
-        "4. Restart Claude Code — it auto-connects"
+        "4. Restart Claude Code — it auto-connects\n\n"
+        "Claude can then run all 244 tools, spawn/move actors,\n"
+        "write Verse code, and read your level — without leaving\n"
+        "the conversation.\n\n"
+        "When done: click ■ Stop Listener above, or run\n"
+        "tb.run(\"mcp_stop\") in the Python console.\n"
+        "This closes the port until you need it again."
     )
     info.setWordWrap(True)
     info.setStyleSheet("color: #888888; font-size: 11px; padding: 4px;")
@@ -2922,8 +2976,18 @@ class ToolbeltDashboard(QMainWindow):
         self._stack.addWidget(search_scroll)  # index 0
 
         self._cat_indices: dict = {}
+        self._mcp_refresh_fn = None  # populated after MCP tab is built
         for label, builder in self._CATEGORIES:
-            self._cat_indices[label] = self._stack.addWidget(builder(R))
+            idx = self._stack.addWidget(builder(R))
+            self._cat_indices[label] = idx
+            if label == "MCP":
+                # Find the status label's stored refresh fn
+                page = self._stack.widget(idx)
+                for child in page.findChildren(QLabel):
+                    fn = child.property("mcp_refresh_fn")
+                    if fn:
+                        self._mcp_refresh_fn = fn
+                        break
 
         # ── Left sidebar ──────────────────────────────────────────────────────
         sidebar = QWidget()
@@ -3058,6 +3122,9 @@ class ToolbeltDashboard(QMainWindow):
         self._filter_box.setPlaceholderText(f"Filter {label}…")
         self._filter_box.setVisible(show_filter)
         self._stack.setCurrentIndex(self._cat_indices[label])
+        # Refresh MCP status indicator whenever the MCP tab is navigated to
+        if label == "MCP" and hasattr(self, "_mcp_refresh_fn"):
+            self._mcp_refresh_fn()
 
     def _on_filter(self, text: str) -> None:
         """Filter buttons within the currently visible category page."""

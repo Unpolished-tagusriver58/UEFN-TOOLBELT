@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated": "2026-03-22",
+  "updated": "2026-03-24",
   "description": "UEFN Toolbelt Plugin Registry — core tools and community plugins.",
   "plugins": [
     {
@@ -844,6 +844,49 @@
       "download_url": "https://raw.githubusercontent.com/undergroundrap/UEFN-TOOLBELT/main/community_plugins/random_yaw.py",
       "min_toolbelt_version": "1.5.3",
       "size_kb": 2
+    },
+    {
+      "id": "spawn_at_each_selected",
+      "name": "Spawn At Each Selected",
+      "version": "1.0.0",
+      "author": "Ocean Bennett",
+      "author_url": "https://github.com/undergroundrap",
+      "type": "community",
+      "description": "Stamp any asset at the world position of every selected actor. Place lights above every torch, markers at every spawn pad, signs above every chest — one command, any count.",
+      "category": "Procedural",
+      "tags": [
+        "spawn",
+        "stamp",
+        "batch",
+        "position",
+        "community"
+      ],
+      "url": "https://github.com/undergroundrap/UEFN-TOOLBELT/blob/main/community_plugins/spawn_at_each_selected.py",
+      "download_url": "https://raw.githubusercontent.com/undergroundrap/UEFN-TOOLBELT/main/community_plugins/spawn_at_each_selected.py",
+      "min_toolbelt_version": "1.9.0",
+      "size_kb": 2
+    },
+    {
+      "id": "verse_gen_checkpoint",
+      "name": "Verse: Checkpoint System",
+      "version": "1.0.0",
+      "author": "Ocean Bennett",
+      "author_url": "https://github.com/undergroundrap",
+      "type": "community",
+      "description": "Generate a complete Verse checkpoint/progression system — sequential trigger activation, per-player progress tracking, configurable win condition, optional reset on elimination. For racing, tutorial, and obstacle course maps.",
+      "category": "Verse",
+      "tags": [
+        "verse",
+        "codegen",
+        "checkpoint",
+        "progression",
+        "racing",
+        "community"
+      ],
+      "url": "https://github.com/undergroundrap/UEFN-TOOLBELT/blob/main/community_plugins/verse_gen_checkpoint.py",
+      "download_url": "https://raw.githubusercontent.com/undergroundrap/UEFN-TOOLBELT/main/community_plugins/verse_gen_checkpoint.py",
+      "min_toolbelt_version": "1.9.0",
+      "size_kb": 3
     }
   ]
 }

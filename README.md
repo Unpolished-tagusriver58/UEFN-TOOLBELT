@@ -43,9 +43,9 @@ platform looks and feels identical.
 
 ---
 
-## The Demo — New Project Setup in 2 Commands
+## The Demo — New Project Setup in Under a Minute
 
-> Proven live. Scaffold + Verse game manager + 493-actor arena. No manual steps except one Build click.
+> Proven live. Scaffold + Verse game manager + 493-actor arena + reusable room stamps. No manual steps except one Build click.
 
 ```python
 # Command 1 — professional folder structure + Verse game manager deployed
@@ -57,15 +57,23 @@ tb.run("project_setup", project_name="MyGame")
 tb.run("arena_generate", size="medium")
 # → 493 actors placed (6 Red spawns, 6 Blue spawns)
 
+# Command 3 — save a loot room you built as a reusable stamp
+tb.run("stamp_save", name="loot_room")
+# → saved 12 actors to Saved/UEFN_Toolbelt/stamps/loot_room.json
+
+# Navigate camera to a new location, then stamp it in
+tb.run("stamp_place", name="loot_room", yaw_offset=90)
+# → 12 FortStaticMeshActors placed at camera, rotated 90°
+
 # One click — Verse menu → Build Verse Code
 
-# Command 3 — error loop closes automatically
+# Command 4 — error loop closes automatically
 tb.run("verse_patch_errors")
 # → build_status: SUCCESS
 ```
 
-What used to take 30+ minutes of manual setup runs in seconds. This is the entry point
-for every new UEFN project — scaffold, code, layout, compiled, ready.
+What used to take 30+ minutes of manual setup runs in seconds. Scaffold, code, layout,
+stamp your best rooms, build — ready to publish.
 
 ---
 
