@@ -5,6 +5,31 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.9.1] — 2026-03-24
+
+### feat: level stamp system — save and re-place actor groups
+
+**New tools (`stamp_save`, `stamp_place`, `stamp_list`, `stamp_info`, `stamp_delete`):**
+- `stamp_save` — capture any selection of StaticMesh actors as a named stamp; records relative transforms, mesh asset paths, rotations, and scales to `Saved/UEFN_Toolbelt/stamps/{name}.json`
+- `stamp_place` — re-spawn a saved stamp at the viewport camera (or explicit location). Optional `yaw_offset` rotates all actor positions and rotations around the stamp center. Optional `scale_factor` multiplies all offsets and scales uniformly
+- `stamp_list` / `stamp_info` / `stamp_delete` — manage saved stamps
+- New **Stamps** category in the registry (38 categories total)
+- Full undo support via `ScopedEditorTransaction`; new actors auto-selected after placement
+- Blueprint/device actors are skipped with a warning (can't be reliably re-spawned from path)
+- Stamp files survive hot-reloads, editor restarts, and Toolbelt updates — stored in `Saved/` not `Content/`
+- Distinct from `prefab_migrate_open` (asset migration between projects) — stamps are for level layout reuse
+- Documented in CLAUDE.md with compass-point placement example
+
+### docs: quirk #26 — nuclear reload crash when adding new modules
+
+- Documented `EXCEPTION_ACCESS_VIOLATION` caused by `sys.modules.pop` freeing Python objects
+  while stale Unreal C++ callbacks (Slate tick, MCP socket) still point at them
+- Crash signature, when it happens, and the safe workflow (full restart for new modules,
+  nuclear reload only for iterating on existing tools)
+- Added warning to CLAUDE.md nuclear reload section with cross-reference to Quirk #26
+
+---
+
 ## [1.9.0] — 2026-03-24
 
 ### feat: level health dashboard — unified audit score

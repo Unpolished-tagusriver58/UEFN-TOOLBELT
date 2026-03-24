@@ -44,6 +44,11 @@ Ask the user to run the appropriate bundle below. Syntax passing ≠ working in 
 
 ### The hard refresh bundle (paste into UEFN Python console)
 
+> ⚠️ **Nuclear reload is unsafe when adding a NEW module to `tools/__init__.py`.**
+> It can cause `EXCEPTION_ACCESS_VIOLATION` as stale C++ callbacks fire against freed Python objects.
+> **Use a full UEFN restart instead** when first introducing a new tool module.
+> Nuclear reload is safe for iterating on existing tools. See `docs/UEFN_QUIRKS.md` Quirk #26.
+
 ```python
 import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.launch_qt()
 ```
@@ -61,7 +66,7 @@ import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in
 ## ⚠️ MANDATORY: Check the Registry Before Adding Any Tool
 
 **Never build a new tool without first auditing what already exists.**
-With 239 registered tools, the risk of duplicating or fragmenting existing functionality is high.
+With 244 registered tools, the risk of duplicating or fragmenting existing functionality is high.
 A new tool that overlaps an existing one wastes time, inflates the count, and confuses users.
 
 ### Pre-build checklist — required before writing a single line of tool code
@@ -100,7 +105,7 @@ This keeps the tool count honest, the dashboard scannable, and the MCP manifest 
 ## What This Project Is
 
 **UEFN Toolbelt** is a comprehensive Python automation framework for Unreal Editor for Fortnite (UEFN 40.00+, March 2026).
-It runs inside the editor and exposes 239 tools through:
+It runs inside the editor and exposes 244 tools through:
 - A persistent top-menu entry (`Toolbelt ▾`) in the UEFN editor bar
 - An 18-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
 - An MCP HTTP bridge so Claude Code can control UEFN directly
@@ -144,7 +149,7 @@ This file contains every registered tool with its full Python parameter signatur
   }
 }
 ```
-All 239 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
+All 244 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
 
 **Schema utility functions** (`schema_utils.py`):
 - `schema_utils.validate_property(class_name, prop)` — check if a property exists and is writable
@@ -287,7 +292,7 @@ Then restart Claude Code — it connects automatically.
 
 ### What Claude Code can now do
 
-- Run any of the 239 registered tools by name
+- Run any of the 244 registered tools by name
 - Spawn, move, delete actors
 - List/rename/import/tag assets
 - Take screenshots, save level snapshots
@@ -642,6 +647,45 @@ tb.run("actor_copy_to_positions",
 
 ---
 
+### Level Stamps
+
+Save a group of placed actors as a reusable named stamp (JSON on disk), then re-place
+it anywhere with optional yaw rotation and uniform scale. Full undo via `ScopedEditorTransaction`.
+Only StaticMesh actors are captured — Blueprint/device actors are skipped with a warning.
+
+**Not the same as `prefab_migrate_open`** — that tool exports `.uasset` files between projects.
+Stamps are for level layout: cookie-cut a prop cluster and re-stamp it 10× across your map.
+
+| Tool | Key Params | What it does |
+|---|---|---|
+| `stamp_save` | `name` | Save selected StaticMesh actors as a named stamp to `Saved/UEFN_Toolbelt/stamps/{name}.json` |
+| `stamp_place` | `name`, `location=[x,y,z]`, `yaw_offset=0.0`, `scale_factor=1.0`, `folder="Stamps"` | Place stamp at camera position (or given location). Rotates all offsets + rotations by yaw_offset |
+| `stamp_list` | — | List all saved stamps with actor counts |
+| `stamp_info` | `name` | Print actor names, mesh paths, and relative offsets |
+| `stamp_delete` | `name` | Delete a saved stamp |
+
+```python
+# Save selected actors as "guard_post"
+tb.run("stamp_save", name="guard_post")
+
+# Place at camera position
+tb.run("stamp_place", name="guard_post")
+
+# Place at specific location, rotated 180° and scaled up
+tb.run("stamp_place", name="guard_post", location=[8000, 4000, 0],
+       yaw_offset=180.0, scale_factor=2.0)
+
+# Place 4 copies at compass points — instant symmetric layout
+for angle, x, y in [(0, 5000, 0), (90, 0, 5000), (180, -5000, 0), (270, 0, -5000)]:
+    tb.run("stamp_place", name="guard_post", location=[x, y, 0], yaw_offset=angle)
+
+tb.run("stamp_list")
+tb.run("stamp_info",   name="guard_post")
+tb.run("stamp_delete", name="guard_post")
+```
+
+---
+
 ### Foliage / Scatter
 
 | Tool | Key Params | What it does |
@@ -923,7 +967,7 @@ tb.run("config_reset", key="all")   # wipe all customisations
 | `level_health_open` | — | Open the Level Health Dashboard window — colour-coded category cards, per-issue drilldown, live audit progress. |
 | `plugin_validate_all` | — | Validate all registered tools against schema |
 | `plugin_list_custom` | — | List all loaded third-party tools from `Saved/UEFN_Toolbelt/Custom_Plugins` |
-| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 239 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
+| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 244 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
 
 **Online Plugin Hub** — the Plugin Hub dashboard tab fetches `registry.json` live from GitHub.
 - **Core Tools** (green/BUILT-IN): 10 flagship modules by Ocean Bennett, already built in
@@ -953,7 +997,7 @@ When the listener is running, Claude Code can call these directly:
 | `ping` | — | Health check + command list |
 | `get_log` | `last_n=50` | Return last N lines from the MCP command log ring |
 | `execute_python` | `code` | Run Python in UEFN (pre-populated: `unreal`, `actor_sub`, `asset_sub`, `level_sub`, `tb`) |
-| `run_tool` | `tool_name`, `kwargs={}` | Run any of the 239 registered tools |
+| `run_tool` | `tool_name`, `kwargs={}` | Run any of the 244 registered tools |
 | `list_tools` | `category=""` | List all registered tools |
 | `describe_tool` | `tool_name` | Full manifest entry for one tool (name, description, parameters, tags) |
 | `batch_exec` | `commands=[{command, params}]` | Multiple commands in one tick |

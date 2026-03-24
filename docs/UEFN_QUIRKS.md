@@ -756,3 +756,77 @@ outside the tool function.
 
 For tools where the window cannot be made stable, fall back to a headless implementation
 that logs output to the Output Log — this is always safe and MCP/AI-friendly.
+
+---
+
+## 26. Nuclear Reload Can Cause EXCEPTION_ACCESS_VIOLATION When Adding New Modules (Discovered: March 2026)
+
+### The Problem
+
+The nuclear reload command:
+
+```python
+import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); ...
+```
+
+forcibly removes all `UEFN_Toolbelt` modules from `sys.modules`, which triggers Python's
+garbage collector to destroy module-level objects. If any of those objects have registered
+callbacks on the Unreal **C++ side** (Slate tick drivers, HTTP listeners, timer handles),
+those C++ registrations remain live even after the Python objects are freed.
+
+When Unreal fires one of those stale callbacks after GC, it writes to a freed Python object
+— producing an `EXCEPTION_ACCESS_VIOLATION writing address 0x0000000000000000` with no
+Python traceback and no way to catch it with `try/except`.
+
+### When It Happens
+
+This crash is most likely to occur when:
+
+1. **Adding a new module** — the first nuclear reload after a new `from . import my_tool`
+   is added to `tools/__init__.py`. The new module set increases the number of registered
+   objects exposed to Unreal C++.
+2. **A window is open** — any tool window with a Slate tick driver still registered when
+   `sys.modules.pop` fires.
+3. **MCP bridge is running** — the HTTP listener has a socket callback registered with
+   Unreal's tick system.
+
+### The Crash Signature
+
+```
+EXCEPTION_ACCESS_VIOLATION writing address 0x0000000000000000
+```
+
+Stack pattern: `UnrealEditorFortnite` frames → `python311` frames → `UnrealEditorFortnite`
+frames → `user32` → `kernel32` → `ntdll`. The Python frames in the middle confirm execution
+was inside Python when the stale C++ callback fired.
+
+### The Fix
+
+**Use a full UEFN restart instead of nuclear reload when adding a new module to the registry.**
+
+Nuclear reload is safe for iterating on existing tools (re-registering the same module
+objects the C++ side already knows about). It becomes unstable when the set of registered
+Python objects changes — particularly on the first reload after adding a new module.
+
+```
+✅ Safe: nuclear reload while iterating on an existing tool (same module, same callbacks)
+✅ Safe: nuclear reload when no windows are open and MCP bridge is stopped
+⚠️ Risky: nuclear reload after adding a new module to tools/__init__.py
+❌ Don't: nuclear reload with a PySide6 window open (Slate tick still registered)
+❌ Don't: nuclear reload while mcp_start is running (socket callback still registered)
+```
+
+### Workflow
+
+When adding a new tool module:
+1. Edit the source files
+2. **Restart UEFN** (File → Restart Editor, or close and reopen)
+3. Test after the fresh cold boot — module objects are registered cleanly from the start
+4. Only switch back to nuclear reload for further iteration once the module is stable
+
+### Why Nuclear Reload Works at All
+
+Nuclear reload works reliably for existing modules because: the same module-level objects
+are re-created with the same IDs, and Unreal's C++ side re-registers them without
+accumulating stale handles. The hazard window is only during the gap between `sys.modules.pop`
+(Python objects freed) and the re-import (new objects registered).
