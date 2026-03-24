@@ -65,7 +65,7 @@ try:
         QSplitter, QPushButton, QLabel, QLineEdit, QTextEdit, QScrollArea,
         QFrame, QFileDialog, QGraphicsView, QGraphicsScene,
         QGraphicsItem, QGraphicsObject, QGraphicsTextItem,
-        QInputDialog, QMenu,
+        QInputDialog, QMenu, QComboBox,
     )
     from PySide6.QtCore import Qt, QTimer, QRectF, QPointF, Signal
     from PySide6.QtGui import (
@@ -794,6 +794,48 @@ def run_verse_graph_open(verse_path: str = "", **kwargs) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  Node tooltip builder
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _make_node_tooltip(nd: DeviceNode) -> str:
+    """Rich tooltip explaining every badge visible on the node."""
+    lines = [f"{nd.label}", f"Class: {nd.class_name}", f"Category: {nd.category}"]
+
+    if nd.world_loc != (0.0, 0.0, 0.0):
+        lines.append(f"Location: X={nd.world_loc[0]:.0f}  Y={nd.world_loc[1]:.0f}  Z={nd.world_loc[2]:.0f}")
+
+    lines.append("")
+
+    # Cluster badge (top-left number)
+    if nd.cluster_id >= 0:
+        lines.append(f"#{nd.cluster_id}  Cluster ID — all devices sharing this number are")
+        lines.append(f"     connected into the same logic group (Union-Find).")
+
+    # Verse badge
+    if nd.verse_file:
+        lines.append(f"VS  Verse file matched: {nd.verse_file}")
+    else:
+        lines.append("     No Verse file linked to this device.")
+
+    # Warning / error badges (top-right !)
+    if nd.errors:
+        lines.append("")
+        lines.append("🔴  ERRORS (red !):")
+        for e in nd.errors:
+            lines.append(f"     • {e}")
+    if nd.warnings:
+        lines.append("")
+        lines.append("⚠   WARNINGS (yellow !):")
+        for w in nd.warnings:
+            lines.append(f"     • {w}")
+
+    if not nd.errors and not nd.warnings:
+        lines.append("     No issues detected.")
+
+    return "\n".join(lines)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  PySide6 UI
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1095,7 +1137,7 @@ if _PYSIDE6:
             p.drawPath(path)
 
             # Title
-            p.setPen(QPen(QColor("#111111")))
+            p.setPen(QPen(QColor("#FFFFFF")))
             p.setFont(QFont("Segoe UI", 9, QFont.Bold))
             p.drawText(QRectF(8, 4, self._w - 16, hdr - 4),
                        Qt.AlignVCenter | Qt.AlignLeft, self._title)
@@ -1189,6 +1231,148 @@ if _PYSIDE6:
                 "color": self._color,
             }
 
+    # ── Help dialog ───────────────────────────────────────────────────────────
+
+    class _HelpDialog(ToolbeltWindow):
+        """Purpose, workflow, badge guide, and attribution for the Device Graph."""
+
+        _CONTENT = """\
+WHAT IS THIS?
+
+The Verse Device Graph gives you a bird's-eye view of your entire UEFN level
+architecture in one window. Every Creative/Verse device becomes a node. Every
+@editable reference and .Subscribe() call becomes an edge. The result is a map
+of how your island's logic actually flows — something the UEFN Properties panel
+can never show you because it only looks at one device at a time.
+
+─────────────────────────────────────────────────────────────────────────
+
+WHY IT WAS MADE
+
+UEFN levels with many devices become impossible to reason about without a map.
+Once you pass ~30 devices connected through Verse, losing track of what talks to
+what is inevitable. This graph was built to surface that architecture instantly:
+who connects to whom, which devices are orphaned, where your Verse code reaches,
+and whether the overall structure is healthy or broken.
+
+Inspired by ImmatureGamer's uefn-device-graph (tkinter prototype).
+This is an independent PySide6 rewrite — force-directed layout, health scoring,
+cluster detection, live sync, write-back, and layout persistence — integrated
+into the full Toolbelt stack.
+
+─────────────────────────────────────────────────────────────────────────
+
+TYPICAL WORKFLOW
+
+  1. Set your Verse folder in the Path field (once — it's saved to config)
+  2. Click SCAN — level actors + .verse files are parsed in one pass
+  3. Read the Architecture Health score (0–100) in the top bar
+       ≥ 70  — healthy, well-connected  (green)
+       40–69 — some orphans or broken refs  (yellow)
+       < 40  — significant issues  (red)
+  4. Hover a node to dim everything it doesn't connect to
+  5. Click a node to inspect its @editable refs, events, and functions
+  6. Use the @ed / .sub / .call toggles to focus on one edge type at a time
+  7. Use the Category dropdown to isolate a single device family (e.g. Timer,
+     Capture Area, Score Manager) — great for large levels with 100+ devices
+  8. Click Gen Wiring to generate a Verse creative_device stub from the graph
+  9. Add + Note boxes to annotate sections for yourself or teammates
+  10. Close the window — your layout and notes are saved automatically
+ 11. Reopen anytime — positions and notes restore on the next SCAN
+
+─────────────────────────────────────────────────────────────────────────
+
+NODE BADGES
+
+  #N  (top-left, colored circle)
+      Cluster ID — all nodes sharing this number are connected into the same
+      logic group (Union-Find across all edges). A level with 197 devices and
+      180 clusters means most devices are isolated — no Verse wiring links them.
+
+  !   (top-right, RED)
+      Error — a @editable device reference type couldn't be matched to any
+      placed device in the level. The Verse stub will have a dangling ref.
+
+  !   (top-right, YELLOW)
+      Warning — one or more issues found:
+        • Orphan: no @editable or .Subscribe connections to other devices
+        • Unused function: defined but never called from within the device
+
+  VS  (footer, bottom-left)
+      Verse file linked — this device was matched to a .verse class by label.
+      Its @editable refs and .Subscribe calls have been parsed and drawn as edges.
+
+─────────────────────────────────────────────────────────────────────────
+
+EDGE TYPES
+
+  ─────  Red  (@ed)    @editable device reference declared in a Verse class
+  - - -  Green (.sub)  .Subscribe() event subscription wired in OnBegin
+         Blue  (.call) Direct method call on a device ref
+
+  Toggle any edge type on/off with the @ed / .sub / .call buttons in the toolbar.
+
+─────────────────────────────────────────────────────────────────────────
+
+TIPS
+
+  • The minimap (bottom-right corner of the canvas) shows every device as a
+    colored dot (matching its category color). Click or drag on it to jump to
+    any area instantly. The blue outline shows what's visible in the canvas.
+
+  • Focus button: select any node then click Focus to instantly centre and zoom
+    the canvas on it — useful when searching brings up a result buried deep in
+    a large graph.
+
+  • The Category dropdown filters the graph to one device family at a time.
+    Search and Category stack — you can filter to "Timer" devices and then
+    search within them. Select "All Categories" to reset.
+
+  • Re-Layout runs force-directed physics (Fruchterman-Reingold). Nodes pull
+    toward connected partners and repel unrelated ones. Run it after SCAN to
+    see a topology-driven layout instead of the default category columns.
+
+  • Live mode (● Live) polls for level changes every 4 seconds and refreshes
+    the graph without moving nodes you've already positioned.
+
+  • Write-back: select a node and use the Label / Folder fields in the side
+    panel to rename actors and move them to World Outliner folders directly
+    from the graph — no need to find them in the viewport.
+
+  • The Gen Wiring dialog produces a ready-to-compile Verse stub with
+    @editable declarations and OnBegin subscriptions generated from your graph.
+    Click "Write to Verse File" to deploy it straight into your project.
+
+  • Your layout (node positions + note boxes) is saved to
+    Saved/UEFN_Toolbelt/graph_layout.json when you close the window.
+"""
+
+        def __init__(self) -> None:
+            super().__init__(title="UEFN Toolbelt — Verse Device Graph Help",
+                             width=700, height=720)
+            self._build_ui()
+
+        def _build_ui(self) -> None:
+            root = QWidget()
+            self.setCentralWidget(root)
+            vl = QVBoxLayout(root)
+            vl.setContentsMargins(0, 0, 0, 0)
+            vl.setSpacing(0)
+
+            bar, bl = self.make_topbar("VERSE DEVICE GRAPH — HELP & REFERENCE")
+            bl.addStretch()
+            vl.addWidget(bar)
+
+            editor = QTextEdit()
+            editor.setReadOnly(True)
+            editor.setPlainText(self._CONTENT)
+            editor.setFont(QFont("Consolas", 9))
+            editor.setStyleSheet(
+                f"background:{self.hex('panel')}; color:{self.hex('text')};"
+                f"border:none; padding:16px; line-height:1.5;"
+            )
+            vl.addWidget(editor)
+
     # ── Note edit dialog (themed) ─────────────────────────────────────────────
 
     class _NoteEditDialog(ToolbeltWindow):
@@ -1252,6 +1436,152 @@ if _PYSIDE6:
 
     # ── Canvas view ───────────────────────────────────────────────────────────
 
+    class _MiniMap(QWidget):
+        """
+        Minimap overlay: draws node dots by category color + viewport outline.
+        Uses the real scene bounding rect for accurate coordinate mapping.
+        Delta-based dragging avoids jump-on-click jank.
+        """
+
+        _W, _H = 200, 130
+        _PAD   = 6
+
+        def __init__(self, scene: "QGraphicsScene", main_view: "QGraphicsView",
+                     node_items_fn: "callable") -> None:
+            super().__init__(main_view)
+            self._scene      = scene
+            self._main       = main_view
+            self._node_items = node_items_fn   # callable → current _node_items dict
+            self._scene_rect = None            # cached QRectF, set by fit_scene()
+            self._drag_scene_center = None     # scene center at drag start
+
+            self.setFixedSize(self._W, self._H)
+            self.setStyleSheet(
+                "background:#111; border:1px solid #2E2E2E; border-radius:4px;"
+            )
+            self.setCursor(Qt.PointingHandCursor)
+
+            main_view.horizontalScrollBar().valueChanged.connect(self.update)
+            main_view.verticalScrollBar().valueChanged.connect(self.update)
+            main_view.horizontalScrollBar().rangeChanged.connect(self.update)
+            main_view.verticalScrollBar().rangeChanged.connect(self.update)
+
+        def fit_scene(self) -> None:
+            """Use the real scene bounding rect for accurate mapping."""
+            r = self._scene.itemsBoundingRect()
+            if r.isValid():
+                self._scene_rect = r.adjusted(-40, -40, 40, 40)
+            else:
+                self._scene_rect = None
+            self.update()
+
+        # ── coordinate helpers ──────────────────────────────────────────────
+
+        def _s2m(self, sx: float, sy: float):
+            """Scene point → minimap pixel."""
+            r = self._scene_rect
+            if not r or r.width() == 0 or r.height() == 0:
+                return 0, 0
+            pw = self._W - self._PAD * 2
+            ph = self._H - self._PAD * 2
+            return (
+                self._PAD + (sx - r.x()) / r.width()  * pw,
+                self._PAD + (sy - r.y()) / r.height() * ph,
+            )
+
+        def _m2s(self, px: float, py: float):
+            """Minimap pixel → scene point."""
+            r = self._scene_rect
+            if not r:
+                return 0.0, 0.0
+            pw = self._W - self._PAD * 2
+            ph = self._H - self._PAD * 2
+            return (
+                r.x() + (px - self._PAD) / pw * r.width(),
+                r.y() + (py - self._PAD) / ph * r.height(),
+            )
+
+        # ── paint ───────────────────────────────────────────────────────────
+
+        def paintEvent(self, event) -> None:
+            p = QPainter(self)
+            p.setRenderHint(QPainter.Antialiasing, False)
+            p.fillRect(self.rect(), QColor("#111111"))
+
+            if not self._scene_rect:
+                p.setPen(QColor("#444"))
+                p.setFont(QFont("Segoe UI", 8))
+                p.drawText(self.rect(), Qt.AlignCenter, "Scan to populate")
+                p.end()
+                return
+
+            # Node dots
+            p.setPen(Qt.NoPen)
+            for item in self._node_items().values():
+                if not item.isVisible():
+                    continue
+                color = item.data.color if hasattr(item.data, "color") else "#5d6d7e"
+                mx, my = self._s2m(item.pos().x(), item.pos().y())
+                p.setBrush(QColor(color))
+                p.drawRect(int(mx), int(my), 3, 3)
+
+            # Viewport rect
+            vp = self._main.mapToScene(self._main.viewport().rect()).boundingRect()
+            x1, y1 = self._s2m(vp.x(), vp.y())
+            x2, y2 = self._s2m(vp.right(), vp.bottom())
+            rw = max(4, int(x2 - x1))
+            rh = max(4, int(y2 - y1))
+            rx = int(max(self._PAD, min(x1, self._W - self._PAD - rw)))
+            ry = int(max(self._PAD, min(y1, self._H - self._PAD - rh)))
+            p.setPen(QPen(QColor("#4A90D9"), 1.2))
+            p.setBrush(QBrush(QColor(74, 144, 217, 18)))
+            p.drawRect(rx, ry, rw, rh)
+
+            # Outer border
+            p.setPen(QPen(QColor("#2E2E2E"), 1))
+            p.setBrush(Qt.NoBrush)
+            p.drawRoundedRect(0, 0, self._W - 1, self._H - 1, 4, 4)
+            p.end()
+
+        # ── interaction ─────────────────────────────────────────────────────
+
+        def mousePressEvent(self, e) -> None:
+            if not self._scene_rect:
+                return
+            # Jump to clicked position immediately
+            sx, sy = self._m2s(float(e.pos().x()), float(e.pos().y()))
+            from PySide6.QtCore import QPointF
+            self._main.centerOn(QPointF(sx, sy))
+            # Record start state for delta drag
+            self._drag_scene_center = self._main.mapToScene(
+                self._main.viewport().rect().center()
+            )
+            self._drag_mm_start = (float(e.pos().x()), float(e.pos().y()))
+            self.update()
+
+        def mouseMoveEvent(self, e) -> None:
+            if not (e.buttons() and self._drag_scene_center
+                    and self._drag_mm_start and self._scene_rect):
+                return
+            dx_mm = float(e.pos().x()) - self._drag_mm_start[0]
+            dy_mm = float(e.pos().y()) - self._drag_mm_start[1]
+            pw = self._W - self._PAD * 2
+            ph = self._H - self._PAD * 2
+            if pw <= 0 or ph <= 0:
+                return
+            dx_s = dx_mm / pw * self._scene_rect.width()
+            dy_s = dy_mm / ph * self._scene_rect.height()
+            from PySide6.QtCore import QPointF
+            self._main.centerOn(QPointF(
+                self._drag_scene_center.x() + dx_s,
+                self._drag_scene_center.y() + dy_s,
+            ))
+            self.update()
+
+        def mouseReleaseEvent(self, e) -> None:
+            self._drag_scene_center = None
+            self._drag_mm_start = None
+
     class _GraphView(QGraphicsView):
 
         def __init__(self, scene: QGraphicsScene) -> None:
@@ -1263,12 +1593,46 @@ if _PYSIDE6:
             self.setBackgroundBrush(QBrush(QColor("#181818")))
             self.setFrameStyle(0)
             self.setStyleSheet("background: #181818; border: none;")
+            self._minimap: Optional["_MiniMap"] = None
+
+        def set_minimap(self, mm: "_MiniMap") -> None:
+            self._minimap = mm
+            # Parent to viewport() so it overlays the canvas and receives mouse events.
+            # setParent() hides widgets in Qt — must call show() explicitly after.
+            mm.setParent(self.viewport())
+            mm.show()
+            mm.raise_()
+            self._position_minimap()
+
+        def resizeEvent(self, e) -> None:
+            super().resizeEvent(e)
+            self._position_minimap()
+
+        def _position_minimap(self) -> None:
+            if not self._minimap:
+                return
+            vp = self.viewport()
+            margin = 10
+            self._minimap.move(
+                vp.width()  - self._minimap.width()  - margin,
+                vp.height() - self._minimap.height() - margin,
+            )
+            self._minimap.show()
+            self._minimap.raise_()
+
+        def scrollContentsBy(self, dx: int, dy: int) -> None:
+            super().scrollContentsBy(dx, dy)
+            # Qt physically moves viewport child widgets when scrolling —
+            # re-pin the minimap to the corner after every scroll tick.
+            self._position_minimap()
 
         def wheelEvent(self, e):
             factor = 1.12 if e.angleDelta().y() > 0 else 0.89
             new_scale = self.transform().m11() * factor
             if 0.15 < new_scale < 3.5:
                 self.scale(factor, factor)
+            if self._minimap:
+                self._minimap.update()
 
         def drawBackground(self, p: QPainter, rect):
             super().drawBackground(p, rect)
@@ -1542,10 +1906,12 @@ if _PYSIDE6:
 
             bl.addWidget(_btn("SCAN", accent=True, cb=self._do_scan))
             bl.addWidget(_btn("Fit", cb=self._do_fit_view, w=40))
+            bl.addWidget(_btn("Focus", cb=self._do_focus_selection, w=52))
             bl.addWidget(_btn("Re-Layout", cb=self._do_relayout))
             bl.addWidget(_btn("Export JSON", cb=self._do_export))
             bl.addWidget(_btn("Gen Wiring", cb=self._do_generate_wiring))
             bl.addWidget(_btn("+ Note", cb=self._add_comment))
+            bl.addWidget(_btn("?", cb=self._do_help, w=28))
 
             # Edge type toggle buttons
             bl.addSpacing(8)
@@ -1602,6 +1968,26 @@ if _PYSIDE6:
             self._search.setPlaceholderText("filter nodes…")
             self._search.textChanged.connect(self._on_search)
             bl.addWidget(self._search)
+
+            bl.addSpacing(8)
+            lbl_cat = QLabel("Category:")
+            lbl_cat.setStyleSheet(f"color:{self.hex('muted')};")
+            bl.addWidget(lbl_cat)
+
+            self._cat_combo = QComboBox()
+            self._cat_combo.setFixedHeight(26)
+            self._cat_combo.setMinimumWidth(160)
+            self._cat_combo.setToolTip("Show only nodes in this device category")
+            self._cat_combo.setStyleSheet(
+                "QComboBox{background:#1A1A1A; color:#E0E0E0; border:1px solid #3A3A3A;"
+                "border-radius:3px; padding:2px 6px;}"
+                "QComboBox::drop-down{border:none;}"
+                "QComboBox QAbstractItemView{background:#1A1A1A; color:#E0E0E0;"
+                "selection-background-color:#2A2A2A;}"
+            )
+            self._cat_combo.addItem("All Categories")
+            self._cat_combo.currentTextChanged.connect(self._on_category_filter)
+            bl.addWidget(self._cat_combo)
             bl.addStretch()
 
             self._status = QLabel("Click SCAN to begin")
@@ -1619,6 +2005,8 @@ if _PYSIDE6:
 
             self._scene = QGraphicsScene()
             self._view  = _GraphView(self._scene)
+            self._minimap = _MiniMap(self._scene, self._view, lambda: self._node_items)
+            self._view.set_minimap(self._minimap)
             split.addWidget(self._view)
 
             scroll = QScrollArea()
@@ -1686,9 +2074,45 @@ if _PYSIDE6:
                     f"health {self._health_score}/100 · {self._graph.cluster_count} clusters · "
                     f"{nw}W {nerr}E"
                 )
+                self._populate_cat_combo()
             except Exception as exc:
                 self._status.setText(f"Scan error: {exc}")
                 log_error(f"verse_graph_open: {exc}")
+
+        def _do_help(self) -> None:
+            self._help_dlg = _HelpDialog()
+            self._help_dlg.show_in_uefn()
+
+        def _populate_cat_combo(self) -> None:
+            """Rebuild the category dropdown from the current graph."""
+            if not self._graph:
+                return
+            cats = sorted({nd.category or "Uncategorized" for nd in self._graph.nodes})
+            self._cat_combo.blockSignals(True)
+            current = self._cat_combo.currentText()
+            self._cat_combo.clear()
+            self._cat_combo.addItem("All Categories")
+            for c in cats:
+                self._cat_combo.addItem(c)
+            # Restore previous selection if still valid
+            idx = self._cat_combo.findText(current)
+            self._cat_combo.setCurrentIndex(idx if idx >= 0 else 0)
+            self._cat_combo.blockSignals(False)
+
+        def _on_category_filter(self, category: str) -> None:
+            """Show only nodes belonging to the selected category."""
+            self._on_node_unhovered()
+            show_all = (category == "All Categories")
+            for nid, item in self._node_items.items():
+                node_cat = item.data.category or "Uncategorized"
+                item.setVisible(show_all or node_cat == category)
+                if not item.isVisible() and self._selected and self._selected.id == nid:
+                    self._selected = None
+                    self._panel.clear()
+            self._on_edge_toggle()
+            # Keep search filter consistent
+            if self._search.text().strip():
+                self._on_search(self._search.text())
 
         def _do_relayout(self) -> None:
             if not self._graph:
@@ -1726,10 +2150,15 @@ if _PYSIDE6:
         def _on_search(self, text: str) -> None:
             self._on_node_unhovered()   # clear any active dim before refiltering
             t = text.strip().lower()
+            cat = self._cat_combo.currentText()
+            show_all_cats = (cat == "All Categories")
             for nid, item in self._node_items.items():
-                visible = (not t or t in item.data.label.lower()
+                node_cat = item.data.category or "Uncategorized"
+                cat_ok = show_all_cats or node_cat == cat
+                text_ok = (not t or t in item.data.label.lower()
                            or t in item.data.class_name.lower()
                            or t in (item.data.category or "").lower())
+                visible = cat_ok and text_ok
                 item.setVisible(visible)
                 # Clear selection if the selected node is now hidden
                 if not visible and self._selected and self._selected.id == nid:
@@ -1776,6 +2205,18 @@ if _PYSIDE6:
             if rect.isValid():
                 self._view.fitInView(rect.adjusted(-60, -60, 60, 60),
                                      Qt.KeepAspectRatio)
+            self._minimap.fit_scene()
+
+        def _do_focus_selection(self) -> None:
+            """Centre and zoom the view onto the currently selected node."""
+            if not self._selected:
+                return
+            item = self._node_items.get(self._selected.id)
+            if not item:
+                return
+            r = item.sceneBoundingRect()
+            self._view.fitInView(r.adjusted(-120, -80, 120, 80), Qt.KeepAspectRatio)
+            self._minimap.update()
 
         def _on_edge_toggle(self) -> None:
             show_ed = self._btn_editable.isChecked()
@@ -1820,14 +2261,19 @@ if _PYSIDE6:
         # ── Comment boxes ─────────────────────────────────────────────────
 
         def _add_comment(self) -> None:
-            """Spawn a new note box in the center of the current view."""
-            center = self._view.mapToScene(
-                self._view.viewport().rect().center()
-            )
-            box = _CommentBox(x=center.x() - 150, y=center.y() - 70)
+            """Spawn a new note box just outside the scene content, then pan to it."""
+            rect = self._scene.itemsBoundingRect()
+            if rect.isValid():
+                x = rect.right() + 60
+                y = rect.top()
+            else:
+                c = self._view.mapToScene(self._view.viewport().rect().center())
+                x, y = c.x() - 150, c.y() - 70
+            box = _CommentBox(x=x, y=y)
             box.deleted.connect(self._remove_comment)
             self._scene.addItem(box)
             self._comment_items.append(box)
+            self._view.centerOn(box)
 
         def _remove_comment(self, box: "_CommentBox") -> None:
             if box in self._comment_items:
@@ -2072,6 +2518,7 @@ if _PYSIDE6:
                     if item:
                         item.setPos(nd.x, nd.y)
 
+                self._minimap.fit_scene()
                 self._paint_hbar()
 
                 ndn  = len(self._graph.nodes)
@@ -2176,6 +2623,7 @@ if _PYSIDE6:
                 item.node_clicked.connect(self._on_node_clicked)
                 item.node_hovered.connect(self._on_node_hovered)
                 item.node_unhovered.connect(self._on_node_unhovered)
+                item.setToolTip(_make_node_tooltip(nd))
                 self._scene.addItem(item)
                 self._node_items[nd.id] = item
 

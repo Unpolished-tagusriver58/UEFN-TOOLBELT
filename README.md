@@ -5,7 +5,7 @@
 
 [![CI](https://github.com/undergroundrap/UEFN-TOOLBELT/actions/workflows/ci.yml/badge.svg)](https://github.com/undergroundrap/UEFN-TOOLBELT/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.8.0-green.svg)](docs/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.8.3-green.svg)](docs/CHANGELOG.md)
 [![Discussions](https://img.shields.io/badge/community-discussions-blueviolet)](https://github.com/undergroundrap/UEFN-TOOLBELT/discussions)
 
 ![UEFN Toolbelt Dashboard](docs/dashboard_hero.png)
@@ -981,6 +981,32 @@ Add the stubs dir to `.vscode/settings.json` in your project:
 
 ![Verse Code Generation Utilities](docs/verse_tab.png)
 
+---
+
+#### Verse Device Graph — `verse_graph_open`
+
+> **The single most powerful tool in the Toolbelt for understanding a UEFN level.**
+
+Once a UEFN island exceeds ~30 Verse devices, reasoning about which device talks to which becomes impossible from the Properties panel alone — it only ever shows one device at a time. The Device Graph solves this completely.
+
+Run `tb.run("verse_graph_open")`, point it at your Verse folder, hit **SCAN**, and in seconds you have a **live, interactive map of your entire island's logic** — every device as a node, every `@editable` reference and `.Subscribe()` call as an edge, colored by type.
+
+**What it gives you that nothing else can:**
+- **Instant architecture health** — a 0–100 score with Union-Find cluster detection tells you immediately whether your devices are connected or siloed
+- **Orphan detection** — unconnected devices surface instantly; they'd be invisible in the Properties panel
+- **Wiring errors** — dangling `@editable` refs that point to no placed actor show as red `!` badges before you ever run a build
+- **Blueprint-style layout** — devices grouped by category (Timer, Score, Trigger, etc.) so the structure mirrors how you think about the game
+- **Minimap** — navigate 200+ node graphs without losing your place; colored dots match category colors, click or drag to teleport
+- **Category filter** — isolate an entire device family in one click, stack with search to drill down further
+- **Comment boxes** — annotate sections for yourself or teammates, survive every re-scan
+- **Live sync** — polls every 4 s; graph updates when you add or remove devices in the editor without losing node positions
+- **Gen Wiring** — generates a ready-to-compile `creative_device` Verse stub with `@editable` declarations and `OnBegin` subscriptions from the graph
+- **Write-back** — rename actors and move them to World Outliner folders directly from the graph side panel
+
+This tool alone justifies installing the Toolbelt on any project with serious Verse usage.
+
+---
+
 | Tool Name | Description |
 |---|---|
 | `spline_to_verse_points` | Convert selected spline → Verse `vector3` array literal |
@@ -988,7 +1014,7 @@ Add the stubs dir to `.vscode/settings.json` in your project:
 | `spline_to_verse_zone_boundary` | Spline → Verse zone boundary array + IsPointInZone helper |
 | `spline_export_json` | Export spline points to JSON (pipe into scatter_along_path) |
 | `verse_list_devices` | Enumerate all devices in current level |
-| `verse_graph_open` | **Interactive device graph** — blueprint-style category columns by default (Re-Layout for physics), comment/note boxes (drag, resize, color, multi-line body), bi-directional viewport↔graph selection, ● Live sync, write-back rename + folder move, Gen Wiring codegen |
+| `verse_graph_open` | **Interactive device graph** — blueprint-style category columns, **minimap** (colored dot overlay, click/drag to navigate), **category filter** dropdown, **Focus** button, **Help** dialog, comment/note boxes, hover highlight, edge type toggles, ● Live sync, write-back, Gen Wiring |
 | `verse_graph_scan` | Headless scan → full device adjacency dict (MCP-friendly, no UI needed) |
 | `verse_graph_export` | Export device graph to JSON for archiving or external tooling |
 | `verse_bulk_set_property` | Bulk-set any UPROPERTY on selection |
@@ -2309,7 +2335,7 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 ### v1.5 — March 2026 (Verse Device Graph + Config Persistence)
 
-- **Verse Device Graph** (`verse_graph_open`, `verse_graph_scan`, `verse_graph_export`): Interactive node graph of every Creative/Verse device in the current level. *(Inspired by and full credit to [ImmatureGamer's uefn-device-graph](https://github.com/ImmatureGamer/uefn-device-graph) — this is an independent PySide6 rewrite integrated into the Toolbelt stack.)* Default view organises nodes in Blueprint-style category columns (largest category first); Re-Layout button runs animated Fruchterman-Reingold physics. Comment/note boxes (+ Note) are draggable, resizable, and support multi-line body text — survive every re-scan. Bi-directional viewport↔graph selection sync. ● Live mode polls for level changes every 4 s, preserving node positions. Write-back renames actors and moves them to folders directly from the side panel. Gen Wiring generates a full `creative_device` Verse stub from the current graph. Architecture Health Score (0–100) with Union-Find cluster detection. Fully MCP-callable — `verse_graph_scan` returns the complete adjacency dict.
+- **Verse Device Graph** (`verse_graph_open`, `verse_graph_scan`, `verse_graph_export`): The most powerful tool in the Toolbelt for understanding a UEFN level's logic architecture. Interactive node graph of every Creative/Verse device — nodes grouped in Blueprint-style category columns, edges colored by type (`@editable` red, `.Subscribe` green, `.call` blue). Architecture Health Score (0–100) with Union-Find cluster detection. **Minimap** overlay (colored dots + blue viewport rect, click/drag to navigate). **Category filter** dropdown to isolate a device family. **Focus** button to jump to any selected node. Comment/note boxes survive every re-scan. Hover highlight dims unrelated nodes. ● Live mode polls every 4 s without disturbing node positions. Write-back renames actors and moves folders from the side panel. Gen Wiring generates a ready-to-compile `creative_device` stub. **?** Help dialog covers full purpose, workflow, badge guide, and tips. Fully MCP-callable via `verse_graph_scan`. *(Inspired by [ImmatureGamer's uefn-device-graph](https://github.com/ImmatureGamer/uefn-device-graph) — independent PySide6 rewrite integrated into the Toolbelt stack.)*
 - **Persistent Config System** (`config_list`, `config_get`, `config_set`, `config_reset`): 12 configurable values persisted at `Saved/UEFN_Toolbelt/config.json` — survives `install.py` updates. Tools read from config instead of hardcoded defaults. `verse.project_path` lets you set your Verse root once and never type it again.
 - **Tool count: 171** (up from 165). 103/103 integration tests passing.
 

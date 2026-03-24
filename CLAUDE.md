@@ -759,7 +759,7 @@ tb.run("screenshot_focus_selection", width=1920, height=1080, name="prop_focus")
 | `verse_select_by_name` | `name_contains` | Select devices matching label |
 | `verse_select_by_class` | `class_name` | Select devices by class |
 | `verse_export_report` | `output_path` | JSON export of all device properties |
-| `verse_graph_open` | `verse_path=""` | Interactive device graph — blueprint-style category columns by default, Re-Layout for physics, **+ Note** button spawns comment boxes (drag/resize/color/body text), bi-directional viewport↔graph selection, ● Live sync |
+| `verse_graph_open` | `verse_path=""` | Interactive device graph — blueprint-style category columns, **minimap** overlay (colored dots + blue viewport rect, click/drag to navigate), **category filter** dropdown, **Focus** button, **?** Help dialog, comment/note boxes, hover highlight, edge toggles, ● Live sync, write-back |
 | `verse_graph_scan` | `verse_path=""` | Headless scan → full adjacency dict (MCP-friendly) |
 | `verse_graph_export` | `verse_path`, `output_path` | Export device graph to JSON |
 | `verse_gen_game_skeleton` | `device_name` | Full game manager Verse stub |

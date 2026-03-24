@@ -5,6 +5,43 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.8.3] — 2026-03-23
+
+### feat: verse device graph — minimap, category filter, focus button, help dialog, node tooltips
+
+**Minimap (bottom-right canvas overlay):**
+- Custom `QWidget` overlay — draws every node as a 3×3 colored dot matching its category color
+- No scene re-render — edges never bleed into the thumbnail
+- Blue viewport outline updates live as you pan/zoom the main canvas
+- Click to teleport view, drag to pan — delta-based drag prevents jump-on-click jank
+- Stays pinned to bottom-right corner via `scrollContentsBy` override (fixes vanish-on-drag)
+- Updates correctly after Live mode rescans and Re-Layout
+
+**Category filter dropdown:**
+- Toolbar `QComboBox` populated after every SCAN with all unique device categories
+- Selecting a category hides all other nodes and their edges instantly
+- Search and category stack — filter to "Timer" then search within it
+- Previous selection restored across rescans; "All Categories" resets
+
+**Focus button:**
+- Select any node, click Focus → view centres and zooms to that node
+- Useful for navigating to a search result buried in a large graph
+
+**Help dialog (`?` button):**
+- Themed `_HelpDialog(ToolbeltWindow)` — scrollable reference window matching dashboard style
+- Covers: purpose, why it was made, typical workflow, badge guide, edge types, tips, attribution
+- Documents minimap, category filter, Focus, comment boxes, layout persistence, write-back
+
+**Node badge tooltips:**
+- `_make_node_tooltip(nd)` module-level function — every node shows a tooltip explaining
+  cluster ID, VS badge, error (red !) and warning (yellow !) badges with full context
+
+**Minimap vanish fix:**
+- Root cause: `QWidget::scroll()` physically moves viewport child widgets during `ScrollHandDrag`
+- Fix: `_GraphView.scrollContentsBy` override re-pins minimap to corner after every scroll tick
+
+---
+
 ## [1.8.2] — 2026-03-23
 
 ### feat: verse device graph — blueprint-style grouped layout + comment boxes
