@@ -379,6 +379,37 @@ import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in
 
 ---
 
+## Testing: Smoke Test vs Integration Test
+
+Two separate test systems. Know which is which before running either.
+
+### Smoke Test — `tb.run("toolbelt_smoke_test")`
+**What it proves:** All 246 tools *registered* correctly. The registry loaded, all modules imported, and a set of "safe" tools ran end-to-end without exceptions.
+**What it does NOT prove:** That tools produce correct output on real actors. It cannot test anything selection-dependent or level-state-dependent.
+**Safe to run:** Anywhere, any project, any time. ~5 seconds.
+**Run after:** Every code change, before committing.
+
+### Integration Test — `tb.run("toolbelt_integration_test")`
+**What it proves:** 163 tools *work* in a live UEFN editor. The harness spawns real actor fixtures, runs each tool against them, verifies the result (property changed, actor count correct, file written), and cleans up.
+**Coverage:** All 246 tools across 21 test sections — materials, bulk ops, patterns, scatter, zones, stamps, actor org, proximity, alignment, signs, post-process, audio, lighting, world state, and more.
+**⚠️ INVASIVE — only run in a blank template level.** It spawns and deletes actors. Never run in a production project.
+**Run after:** Before any PR. After adding a new tool. After major refactors. ~35 seconds.
+
+```
+Results: Saved/UEFN_Toolbelt/integration_test_results.txt
+```
+If the editor crashes mid-run, the file contains partial results up to the last completed test — check it to find which section caused the crash.
+
+| | Smoke Test | Integration Test |
+|---|---|---|
+| Tests registration? | ✅ All 246 tools | ✅ |
+| Tests live execution? | Partial (safe tools only) | ✅ 163 tests on real actors |
+| Safe in production? | ✅ Yes | ❌ Blank level only |
+| Runtime | ~5s | ~35s |
+| Run when? | After every change | Before every PR |
+
+---
+
 ## ⚠️ V2 Device Property Wall — Critical for AI Autonomy
 
 Fortnite V2 Creative devices (Timer Device, Capture Area, Score Manager, Guard Spawner, etc.)
