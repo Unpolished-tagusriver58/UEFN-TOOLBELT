@@ -47,10 +47,19 @@ except ImportError:
 
 # ── Asset path helpers ────────────────────────────────────────────────────────
 
+# Matches any /MountPoint/... path in T3D text (quoted or unquoted).
+# Catches /Game/, /SPUNCHBROTHUS/, /MyProject/ etc.
+# Engine/Script/Transient paths are filtered out in _parse_t3d.
 _T3D_PATH_RE = re.compile(
-    r"['\"]?(/Game/[A-Za-z0-9_/.\-]+)['\"]?",
-    re.IGNORECASE,
+    r"['\"]?(\/[A-Za-z][A-Za-z0-9_]+(?:\/[A-Za-z0-9_\-\.]+)+)['\"]?",
 )
+
+# Mounts to ignore when parsing T3D — engine/runtime paths, not user assets
+_T3D_SKIP_MOUNTS = {
+    "/Engine", "/Script", "/Transient", "/FortniteGame", "/Fortnite",
+    "/Paper2D", "/Plugin", "/Plugins", "/Epic", "/Fortnite.com",
+}
+
 
 def _normalize_pkg(path: str) -> str:
     """Strip .AssetName suffix so we always work with package paths."""
@@ -66,17 +75,29 @@ def _pkg_to_asset(pkg: str) -> str:
 
 
 def _pkg_to_disk(pkg: str, content_dir: str) -> str:
-    """'/Game/Folder/SM_Wall' → '<content_dir>/Folder/SM_Wall.uasset'"""
-    relative = pkg[len("/Game/"):]
+    """'/MountPoint/Folder/SM_Wall' → '<content_dir>/Folder/SM_Wall.uasset'"""
+    parts = pkg.lstrip("/").split("/", 1)
+    relative = parts[1] if len(parts) > 1 else parts[0]
     return os.path.join(content_dir, relative.replace("/", os.sep) + ".uasset")
 
 
 def _parse_t3d(text: str) -> List[str]:
-    """Extract all unique /Game/ package paths from T3D clipboard text."""
+    """
+    Extract all unique project asset package paths from T3D clipboard text.
+    Handles /Game/... paths AND project-mount paths like /SPUNCHBROTHUS/...
+    Filters out engine, script, and transient runtime paths.
+    """
     seen: Set[str] = set()
     for m in _T3D_PATH_RE.finditer(text):
-        pkg = _normalize_pkg(m.group(1))
-        if pkg.startswith("/Game/") and pkg not in seen:
+        raw = m.group(1)
+        pkg = _normalize_pkg(raw)
+        # Skip engine/runtime mounts
+        if any(pkg.startswith(s) for s in _T3D_SKIP_MOUNTS):
+            continue
+        # Must have at least two path segments to be a real asset
+        if pkg.count("/") < 2:
+            continue
+        if pkg not in seen:
             seen.add(pkg)
     return sorted(seen)
 
