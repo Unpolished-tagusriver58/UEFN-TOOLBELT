@@ -616,3 +616,143 @@ Never force-prepend `/Game/` to paths from `get_selected_asset_data()` or the As
 | `Paths.get_project_file_path()` | Returns `FortniteGame.uproject` | Asset Registry mount detection |
 | `candidates[0]` (first alpha mount) | Picks ACLPlugin or similar before user project | `max(counts, key=counts.get)` |
 | `/Game/` as asset destination | Assets invisible in Content Browser | `_detect_project_mount()` |
+
+---
+
+## 24. Loading Asset Objects in Audit/Scan Tools Causes EXCEPTION_ACCESS_VIOLATION (Discovered: March 2026)
+
+### The Problem
+
+Any tool that calls `asset_data.get_asset()` or loads a full asset object (texture, mesh,
+material) during a bulk scan will randomly crash the editor with:
+
+```
+Unhandled Exception: EXCEPTION_ACCESS_VIOLATION writing address 0x0000000000000000
+```
+
+No Python traceback. No Output Log entry. The crash bypasses all `try/except` blocks
+because it happens at the C++ level inside Unreal's asset system — Python never gets
+a chance to catch it.
+
+### How We Discovered It
+
+Building the `level_health_report` tool, the first implementation called
+`memory_scan_textures` and `lod_audit_folder` internally. Both tools load actual asset
+objects to inspect texture dimensions and mesh LOD counts. The result was a repeatable
+hard crash with `EXCEPTION_ACCESS_VIOLATION` — no log, no traceback, just the editor gone.
+
+The crash only appeared after a few seconds (when the asset loading actually happened),
+which initially looked like a threading issue. It was not — it was the asset object
+loading itself hitting a null internal pointer.
+
+### The Rule
+
+**Audit and scan tools must use Asset Registry metadata only. Never call `get_asset()`
+during a bulk scan.**
+
+| Safe | Unsafe |
+|---|---|
+| `asset_data.package_name` | `asset_data.get_asset()` |
+| `asset_data.asset_class_path` | `unreal.load_asset(path)` |
+| `ar.get_assets(filter)` | `mesh.get_num_lods()` on a loaded object |
+| `ar.get_all_cached_paths()` | `texture.get_editor_property("CompressionSettings")` |
+| `actor.get_actor_location()` | Iterating loaded objects in a scan loop |
+
+### The Fix Pattern
+
+```python
+# ❌ Crashes — loads asset object in a scan loop
+for asset_data in ar.get_assets(filt):
+    obj = asset_data.get_asset()          # ← null pointer risk
+    lod_count = obj.get_num_lods()        # ← crash happens here
+
+# ✅ Safe — reads metadata only, never loads
+for asset_data in ar.get_assets(filt):
+    name = str(asset_data.package_name)   # metadata only
+    cls  = str(asset_data.asset_class_path.asset_name)
+```
+
+### Where This Applies
+
+- Any tool that scans the entire project (LOD audit, memory scan, texture scan)
+- Any "health check" or "report" tool that aggregates data across many assets
+- Tools that check properties only available on loaded objects (texture size, LOD count,
+  collision settings, material parameters)
+
+For those properties, either: (a) accept that you can't read them safely in a bulk scan,
+or (b) limit the scan to a small explicit selection the user has already loaded in the CB.
+
+### Canonical Implementation
+
+`level_health.py` — all five audit runners use AR metadata only, zero `get_asset()` calls.
+This is the reference pattern for any future audit/scan tool.
+
+---
+
+## 25. PySide6 Windows Defined Inside Tool Functions Can Hard-Crash With No Log (Discovered: March 2026)
+
+### The Problem
+
+A `ToolbeltWindow` subclass defined **inside** a `@register_tool` function can cause an
+immediate hard crash (no Output Log, no crash report) when `show_in_uefn()` is called —
+even when structurally identical code works in other windowed tools.
+
+The crash is silent: no Python traceback, no `EXCEPTION_ACCESS_VIOLATION` report, just
+the editor process disappearing. `try/except` cannot catch it.
+
+### What We Tried
+
+During development of `level_health_open`, every standard approach was attempted:
+- Removing `QThread` / `QApplication.processEvents()` — still crashed
+- Replacing custom `paintEvent` (QPainter) — still crashed
+- Removing `QScrollArea`, `QFrame.Shape.HLine`, emoji — still crashed
+- Using `QFrame` vs `QWidget` as central widget — still crashed
+- Matching the exact layout pattern from working windows (`verse_device_graph.py`) — still crashed
+
+The headless version (`level_health_report`) runs the same audit logic without a window
+and works perfectly every time.
+
+### The Working Pattern (All Other Windows)
+
+Windows defined at **module level** (outside any function) work reliably:
+
+```python
+# module level — works
+class MyWindow(ToolbeltWindow):
+    def __init__(self): ...
+
+@register_tool(name="my_tool_open", ...)
+def run_my_tool_open(**kwargs) -> dict:
+    win = MyWindow()
+    win.show_in_uefn()
+    return {"status": "ok"}
+```
+
+### The Failing Pattern
+
+Windows defined **inside** the tool function are the common factor in all crashes:
+
+```python
+@register_tool(name="my_tool_open", ...)
+def run_my_tool_open(**kwargs) -> dict:
+    class MyWindow(ToolbeltWindow):   # ← defined inside function
+        def __init__(self): ...
+    win = MyWindow()
+    win.show_in_uefn()                # ← crashes here, no log
+```
+
+### Current Status
+
+Root cause is unknown. Qt's metaclass system may behave differently for classes
+created inside a function scope on repeated calls (hot-reload creates a new class
+object each time). This may interact badly with PySide6's C++ type registry in
+UEFN's embedded Python.
+
+### The Rule
+
+**Define all `ToolbeltWindow` subclasses at module level, never inside a function.**
+If a tool's window crashes with no log despite correct code, move the class definition
+outside the tool function.
+
+For tools where the window cannot be made stable, fall back to a headless implementation
+that logs output to the Output Log — this is always safe and MCP/AI-friendly.

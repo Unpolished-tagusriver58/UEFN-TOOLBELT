@@ -313,6 +313,10 @@ def _tab_quick_actions(R) -> "QScrollArea":
          lambda: R("ui_icon_import_open"),
          "Copy an image from any browser, Figma, or Photoshop and paste it directly. "
          "Auto-applies TC_UserInterface2D / NoMipmaps. Supports file browse and drag-drop.")
+    _btn(g_flag, "Level Health Report  —  unified 0-100 audit score",
+         lambda: R("level_health_open"),
+         "Runs all audit categories (actors, naming, assets, devices, level info) and "
+         "prints a formatted score report to the Output Log. Use level_health_report for MCP/AI.")
     _btn(g_flag, "World State Export  —  full level snapshot for AI",
          lambda: R("world_state_export"),
          "Dumps every actor's transform and readable properties to world_state.json — "

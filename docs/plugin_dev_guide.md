@@ -327,6 +327,30 @@ Canonical implementation: `core/__init__.py` → `detect_project_mount()` and `P
 
 ---
 
+## ⚠️ Never Load Asset Objects in Scan or Audit Plugins
+
+If your plugin scans many assets (audit tools, health checks, batch reporters), **never call
+`asset_data.get_asset()` or `unreal.load_asset()` inside a scan loop.** This causes a hard
+editor crash — `EXCEPTION_ACCESS_VIOLATION` — with no Python traceback and no Output Log.
+`try/except` cannot catch it.
+
+```python
+# ❌ Crashes the editor — loads asset object in a loop
+for asset_data in ar.get_assets(filt):
+    obj = asset_data.get_asset()        # null pointer risk
+    lod_count = obj.get_num_lods()      # crash
+
+# ✅ Safe — reads AR metadata only
+for asset_data in ar.get_assets(filt):
+    name = str(asset_data.package_name)
+    cls  = str(asset_data.asset_class_path.asset_name)
+```
+
+Full breakdown: `docs/UEFN_QUIRKS.md` Quirk #24.
+Reference implementation: `tools/level_health.py` — all audit runners are metadata-only.
+
+---
+
 ## 🔒 Security Model
 
 The Toolbelt applies **four security gates** to every custom plugin:

@@ -5,6 +5,21 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.9.0] — 2026-03-24
+
+### feat: level health dashboard — unified audit score
+
+**New tools (`level_health_report`, `level_health_open`):**
+- `level_health_report` — headless: runs all 6 audit categories and returns a 0–100 health score with A+…F grade. Fully structured dict return — MCP/AI agent friendly.
+- `level_health_open` — windowed UI: animated score ring, colour-coded category cards (green/yellow/red), per-issue summary text, live audit progress, and a console log pane.
+- Six audit categories: Actor Integrity, Memory & Textures, Asset References, Naming Conventions, LOD & Collision, Performance — each scored proportionally and weighted.
+- Aggregates results from 6 existing audit tools (`rogue_actor_scan`, `memory_scan_textures`, `ref_audit_orphans`, `rename_dry_run`, `lod_audit_folder`, `system_perf_audit`) — no duplicated logic.
+- Audit runs on a background QThread so the UI stays responsive during scan.
+- Added to dashboard Flagship Tools quick bar.
+- Added `level_health_report` and `level_health_open` to CLAUDE.md Utilities table.
+
+---
+
 ## [1.8.5] — 2026-03-24
 
 ### feat: ui icon importer — clipboard-first texture import
