@@ -73,11 +73,12 @@ It runs inside the editor and exposes 229 tools through:
 > dashboard theme exactly.**
 > Read `docs/ui_style_guide.md` before writing any windowed UI.
 > The short version:
-> 1. `from ..dashboard_pyside6 import _QSS as _DASH_QSS` (with inline fallback)
-> 2. `self.setStyleSheet(_DASH_QSS)` on every `QMainWindow` / `QDialog`
-> 3. Only use hex values from the palette in that guide — no purple, no navy, no off-whites
-> 4. Always include the Slate tick driver (`register_slate_post_tick_callback`) or the window will be invisible
-> 5. Reference implementation: `tools/verse_device_graph.py`
+> 1. Subclass `ToolbeltWindow` from `core/base_window.py` — theme + Slate tick are automatic
+> 2. Only use hex values from the palette in that guide — no purple, no navy, no off-whites
+> 3. **NEVER add `make_topbar()` unless it carries multiple real toolbar buttons** (scan, export, filter, etc.). The OS title bar set via `title=` already shows the window name. A topbar whose only content is a title label + stretch (even with one small utility button like `?`) is redundant visual noise — remove it. This applies to main windows AND sub-dialogs (help, edit, confirm). If in doubt: does removing the topbar lose any functionality? If no → remove it.
+> 4. **Every tool window must have a `?` help button** that opens a `_HelpDialog(ToolbeltWindow)`. No exceptions. If the window has a topbar → `?` goes last on the right. If no topbar → `?` goes in the bottom action row right-aligned. See `docs/ui_style_guide.md` for the exact pattern.
+> 5. For read-only text areas (help dialogs, logs): always set `editor.setLineWrapMode(QTextEdit.NoWrap)` — otherwise separator lines and fixed-width content wrap and break the layout.
+> 6. Reference implementation: `tools/verse_device_graph.py` (main window has topbar with 8+ toolbar buttons — that earns it)
 
 ---
 
@@ -124,8 +125,7 @@ All 229 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as 
    PySide6 is installed separately to UE's embedded Python.
 4. **Save explicitly** — asset changes aren't saved automatically.
    Always call `save_asset(path)` or `save_current_level()`.
-5. **Path format** — asset paths start with `/Game/` and use forward slashes.
-   Actors are addressed by path name or label.
+5. **Path format** — asset paths use forward slashes. In standard UE5 docs paths start with `/Game/`, but **in UEFN the Content Browser mount point is the project name** (e.g. `/Device_API_Mapping/`). `AssetData.package_name` returns the project-mount form. Never force-prepend `/Game/` to paths from the Asset Registry or Content Browser selection. `unreal.Paths.project_content_dir()` returns the FortniteGame engine path — use `unreal.Paths.project_dir() + "/Content"` instead. See `docs/UEFN_QUIRKS.md` Quirk #23.
 6. **Vectors/Rotators** — `unreal.Vector(x, y, z)` · `unreal.Rotator(pitch, yaw, roll)`
    Pitch = tilt up/down · Yaw = rotate left/right · Roll = spin
 
@@ -1014,6 +1014,7 @@ tb.run("scatter_props", ...)   # N actors
 | `Content/Python/UEFN_Toolbelt/core/theme.py` | **Single source of truth for all UI colors.** Edit `PALETTE` here to change the platform's appearance everywhere. |
 | `Content/Python/UEFN_Toolbelt/core/base_window.py` | `ToolbeltWindow` base class — subclass instead of `QMainWindow` for any tool window. Auto-applies theme + Slate tick. |
 | `docs/ui_style_guide.md` | **UI Style Guide — MANDATORY** for all windowed tools and plugins. Color palette, `ToolbeltWindow` API, widget recipes. Read this before writing any PySide6 UI. |
+| `docs/UEFN_QUIRKS.md` | **Critical reading for tool authors** — non-obvious UEFN Python behaviors. Key quirks: #2 Main Thread Lock, #19 V2 Device Property Wall, #23 `/Game/` mount invisible in CB + correct project mount detection. Any tool that touches assets, paths, or the Content Browser should consult this first. |
 | `docs/CHANGELOG.md` | Version history — all notable changes by release. |
 | `docs/plugin_dev_guide.md` | Plugin authorship guide — security model, audit format, version stamp |
 | `tests/smoke_test.py` | 5-layer health check — run `tb.smoke_test()` |

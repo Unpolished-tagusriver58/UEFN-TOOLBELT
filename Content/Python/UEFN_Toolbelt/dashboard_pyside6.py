@@ -305,6 +305,10 @@ def _tab_quick_actions(R) -> "QScrollArea":
          lambda: R("verse_graph_open"),
          "Opens the force-directed node graph — devices are nodes, @editable refs are edges. "
          "Detects clusters, scores architecture health 0–100, exports to JSON.")
+    _btn(g_flag, "Prefab Asset Migrator  —  copy assets with full dependency closure",
+         lambda: R("prefab_migrate_open"),
+         "Migrates assets (+ all meshes, materials, textures) to another folder or project. "
+         "Dry-run preview, flatten option, viewport + Content Browser selection, cross-project disk copy.")
     _btn(g_flag, "World State Export  —  full level snapshot for AI",
          lambda: R("world_state_export"),
          "Dumps every actor's transform and readable properties to world_state.json — "

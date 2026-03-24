@@ -44,8 +44,12 @@ class MyToolWindow(ToolbeltWindow):
         vl.setContentsMargins(0, 0, 0, 0)
         vl.setSpacing(0)
 
+        # Only add a topbar if it carries actual toolbar buttons.
+        # The OS title bar (set via title=) already shows the tool name —
+        # never add make_topbar() just to repeat that text.
         bar, bl = self.make_topbar("MY TOOL")
         bl.addWidget(self.make_btn("Run", accent=True, cb=self._run))
+        bl.addWidget(self.make_btn("Clear", cb=self._clear))
         bl.addStretch()
         vl.addWidget(bar)
         # ... rest of UI
@@ -97,18 +101,106 @@ _P["accent"]            # → QColor("#3A3AFF")
 
 ---
 
+## The `?` Help Button — Mandatory for Every Tool Window
+
+Every tool that opens its own `ToolbeltWindow` **must** include a `?` help button. Users should never have to guess what a tool does or how to use it.
+
+**Placement rule:**
+- If the window has a topbar with toolbar buttons → add `?` as the last button on the right of the topbar
+- If the window has no topbar → add `?` to the bottom action row, right-aligned after a stretch
+
+```python
+# Window with topbar (e.g. verse_device_graph)
+bar, bl = self.make_topbar("VERSE GRAPH")
+bl.addWidget(self.make_btn("Scan", accent=True, cb=self._scan))
+bl.addStretch()
+bl.addWidget(self.make_btn("?", cb=self._do_help, width=28))
+
+# Window without topbar (e.g. prefab_migrator)
+# Add ? to the bottom action row:
+al.addWidget(b_primary_action)
+al.addStretch()
+al.addWidget(self._status_label)
+al.addWidget(b_help)   # _btn("?"), fixedWidth=28, cb=self._do_help
+```
+
+**The help dialog pattern** (use this every time — copy it verbatim):
+```python
+class _HelpDialog(ToolbeltWindow):
+    _CONTENT = """\
+WHAT IS THIS?
+...
+
+─────────────────────────────────────────────────────────────────────────
+
+TYPICAL WORKFLOW
+...
+"""
+    def __init__(self):
+        super().__init__(title="UEFN Toolbelt — My Tool Help", width=700, height=760)
+        self._build_ui()
+
+    def _build_ui(self):
+        root = QWidget()
+        self.setCentralWidget(root)
+        vl = QVBoxLayout(root)
+        vl.setContentsMargins(0, 0, 0, 0)
+        vl.setSpacing(0)
+        editor = QTextEdit()
+        editor.setReadOnly(True)
+        editor.setPlainText(self._CONTENT)
+        editor.setFont(QFont("Consolas", 9))
+        editor.setLineWrapMode(QTextEdit.NoWrap)   # ← always NoWrap
+        editor.setStyleSheet(
+            f"background:{self.hex('panel')}; color:{self.hex('text')}; border:none; padding:16px;"
+        )
+        vl.addWidget(editor)
+
+# In the main window:
+def _do_help(self):
+    self._help_dlg = _HelpDialog()
+    self._help_dlg.show_in_uefn()
+```
+
+**Help content must cover:**
+1. What is this? (one paragraph)
+2. Why it was made / what problem it solves
+3. Typical workflow (numbered steps)
+4. Options/parameters explained
+5. Any known limitations
+
+---
+
 ## ToolbeltWindow — Reference
 
 `core/base_window.ToolbeltWindow` provides these helpers. Call them from inside
 any subclass — no imports or style arguments needed.
 
 ### `make_topbar(title) → (QWidget, QHBoxLayout)`
-46px dark bar with brand-red title. Add buttons/inputs to the layout.
+46px dark bar with brand-red title. Use this **only when the bar carries actual toolbar buttons** (scan, export, refresh, etc.). The OS title bar already shows the window name — do NOT add `make_topbar()` just to repeat it with a stretch-only layout. This applies to **help dialogs and sub-windows too** — the OS title bar already identifies them.
+
 ```python
+# ✅ Correct — topbar earns its place with real actions
 bar, bl = self.make_topbar("VERSE GRAPH")
 bl.addWidget(self.make_btn("Scan", accent=True, cb=self._scan))
+bl.addWidget(self.make_btn("Export", cb=self._export))
 bl.addStretch()
 vl.addWidget(bar)
+
+# ❌ Wrong — title-only topbar duplicates the OS window title
+bar, bl = self.make_topbar("MY TOOL")
+bl.addStretch()   # no buttons = just visual noise, remove this entire block
+vl.addWidget(bar)
+```
+
+### Read-only text areas (help dialogs, logs)
+For help/reference dialogs with pre-formatted text content, always set `NoWrap` to prevent separator lines and fixed-width content from wrapping:
+```python
+editor = QTextEdit()
+editor.setReadOnly(True)
+editor.setFont(QFont("Consolas", 9))
+editor.setLineWrapMode(QTextEdit.NoWrap)  # ← prevents separator lines from splitting
+editor.setStyleSheet(f"background:{self.hex('panel')}; color:{self.hex('text')}; border:none; padding:16px;")
 ```
 
 ### `make_btn(text, accent, cb, height, width) → QPushButton`

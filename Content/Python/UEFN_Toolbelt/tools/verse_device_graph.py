@@ -1359,17 +1359,14 @@ TIPS
             vl.setContentsMargins(0, 0, 0, 0)
             vl.setSpacing(0)
 
-            bar, bl = self.make_topbar("VERSE DEVICE GRAPH — HELP & REFERENCE")
-            bl.addStretch()
-            vl.addWidget(bar)
-
             editor = QTextEdit()
             editor.setReadOnly(True)
             editor.setPlainText(self._CONTENT)
             editor.setFont(QFont("Consolas", 9))
+            editor.setLineWrapMode(QTextEdit.NoWrap)
             editor.setStyleSheet(
                 f"background:{self.hex('panel')}; color:{self.hex('text')};"
-                f"border:none; padding:16px; line-height:1.5;"
+                f"border:none; padding:16px;"
             )
             vl.addWidget(editor)
 

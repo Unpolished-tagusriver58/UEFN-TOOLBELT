@@ -484,3 +484,50 @@ return actor
 # ✅ Extract what you actually need
 return {"status": "ok", "label": actor.get_actor_label(), "path": actor.get_path_name()}
 ```
+
+---
+
+## 23. `/Game/` Mount Point Is Invisible in the Content Browser (Discovered: March 2026)
+
+### The Problem
+In UEFN, `unreal.Paths.project_content_dir()` returns the **FortniteGame engine content path** (`C:/Program Files/Epic Games/Fortnite/FortniteGame/Content`), not the user's project content directory. Similarly, the internal `/Game/` mount point exists and accepts `duplicate_asset()` calls — assets created there return `True` from `does_asset_exist()` — but **they never appear in the Content Browser**. The Content Browser only shows the project's named mount point (e.g. `/Device_API_Mapping/`).
+
+### The Root Cause
+UEFN runs as a plugin inside FortniteGame. `project_content_dir()` resolves relative to the engine, not the user's island project. The `/Game/` mount is technically valid but maps to an internal path that isn't surfaced in the browser UI.
+
+### The Solution
+1. **Get the project mount point** by scanning Asset Registry top-level paths and excluding known engine mounts. `get_project_file_path()` returns `FortniteGame.uproject` in UEFN — do NOT use it for this purpose:
+```python
+_BUILTIN_MOUNTS = {"/Game", "/Engine", "/FortniteGame", "/Fortnite", "/Fortnite.com",
+                   "/Epic", "/Script", "/Paper2D"}
+ar = unreal.AssetRegistryHelpers.get_asset_registry()
+top = [str(p).rstrip("/") for p in ar.get_sub_paths("/", recurse=False)]
+candidates = [p for p in top if p not in _BUILTIN_MOUNTS
+              and not any(p.startswith(b) for b in _BUILTIN_MOUNTS)]
+proj_mount = candidates[0] if candidates else "/Game"  # e.g. "/Device_API_Mapping"
+```
+
+2. **Get the project's Content dir on disk** via `project_dir()` + `"Content"`, then convert to absolute:
+```python
+project_root = unreal.Paths.convert_relative_path_to_full(
+    unreal.Paths.project_dir()
+).rstrip("/\\")
+content_dir = project_root + "/Content"
+```
+
+3. **Use the project mount for same-project asset operations** (duplicate, exists checks, paths shown in CB):
+```python
+# ❌ Assets created here exist internally but are invisible in the Content Browser
+dst = "/Game/Migrated/SM_MyMesh"
+
+# ✅ Assets created here appear in the Content Browser under the Migrated folder
+dst = f"/{proj_name}/Migrated/SM_MyMesh"
+```
+
+### Asset path format from the Content Browser
+`AssetData.package_name` returns paths using the project mount point, **not** `/Game/`:
+```
+/Device_API_Mapping/Meshes/SM_Wall   ← what UEFN returns
+/Game/Meshes/SM_Wall                 ← what you might expect from UE5 docs
+```
+Never force-prepend `/Game/` to paths returned by `get_selected_asset_data()` or the Asset Registry in UEFN.

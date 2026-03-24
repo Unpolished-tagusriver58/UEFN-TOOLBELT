@@ -15,8 +15,12 @@ Usage:
             self._build_ui()
 
         def _build_ui(self):
+            # Only add make_topbar() when it carries actual toolbar buttons.
+            # The OS title bar already shows the tool name — don't repeat it
+            # with a stretch-only bar.
             bar, bl = self.make_topbar("MY TOOL")
             bl.addWidget(self.make_btn("Run", accent=True, cb=self._run))
+            bl.addWidget(self.make_btn("Clear", cb=self._clear))
             bl.addStretch()
             ...
 

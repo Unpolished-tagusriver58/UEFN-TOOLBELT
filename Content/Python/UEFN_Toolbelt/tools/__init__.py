@@ -61,3 +61,4 @@ from . import proximity_tools
 from . import postprocess_tools
 from . import audio_tools
 from . import optimization_tools
+from . import prefab_migrator

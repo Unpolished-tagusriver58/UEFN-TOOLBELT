@@ -5,6 +5,38 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.8.4] — 2026-03-24
+
+### feat: prefab asset migrator — dependency-aware asset migration tool
+
+**New flagship tool (`prefab_migrate_open`):**
+- Walks the full Asset Registry dependency graph from seed assets — meshes pull in materials, materials pull in textures, nothing gets silently dropped
+- Three ways to add assets: Content Browser selection, viewport actor selection (extracts mesh/BP paths from placed actors), manual path entry
+- Two export modes: same-project copy via `EditorAssetLibrary.duplicate_asset()`, cross-project disk copy via `shutil.copy2` on raw `.uasset` files — auto-detected from destination path
+- Flatten folder structure option — copies everything to one flat destination folder, no unwanted parent tree
+- Dry run mode — full preview of what would be copied before committing
+- Destination auto-fills from project mount point on first asset add (fixes UEFN `/Game/` invisibility quirk)
+- `?` help button opens themed reference dialog covering workflows, options, and known limitations
+- Added to dashboard Flagship Tools quick bar alongside Verse Device Graph
+
+**UEFN path quirks fixed:**
+- `unreal.Paths.project_content_dir()` returns FortniteGame engine path — fixed to use Asset Registry mount detection
+- `/Game/` mount is invisible in Content Browser — tool uses project-named mount (e.g. `/Device_API_Mapping/`) derived from first asset added
+- `AssetData.package_name` returns project-mount paths, not `/Game/` — dep resolver updated to handle any mount prefix
+
+### fix: help dialog topbar redundancy + line wrap
+- Removed redundant `make_topbar` from help dialogs in both prefab migrator and verse device graph — OS title bar already identifies the window
+- Added `QTextEdit.NoWrap` to all read-only help/reference text areas — prevents separator lines from splitting across lines
+
+### docs: ui style guide + CLAUDE.md — mandatory `?` help button rule
+- Every tool window must have a `?` help button — codified as mandatory in `docs/ui_style_guide.md` with exact placement rules and copy-paste pattern
+- `make_topbar` rule strengthened: no topbar unless it carries multiple real toolbar buttons, applies to sub-dialogs too
+- Added `NoWrap` recipe for read-only text areas to style guide
+- `docs/UEFN_QUIRKS.md` Quirk #23: `/Game/` mount invisible in Content Browser — full breakdown with correct detection pattern
+- `CLAUDE.md` path format rule updated to reference Quirk #23
+
+---
+
 ## [1.8.3] — 2026-03-23
 
 ### feat: verse device graph — minimap, category filter, focus button, help dialog, node tooltips
