@@ -1776,7 +1776,7 @@ def _tab_mcp(R) -> "QScrollArea":
         '     {"command": "python",\n'
         '      "args": ["<path>/mcp_server.py"]}}}\n'
         "4. Restart Claude Code — it auto-connects\n\n"
-        "Claude can then run all 244 tools, spawn/move actors,\n"
+        "Claude can then run all 247 tools, spawn/move actors,\n"
         "write Verse code, and read your level — without leaving\n"
         "the conversation.\n\n"
         "When done: click ■ Stop Listener above, or run\n"

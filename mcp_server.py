@@ -181,7 +181,7 @@ mcp = FastMCP(
         "IMPORTANT: Start the listener in UEFN first:\n"
         "  import UEFN_Toolbelt as tb; tb.run('mcp_start')\n\n"
         "Key tools:\n"
-        "  run_toolbelt_tool   — run ANY of the 171 registered toolbelt tools\n"
+        "  run_toolbelt_tool   — run ANY of the 247 registered toolbelt tools\n"
         "  execute_python      — run arbitrary Python inside UEFN with full unreal.*\n"
         "  list_toolbelt_tools — see every tool available\n"
         "  get_all_actors      — snapshot the level\n"
@@ -256,7 +256,7 @@ def mcp_get_log(last_n: int = 50) -> str:
 def run_toolbelt_tool(tool_name: str, kwargs: dict | None = None) -> str:
     """Run any registered UEFN Toolbelt tool by name.
 
-    This is the single most powerful MCP tool — it exposes all 171 toolbelt tools
+    This is the single most powerful MCP tool — it exposes all 247 toolbelt tools
     to Claude Code through one command. Instead of writing custom execute_python
     code, just name the tool and pass its arguments as a dict.
 

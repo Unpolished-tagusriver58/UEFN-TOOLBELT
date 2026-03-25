@@ -4,6 +4,8 @@
 > It gives Claude full knowledge of the UEFN Toolbelt so you can use natural language
 > to control UEFN without looking up tool names or parameters.
 
+<!-- last full audit: v1.9.5 — 2026-03-24 -->
+
 ---
 
 ## ⚠️ MANDATORY: Test in UEFN Before Every Commit
@@ -27,7 +29,7 @@ This is the single most important rule in this project. Syntax checks and unit t
 
 Every code change goes through two phases before committing:
 
-**Phase 1 — Syntax check (run immediately, outside UEFN):**
+**Phase 1 — Syntax check + drift check (run immediately, outside UEFN):**
 ```python
 python -c "
 import ast
@@ -37,7 +39,12 @@ for f in files:
     print(f'OK  {f}')
 "
 ```
-Catches Python syntax errors instantly without needing UEFN open. Always do this first — it's the fast gate.
+```bash
+python scripts/drift_check.py
+```
+Catches Python syntax errors and stale version/tool-count references instantly without needing UEFN open. Always do this first — it's the fast gate.
+
+When you add a new tool, also bump `__tool_count__` in `Content/Python/UEFN_Toolbelt/__init__.py` alongside `__version__`. Both are read by `drift_check.py` as the single source of truth.
 
 **Phase 2 — Live UEFN test (required before every commit):**
 Ask the user to run the appropriate bundle below. Syntax passing ≠ working in the editor.
@@ -123,7 +130,7 @@ This keeps the tool count honest, the dashboard scannable, and the MCP manifest 
 **UEFN Toolbelt** is a comprehensive Python automation framework for Unreal Editor for Fortnite (UEFN 40.00+, March 2026).
 It runs inside the editor and exposes 247 tools through:
 - A persistent top-menu entry (`Toolbelt ▾`) in the UEFN editor bar
-- An 26-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
+- A 26-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
 - An MCP HTTP bridge so Claude Code can control UEFN directly
 - A Python client library (`client.py`) for non-MCP scripts
 

@@ -133,7 +133,7 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ### docs: ai-native onboarding — CONTRIBUTING.md and README
 - CONTRIBUTING.md: 5-step contributor loop, mandatory "check existing tools first" as Step 1,
-  fast grep command to audit all 246 tool names before writing anything new
+  fast grep command to audit all 247 tool names before writing anything new
 - README: AI-native pioneer pitch, CLAUDE.md auto-loading as a first-of-its-kind feature
 
 ---
