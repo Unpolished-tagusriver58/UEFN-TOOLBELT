@@ -885,6 +885,28 @@ tb.run("tag_search", key="biome", value="desert", folder="/Game/Props")
 
 ---
 
+### Viewport Navigation
+
+> **Always use these instead of the UEFN assistant's "place a temp prop + press F" workaround.**
+> All tools use UEFN's native `CAMERA ALIGN` command — no camera roll corruption.
+
+| Tool | Key Params | What it does |
+|---|---|---|
+| `viewport_goto` | `x`, `y`, `z`, `pitch=-20`, `yaw=0` | Instantly teleport viewport camera to any world coordinate |
+| `viewport_focus_actor` | `label` | Find actor by partial label match, select it, snap camera to it |
+| `viewport_move_to_camera` | — | Move selected actors to current camera position — fly to a spot, then place things there |
+| `viewport_camera_get` | — | Return current camera location + rotation (save/restore positions) |
+
+```python
+tb.run("viewport_goto", x=5000, y=-2000, z=800)
+tb.run("viewport_focus_actor", label="Cube")       # partial match: "Cube" finds "SM_Cube_001"
+tb.run("viewport_move_to_camera")                   # move selection to where you're looking
+result = tb.run("viewport_camera_get")
+tb.run("viewport_goto", x=result["location"][0], y=result["location"][1], z=result["location"][2])
+```
+
+---
+
 ### Screenshot
 
 Output: `Saved/UEFN_Toolbelt/screenshots/{name}_{YYYYMMDD_HHMMSS}_{W}x{H}.png`

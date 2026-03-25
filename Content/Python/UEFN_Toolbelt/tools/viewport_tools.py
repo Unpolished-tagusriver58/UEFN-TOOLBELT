@@ -151,7 +151,7 @@ def run_viewport_move_to_camera(**kwargs) -> dict:
 
         with unreal.ScopedEditorTransaction("Move Selection to Camera"):
             for actor in actors:
-                actor.set_actor_location(loc)
+                actor.set_actor_location(loc, False, True)
 
         log_info(f"viewport_move_to_camera: moved {len(actors)} actor(s) to ({loc.x:.0f}, {loc.y:.0f}, {loc.z:.0f})")
         return {
