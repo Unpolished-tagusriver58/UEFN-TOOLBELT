@@ -178,16 +178,19 @@ The project uses a **Hybrid Schema** model for AI context:
 
 ## Tool Manifest (Phase 20 — AI-Agent Readiness)
 Run `tb.run("plugin_export_manifest")` to generate `Saved/UEFN_Toolbelt/tool_manifest.json`.
-This file contains every registered tool with its full Python parameter signatures:
+This file contains every registered tool with its full Python parameter signatures and a concrete `example` call string:
 ```json
 {
-  "verse_list_devices": {
-    "name": "verse_list_devices",
+  "verse_write_file": {
+    "name": "verse_write_file",
     "category": "Verse Helpers",
-    "description": "List all Verse/Creative device actors in the current level.",
+    "description": "Write Verse code directly into the project's Verse source directory...",
     "parameters": {
-      "name_filter": {"type": "str", "required": false, "default": ""}
-    }
+      "filename": {"type": "str", "required": false, "default": ""},
+      "content":  {"type": "str", "required": false, "default": ""},
+      "overwrite": {"type": "bool", "required": false, "default": false}
+    },
+    "example": "tb.run(\"verse_write_file\", filename=\"game_manager.verse\", content=verse_code, overwrite=True)"
   }
 }
 ```
@@ -1041,7 +1044,7 @@ tb.run("screenshot_focus_selection", width=1920, height=1080, name="prop_focus")
 | `verse_gen_custom` | `filename`, `code`, `description` | Write arbitrary Verse to snippets folder |
 | `system_build_verse` | — | Trigger Verse compilation + parse errors back as structured JSON |
 | `system_get_last_build_log` | — | Read last 100 lines of the UEFN log for error analysis |
-| `verse_patch_errors` | `verse_file=""` | **Phase 5 error loop** — reads build log, extracts errors with file/line/message, returns full content of every erroring .verse file so Claude can fix and redeploy in one shot |
+| `verse_patch_errors` | `verse_file=""` | **Phase 5 error loop** — reads build log, extracts errors with `file/line/col/message` + `error_type` (undefined_identifier, type_mismatch, missing_override, syntax_error, etc.) + `fix_hint` per error. Returns `errors_by_file` dict and `error_type_summary` for at-a-glance categorisation. Full content of every erroring .verse file included so Claude can fix and redeploy in one shot. |
 | `spline_to_verse_points` | `sample_count=0` | Spline → Verse `vector3` array |
 | `spline_to_verse_patrol` | — | Full patrol AI skeleton from spline |
 | `spline_to_verse_zone_boundary` | — | Zone boundary + IsPointInZone helper |
@@ -1080,7 +1083,7 @@ tb.run("scaffold_generate", template="uefn_standard", project_name="MyIsland")
 | `api_crawl_selection` | — | Deep-scan properties of selected actors to JSON |
 | `api_crawl_level_classes` | — | Headless dump of exposed properties for every class in the level |
 | `api_sync_master` | — | One-click: level crawl + Verse schema merge → `docs/DEVICE_API_MAP.md` |
-| `world_state_export` | — | Full live state of every actor (transforms + all readable device properties) → `world_state.json` — the AI read layer |
+| `world_state_export` | — | Full live state of every actor → `world_state.json`. Per-actor: `label`, `class`, `folder` (World Outliner path), `parent` (attach parent label), `location/rotation/scale`, `bounds` (center+extent), `asset_path` (StaticMesh package path), `hidden`, `tags`, `properties`. Top-level `summary` block has `class_counts` and `folder_map` sorted by frequency — Claude reads the summary first for level structure, then drills into actors. |
 | `device_catalog_scan` | `extra_paths=[]`, `save_to_docs=True` | Scan Asset Registry for every Creative device Blueprint in Fortnite — not just what's placed. Builds Claude's complete device palette → `device_catalog.json` |
 
 ```python
@@ -1136,7 +1139,7 @@ tb.run("config_reset", key="all")   # wipe all customisations
 | `level_health_open` | — | Open the Level Health Dashboard window — colour-coded category cards, per-issue drilldown, live audit progress. |
 | `plugin_validate_all` | — | Validate all registered tools against schema |
 | `plugin_list_custom` | — | List all loaded third-party tools from `Saved/UEFN_Toolbelt/Custom_Plugins` |
-| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 287 tools with full parameter signatures (name, type, required, default) for AI-agent and automation use |
+| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 287 tools with full parameter signatures (name, type, required, default) + `example` call string for AI-agent and automation use |
 
 **Online Plugin Hub** — the Plugin Hub dashboard tab fetches `registry.json` live from GitHub.
 - **Core Tools** (green/BUILT-IN): 10 flagship modules by Ocean Bennett, already built in

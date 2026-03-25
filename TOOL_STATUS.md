@@ -306,9 +306,24 @@ All materials, bulk ops, patterns, scatter, splines, snapshots, crawler, assets,
 - [ ] **Config**: `config_list`, `config_set`, `config_get`, `config_reset`
 - [ ] **Lighting Extended**: `light_place`, `light_list`, `light_set`, `sky_set_time`
 - [ ] **World State**: `world_state_export`, `device_catalog_scan`
-- [ ] **Activity Log (Batch 10):** `toolbelt_activity_log`, `toolbelt_activity_stats`, `toolbelt_activity_clear`, `publish_audit` — manually verified live 2026-03-25
+- [ ] **Activity Log**: `toolbelt_activity_log`, `toolbelt_activity_stats`, `toolbelt_activity_clear`, `publish_audit` — manually verified live 2026-03-25
 
 **To complete Batch 9:** run `tb.run("toolbelt_integration_test")` in UEFN on a clean template level. Mark each section above with `[x]` after confirming it passes.
+
+### **Batch 10: v1.9.6 Team Workflow + AI Quality (written — pending live run)**
+- [ ] **Visibility**: `actor_hide`, `actor_show`, `actor_isolate`, `actor_show_all`, `folder_hide`, `folder_show`, `actor_lock`, `actor_unlock`
+- [ ] **Viewport Bookmarks**: `viewport_showflag`, `viewport_bookmark_save`, `viewport_bookmark_list`, `viewport_bookmark_jump`
+- [ ] **Selection Sets**: `selection_save`, `selection_restore`, `selection_list`
+- [ ] **Project Admin v1.9.6**: `save_all_dirty`, `mesh_merge_selection`
+
+**Depth improvements verified live 2026-03-25 (existing tools enhanced, no new tools):**
+- `world_state_export` — captures `folder`, `parent`, `bounds`, `asset_path` per actor + `summary.class_counts` / `summary.folder_map`; 2888/3404 actors in test level have `asset_path` populated
+- `verse_patch_errors` — classifies errors into `error_type` + `fix_hint` + groups by file in `errors_by_file`; `error_type_summary` at top level
+- `plugin_export_manifest` — manifest now includes `example` call string per tool (added to 13 key tools)
+- `selection_restore` — duplicate-label bug fixed (first match per label only)
+- `get_folder_path()` None bug fixed in `world_state_export` (root actors now store `""` not `"None"`)
+
+**To complete Batch 10:** run `tb.run("toolbelt_integration_test")` in UEFN on a clean template level. Look for Visibility, Viewport, SelectionSets, and ProjectAdmin sections in the output.
 
 ### **Batch 20–21: AI-Agent Readiness (COMPLETE)**
 - [x] **Tool Manifest**: `plugin_export_manifest` — full parameter signatures for all tools

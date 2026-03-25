@@ -36,6 +36,35 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+### refactor: AI automation depth — world_state richness, verse error classification, manifest examples
+
+**`world_state_export` — per-actor fields added:**
+- `folder` — World Outliner folder path (e.g. `"Arena/Walls"`)
+- `parent` — attach parent actor label (empty string if root)
+- `bounds` — `{center: {x,y,z}, extent: {x,y,z}}` in cm
+- `asset_path` — StaticMesh package path (e.g. `/Engine/BasicShapes/Cube`)
+- Top-level `summary` block: `class_counts` and `folder_map` sorted by frequency
+- Fix: root actors now store `folder: ""` instead of `folder: "None"` (str(None) bug)
+
+**`verse_patch_errors` — error classification added:**
+- `error_type` per error: `undefined_identifier`, `type_mismatch`, `missing_member`, `missing_override`, `syntax_error`, `unreachable_code`, `suspend_context`, `scope_error`, `duplicate_definition`, `unknown`
+- `fix_hint` per error: one-line instruction for Claude to act on immediately
+- `errors_by_file` dict: errors grouped by filename for direct file-by-file repair
+- `error_type_summary` dict: type → count at top level
+
+**Registry — `example` field:**
+- `@register_tool` now accepts `example=""` — a concrete call string with valid param values
+- Exposed in `to_manifest()` output and `tool_manifest.json`
+- Added to 13 most AI-critical tools: `verse_write_file`, `device_set_property`, `scatter_hism`, `stamp_place`, `zone_spawn`, `pattern_circle`, `bulk_align`, `snapshot_save`, `actor_copy_to_positions`, `verse_patch_errors`, `world_state_export`, `device_catalog_scan`
+
+**Integration test — Batch 10 (v1.9.6 tools):**
+- `_test_visibility_tools`: `actor_hide/show/isolate/show_all/lock/unlock`
+- `_test_viewport_bookmarks`: `viewport_showflag` (clean/reset/unknown), bookmark save/list/jump
+- `_test_selection_sets`: `selection_save/list/restore` + duplicate-label safety + error path
+- `_test_project_admin_v196`: `save_all_dirty`
+
+---
+
 ### feat: 6 new tool modules + focus=True viewport snap for all spawn tools (250 → 269 tools)
 
 **New modules (19 tools):**
