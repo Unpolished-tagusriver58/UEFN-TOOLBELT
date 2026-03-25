@@ -5,6 +5,31 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.9.4] — 2026-03-24
+
+### fix: theme switcher now updates the full dashboard
+- Replaced ~84 hardcoded hex values in `dashboard_pyside6.py` with `_color('token')`
+  calls so every inline `setStyleSheet` responds to `set_theme()` live
+- Added two new PALETTE tokens: `text_bright` and `text_dim`, with correct values
+  for all 6 themes (toolbelt_dark, midnight, ocean, nord, forest, daylight)
+- Dark theme output is pixel-identical to before — token values match old hardcoded hex exactly
+- Theme switcher now fully functional: switching to `daylight`, `ocean`, `midnight`,
+  `nord`, or `forest` updates the entire dashboard, not just cascade-controlled widgets
+
+### fix: audit pass 3 — defensive improvements
+- `screenshot_timed_series`: log prominent warning when `interval_sec > 0` (editor
+  will freeze during series; recommend `interval_sec=0` for burst mode)
+- `base_window`: Slate tick exceptions now surface in Output Log instead of silent pass
+- `mcp_server`: `UEFN_MCP_PORT` env var parse wrapped in try/except with range check;
+  falls back to 8765 instead of crashing on invalid input
+- `mcp_server`: stale tool count 171 → 246 in docstring
+
+### docs: ARCHITECTURE.md — system design reference
+- New top-level document: directory map, subsystem descriptions, data flow diagram,
+  execution environment constraints, extension points for contributors
+
+---
+
 ## [1.9.3] — 2026-03-24
 
 ### fix: zero None returns — Phase 21 guarantee enforced across all tools
