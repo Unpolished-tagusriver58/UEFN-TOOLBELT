@@ -47,6 +47,7 @@ from . import foliage_converter
 from . import entity_kits
 from . import selection_utils
 from . import project_admin
+from . import publish_audit
 from . import lighting_mastery
 from . import sequencer_tools
 from . import sim_device_proxy

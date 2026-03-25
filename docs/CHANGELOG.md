@@ -5,6 +5,28 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.9.5] — 2026-03-24
+
+### feat: publish_audit — Fortnite island publish-readiness checker
+- New tool: `publish_audit` in `tools/publish_audit.py`
+- 9-layer fast audit in one call (no actor mutations, fully read-only):
+  1. Actor count vs configurable budget limit (default 2000)
+  2. Required devices present — spawn pads and any custom class list
+  3. Light count budget warning (default >50)
+  4. Rogue actors — zero/extreme scale, off-map, at-origin
+  5. Verse build status — reads last build log for SUCCESS/FAILED
+  6. Unsaved level detection
+  7. Stale ObjectRedirector count (quick Asset Registry scan)
+  8. Level name sanity — not "Untitled" or default
+  9. Memory report freshness — references cached memory_report.json if <2h old
+- Returns `{"status": "ready"|"warnings"|"blocked", "score": 0-100, "checks": {...},
+  "blocked_by": [...], "next_steps": [...]}` — fully MCP-ready
+- Saves report to `Saved/UEFN_Toolbelt/publish_audit.json` after every run
+- Does NOT duplicate existing tools (memory_scan, rogue_actor_scan, ref_full_report,
+  level_health_report) — calls fresh inline checks and references their cached output
+
+---
+
 ## [1.9.4] — 2026-03-24
 
 ### fix: theme switcher now updates the full dashboard
