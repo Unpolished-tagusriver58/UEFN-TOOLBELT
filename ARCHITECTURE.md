@@ -153,6 +153,9 @@ Shared helpers that tools call. No tool registrations live here. Key exports:
 | `with_progress(label)` | Progress dialog context manager |
 | `detect_project_mount()` | Returns the correct Content Browser mount point (never `/Game/`) |
 | `get_config()` | Returns the persistent config singleton |
+| `activity_log.record(tool_id, status, duration_ms, error)` | Called automatically by `registry.execute()` — logs every tool call to the ring buffer and `activity_log.json` |
+| `activity_log.get_log(last_n)` | Returns newest-first entries from the rolling log |
+| `activity_log.get_stats()` | Aggregate stats: total calls, error rate, slowest, most-called |
 
 ### 4. Dashboard (`dashboard_pyside6.py`)
 

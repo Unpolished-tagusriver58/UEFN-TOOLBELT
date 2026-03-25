@@ -304,6 +304,7 @@ All materials, bulk ops, patterns, scatter, splines, snapshots, crawler, assets,
 - [ ] **Config**: `config_list`, `config_set`, `config_get`, `config_reset`
 - [ ] **Lighting Extended**: `light_place`, `light_list`, `light_set`, `sky_set_time`
 - [ ] **World State**: `world_state_export`, `device_catalog_scan`
+- [ ] **Activity Log (Batch 10):** `toolbelt_activity_log`, `toolbelt_activity_stats`, `toolbelt_activity_clear`, `publish_audit` — manually verified live 2026-03-25
 
 **To complete Batch 9:** run `tb.run("toolbelt_integration_test")` in UEFN on a clean template level. Mark each section above with `[x]` after confirming it passes.
 
