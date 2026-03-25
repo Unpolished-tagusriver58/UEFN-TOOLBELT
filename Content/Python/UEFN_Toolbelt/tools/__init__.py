@@ -67,3 +67,8 @@ from . import ui_icon_import
 from . import level_health
 from . import prefab_stamp
 from . import activity_log_tools
+from . import niagara_tools
+from . import pcg_tools
+from . import geometry_tools
+from . import movie_render_tools
+from . import viewport_tools

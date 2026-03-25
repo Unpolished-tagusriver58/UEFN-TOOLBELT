@@ -184,6 +184,7 @@ def run_scatter_props(
     snap_to_surface: bool = False,    # trace downward to land on terrain
     seed: int = 0,                    # 0 = truly random; any other = deterministic
     folder: str = DEFAULT_SCATTER_FOLDER,
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     """
@@ -216,6 +217,7 @@ def run_scatter_props(
     log_info(f"Scattering {len(points)} instances of '{mesh_path.split('/')[-1]}'…")
 
     placed = 0
+    placed_actors = []
     with undo_transaction(f"Scatter Props: {count}× {mesh_path.split('/')[-1]}"):
         for i, (ox, oy) in enumerate(points):
             world_x = cx + ox
@@ -232,9 +234,18 @@ def run_scatter_props(
                 actor.set_folder_path(f"/{folder}")
                 actor.set_actor_label(f"Scatter_{i:04d}")
                 placed += 1
+                placed_actors.append(actor)
 
     log_info(f"Scatter complete: {placed} actors placed in '/{folder}'.")
-    return {"status": "ok", "placed": placed, "folder": folder}
+    if focus and placed_actors:
+        try:
+            unreal.get_editor_subsystem(unreal.EditorActorSubsystem).set_selected_level_actors(placed_actors)
+            unreal.SystemLibrary.execute_console_command(
+                unreal.EditorLevelLibrary.get_editor_world(), "CAMERA ALIGN"
+            )
+        except Exception:
+            pass
+    return {"status": "ok", "placed": placed, "center": list(center), "folder": folder}
 
 
 @register_tool(
@@ -253,6 +264,7 @@ def run_scatter_hism(
     rot_yaw_range: float = 360.0,
     seed: int = 0,
     folder: str = DEFAULT_SCATTER_FOLDER,
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     """
@@ -318,7 +330,15 @@ def run_scatter_hism(
             hism.add_instance(transform)
 
     log_info(f"HISM scatter complete: {count} instances in one actor.")
-    return {"status": "ok", "count": count, "folder": folder}
+    if focus:
+        try:
+            unreal.get_editor_subsystem(unreal.EditorActorSubsystem).set_selected_level_actors([host_actor])
+            unreal.SystemLibrary.execute_console_command(
+                unreal.EditorLevelLibrary.get_editor_world(), "CAMERA ALIGN"
+            )
+        except Exception:
+            pass
+    return {"status": "ok", "count": count, "center": [cx, cy, cz], "folder": folder}
 
 
 @register_tool(

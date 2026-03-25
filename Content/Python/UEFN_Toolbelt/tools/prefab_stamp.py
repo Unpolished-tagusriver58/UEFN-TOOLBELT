@@ -226,6 +226,7 @@ def stamp_place(
     yaw_offset: float = 0.0,
     scale_factor: float = 1.0,
     folder: str = "Stamps",
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     if not name:
@@ -297,6 +298,14 @@ def stamp_place(
         f"[{center.x:.0f}, {center.y:.0f}, {center.z:.0f}] "
         f"yaw={yaw_offset}° scale={scale_factor}×"
     )
+    if focus and new_actors:
+        try:
+            # new_actors already selected above — call native camera command
+            unreal.SystemLibrary.execute_console_command(
+                unreal.EditorLevelLibrary.get_editor_world(), "CAMERA ALIGN"
+            )
+        except Exception:
+            pass
     return {
         "status":         "ok",
         "name":           name,

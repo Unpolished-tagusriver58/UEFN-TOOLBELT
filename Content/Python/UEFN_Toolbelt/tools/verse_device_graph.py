@@ -2650,6 +2650,11 @@ TIPS
                     sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
                     sub.select_nothing()
                     sub.set_actor_selection_state(nd.actor, True)
+                    # Snap viewport to the device — same native command as
+                    # Camera Movement > Move Camera to Object (no roll corruption)
+                    unreal.SystemLibrary.execute_console_command(
+                        unreal.EditorLevelLibrary.get_editor_world(), "CAMERA ALIGN"
+                    )
                 except Exception:
                     pass
 

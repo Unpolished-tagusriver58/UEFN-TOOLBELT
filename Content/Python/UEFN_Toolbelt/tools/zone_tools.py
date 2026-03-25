@@ -135,6 +135,7 @@ def zone_spawn(
     depth: float = 1000.0,
     height: float = 500.0,
     label: str = "Zone",
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     origin = _cam_loc()
@@ -156,6 +157,14 @@ def zone_spawn(
 
     log_info(f"[ZONE] Spawned '{label}' at {origin.x:.0f},{origin.y:.0f},{origin.z:.0f} "
              f"({width:.0f}×{depth:.0f}×{height:.0f} cm)")
+    if focus:
+        try:
+            unreal.get_editor_subsystem(unreal.EditorActorSubsystem).set_selected_level_actors([actor])
+            unreal.SystemLibrary.execute_console_command(
+                unreal.EditorLevelLibrary.get_editor_world(), "CAMERA ALIGN"
+            )
+        except Exception:
+            pass
     return {
         "status": "ok",
         "label": label,

@@ -26,13 +26,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ── Ground truth — read directly from the single source of truth ──────────────
 
-def _read_constants() -> tuple[str, int]:
-    """Read __version__ and __tool_count__ from the single source of truth."""
+def _read_constants() -> tuple[str, int, int]:
+    """Read __version__, __tool_count__, and __category_count__ from the single source of truth."""
     init_path = os.path.join(ROOT, "Content", "Python", "UEFN_Toolbelt", "__init__.py")
     with open(init_path, encoding="utf-8") as f:
         tree = ast.parse(f.read())
     version = None
     tool_count = None
+    category_count = None
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
             for t in node.targets:
@@ -42,14 +43,19 @@ def _read_constants() -> tuple[str, int]:
                 if isinstance(t, ast.Name) and t.id == "__tool_count__":
                     if isinstance(node.value, ast.Constant):
                         tool_count = int(node.value.value)
+                if isinstance(t, ast.Name) and t.id == "__category_count__":
+                    if isinstance(node.value, ast.Constant):
+                        category_count = int(node.value.value)
     if version is None:
         raise RuntimeError("Could not read __version__ from __init__.py")
     if tool_count is None:
         raise RuntimeError("Could not read __tool_count__ from __init__.py")
-    return version, tool_count
+    if category_count is None:
+        raise RuntimeError("Could not read __category_count__ from __init__.py")
+    return version, tool_count, category_count
 
 
-VERSION, TOOL_COUNT = _read_constants()
+VERSION, TOOL_COUNT, CATEGORY_COUNT = _read_constants()
 
 # ── Files to scan ─────────────────────────────────────────────────────────────
 
@@ -83,6 +89,12 @@ _VERSION_PATTERNS = [
 # Tool count patterns — flag any number adjacent to "tool" that doesn't match TOOL_COUNT
 _TOOL_COUNT_PATTERN = re.compile(
     r"\b(\d{2,4})\s+tool",
+    re.IGNORECASE,
+)
+
+# Category count patterns — flag any number adjacent to "categor" that doesn't match CATEGORY_COUNT
+_CATEGORY_COUNT_PATTERN = re.compile(
+    r"\b(\d{2,3})\s+categor",
     re.IGNORECASE,
 )
 
@@ -150,6 +162,14 @@ _SKIP_LINE_FRAGMENTS = [
     "Phase 13",
     # Module count (not tool count) — "23 tool modules" is a file count
     "tool modules",
+    # Creative device categories (35) — different from tool categories
+    "Creative device",
+    "Creative devices",
+    "device Blueprints",
+    # Historical initial-release category list — intentionally partial
+    "13 categories: Materials",
+    # Module count in comparison table — "38 modules" not "38 categories"
+    "38 modules",
     # Per-module tool counts in changelog — e.g. "(10 tools)" for a single module
     ") — Full actor",
     ") — Full",
@@ -164,7 +184,7 @@ def _should_skip_line(line: str) -> bool:
     return any(frag in line for frag in _SKIP_LINE_FRAGMENTS)
 
 
-def scan_file(rel_path: str, version: str, tool_count: int) -> list[dict]:
+def scan_file(rel_path: str, version: str, tool_count: int, category_count: int = 0) -> list[dict]:
     abs_path = os.path.join(ROOT, rel_path)
     if not os.path.exists(abs_path):
         return []
@@ -197,7 +217,6 @@ def scan_file(rel_path: str, version: str, tool_count: int) -> list[dict]:
                 continue
             for m in _TOOL_COUNT_PATTERN.finditer(line):
                 found = int(m.group(1))
-                # Allow ±0 — exact match only
                 if found != tool_count:
                     findings.append({
                         "file":     rel_path,
@@ -208,6 +227,20 @@ def scan_file(rel_path: str, version: str, tool_count: int) -> list[dict]:
                         "content":  line.rstrip(),
                     })
 
+            # Category count drift
+            if category_count:
+                for m in _CATEGORY_COUNT_PATTERN.finditer(line):
+                    found = int(m.group(1))
+                    if found != category_count:
+                        findings.append({
+                            "file":     rel_path,
+                            "line":     lineno,
+                            "type":     "category count",
+                            "found":    str(found),
+                            "expected": str(category_count),
+                            "content":  line.rstrip(),
+                        })
+
     return findings
 
 
@@ -216,12 +249,12 @@ def run() -> int:
     if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
 
-    print(f"\n[drift_check] Ground truth: version={VERSION}  tools={TOOL_COUNT}")
+    print(f"\n[drift_check] Ground truth: version={VERSION}  tools={TOOL_COUNT}  categories={CATEGORY_COUNT}")
     print(f"[drift_check] Scanning {len(SCAN_FILES)} files...\n")
 
     all_findings: list[dict] = []
     for rel in SCAN_FILES:
-        findings = scan_file(rel, VERSION, TOOL_COUNT)
+        findings = scan_file(rel, VERSION, TOOL_COUNT, CATEGORY_COUNT)
         all_findings.extend(findings)
 
     if not all_findings:

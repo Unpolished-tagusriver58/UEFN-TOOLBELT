@@ -33,7 +33,12 @@ __version__ = "1.9.5"
 
 # Total registered tools — update alongside __version__ when adding/removing tools.
 # Checked by scripts/drift_check.py to catch stale counts across docs and UI.
-__tool_count__ = 250
+__tool_count__ = 270
+
+# Total tool categories — update when adding a new category to any tool module.
+# Shown in the reload message: "269 tools registered across 42 categories."
+# Checked by scripts/drift_check.py to catch stale category counts across docs.
+__category_count__ = 42
 
 # API contract version — plugins declare MIN_TOOLBELT_VERSION = "x.y.z" to
 # signal the oldest platform release they support. Checked at load time.

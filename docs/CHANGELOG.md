@@ -5,6 +5,33 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.9.6] — 2026-03-25
+
+### feat: 6 new tool modules + focus=True viewport snap for all spawn tools (250 → 269 tools)
+
+**New modules (19 tools):**
+- `niagara_tools.py` — VFX control: `niagara_spawn_system`, `niagara_list_systems`, `niagara_bulk_set_parameter`, `niagara_clear_systems`
+- `pcg_tools.py` — PCG graph control: `pcg_execute_graph`, `pcg_set_seed`, `pcg_randomize_seed`, `pcg_refresh_all`
+- `geometry_tools.py` — GeometryScript mesh ops (all default `dry_run=True`): `geometry_weld_edges`, `geometry_fix_normals`, `geometry_recalc_uvs`, `geometry_boolean_union`, `geometry_decimate`
+- `movie_render_tools.py` — Sequencer pipeline: `movie_render_queue_sequence`, `movie_render_apply_preset`, `movie_render_status`
+- `viewport_tools.py` — Camera navigation: `viewport_goto`, `viewport_focus_actor`, `viewport_camera_get`
+- `activity_log_tools.py` — Tool call monitoring: `toolbelt_activity_log`, `toolbelt_activity_stats`, `toolbelt_activity_clear`
+
+**`focus=True` — viewport snap on all spawn tools:**
+- Added to `pattern_grid/circle/arc/spiral/line/wave/helix/radial_rows`, `zone_spawn`, `scatter_props`, `scatter_hism`, `stamp_place`
+- Uses UEFN's native `CAMERA ALIGN` console command (select actors → CAMERA ALIGN) — zero roll corruption
+- All spawn tools now return `"center": [x,y,z]` in their result dict
+- Default `False` (preserves viewport state when using the dashboard; set `True` when running from console or MCP)
+
+**viewport_focus_actor fix:**
+- Replaced manual `set_level_viewport_camera_info` with `CAMERA ALIGN` — eliminates the persistent camera roll corruption introduced in UEFN's viewport API
+
+**drift_check.py — category count tracking:**
+- Now reads `__category_count__` from `__init__.py` alongside `__version__` and `__tool_count__`
+- Added `_CATEGORY_COUNT_PATTERN` scanner — catches stale category counts across all 12 scanned files
+
+---
+
 ## [1.9.6] — 2026-03-24
 
 ### feat: rolling activity log — system monitor for every tool call (247 → 250 tools)

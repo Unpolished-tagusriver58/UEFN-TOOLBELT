@@ -151,6 +151,7 @@ def _spawn_pattern(
     preview: bool,
     seed: int,
     label: str,
+    focus: bool = False,
 ) -> int:
     """
     Spawn actors at every point in `points`.
@@ -161,6 +162,7 @@ def _spawn_pattern(
     tag = _PREVIEW_TAG if preview else _PATTERN_TAG
     total = len(points)
     spawned = 0
+    spawned_actors = []
 
     with undo_transaction(label):
         with with_progress(list(range(total)), f"Spawning {label}…") as gen:
@@ -187,11 +189,14 @@ def _spawn_pattern(
                     except Exception:
                         pass
                     spawned += 1
+                    spawned_actors.append(actor)
 
     mode_str = "[PREVIEW] " if preview else ""
     unreal.log(f"[Patterns] {mode_str}✓ {label}: {spawned}/{total} actors spawned.")
     if preview:
         unreal.log(f"[Patterns]   Run again with preview=False to place the real mesh.")
+    if focus and spawned_actors:
+        _camera_align_to_actors(spawned_actors)
     return spawned
 
 
@@ -345,6 +350,19 @@ def _get_origin() -> Vec3:
     )
 
 
+def _camera_align_to_actors(actors: list) -> None:
+    """Select actors and use UEFN's native 'Move Camera to Object' command.
+    No roll corruption — same as Camera Movement > Move Camera to Object in the viewport menu.
+    """
+    try:
+        actor_sub = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
+        actor_sub.set_selected_level_actors(actors)
+        world = unreal.EditorLevelLibrary.get_editor_world()
+        unreal.SystemLibrary.execute_console_command(world, "CAMERA ALIGN")
+    except Exception:
+        pass
+
+
 # ─── Registered tools ──────────────────────────────────────────────────────────
 
 @register_tool(
@@ -369,6 +387,7 @@ def pattern_grid(
     scale_max: float = 1.2,
     preview: bool = False,
     seed: int = 42,
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     """
@@ -400,8 +419,8 @@ def pattern_grid(
     pts, center = _points_grid(cols, rows, spacing_x, spacing_y, origin, center_origin)
     spawned = _spawn_pattern(pts, center, mesh_path, rotation_mode, scale_mode,
                              scale, scale_min, scale_max, preview, seed,
-                             f"Grid {cols}×{rows}")
-    return {"status": "ok", "spawned": spawned}
+                             f"Grid {cols}×{rows}", focus=focus)
+    return {"status": "ok", "spawned": spawned, "center": list(center)}
 
 
 @register_tool(
@@ -424,7 +443,8 @@ def pattern_circle(
     scale_max: float = 1.2,
     preview: bool = False,
     seed: int = 42,
-**kwargs,
+    focus: bool = False,
+    **kwargs,
 ) -> dict:
     """
     Place props evenly spaced around a full 360° circle.
@@ -443,8 +463,8 @@ def pattern_circle(
     pts, center = _points_circle(count, radius, origin, start_angle_deg)
     spawned = _spawn_pattern(pts, center, mesh_path, rotation_mode, scale_mode,
                              scale, scale_min, scale_max, preview, seed,
-                             f"Circle r={radius:.0f} n={count}")
-    return {"status": "ok", "spawned": spawned}
+                             f"Circle r={radius:.0f} n={count}", focus=focus)
+    return {"status": "ok", "spawned": spawned, "center": list(center)}
 
 
 @register_tool(
@@ -468,8 +488,9 @@ def pattern_arc(
     scale_max: float = 1.2,
     preview: bool = False,
     seed: int = 42,
-**kwargs,
-) -> None:
+    focus: bool = False,
+    **kwargs,
+) -> dict:
     """
     Place props along a partial arc.
 
@@ -485,8 +506,8 @@ def pattern_arc(
     pts, center = _points_arc(count, radius, origin, start_angle_deg, end_angle_deg)
     spawned = _spawn_pattern(pts, center, mesh_path, rotation_mode, scale_mode,
                              scale, scale_min, scale_max, preview, seed,
-                             f"Arc {start_angle_deg:.0f}°→{end_angle_deg:.0f}° r={radius:.0f}")
-    return {"status": "ok", "spawned": spawned}
+                             f"Arc {start_angle_deg:.0f}°→{end_angle_deg:.0f}° r={radius:.0f}", focus=focus)
+    return {"status": "ok", "spawned": spawned, "center": list(center)}
 
 
 @register_tool(
@@ -511,6 +532,7 @@ def pattern_spiral(
     scale_max: float = 1.5,
     preview: bool = False,
     seed: int = 42,
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     """
@@ -530,8 +552,8 @@ def pattern_spiral(
                                   origin, start_angle_deg)
     spawned = _spawn_pattern(pts, center, mesh_path, rotation_mode, scale_mode,
                              scale, scale_min, scale_max, preview, seed,
-                             f"Spiral {turns:.1f} turns")
-    return {"status": "ok", "spawned": spawned}
+                             f"Spiral {turns:.1f} turns", focus=focus)
+    return {"status": "ok", "spawned": spawned, "center": list(center)}
 
 
 @register_tool(
@@ -553,8 +575,9 @@ def pattern_line(
     scale_max: float = 1.2,
     preview: bool = False,
     seed: int = 42,
-**kwargs,
-) -> None:
+    focus: bool = False,
+    **kwargs,
+) -> dict:
     """
     Place props in a straight line from `start` to `end`.
     Both endpoints are included.
@@ -562,8 +585,8 @@ def pattern_line(
     pts, center = _points_line(count, start, end)
     spawned = _spawn_pattern(pts, center, mesh_path, rotation_mode, scale_mode,
                              scale, scale_min, scale_max, preview, seed,
-                             f"Line n={count}")
-    return {"status": "ok", "spawned": spawned}
+                             f"Line n={count}", focus=focus)
+    return {"status": "ok", "spawned": spawned, "center": list(center)}
 
 
 @register_tool(
@@ -588,6 +611,7 @@ def pattern_wave(
     scale_max: float = 1.2,
     preview: bool = False,
     seed: int = 42,
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     """
@@ -607,8 +631,8 @@ def pattern_wave(
     pts, center = _points_wave(count, length, amplitude, frequency, origin, axis)
     spawned = _spawn_pattern(pts, center, mesh_path, rotation_mode, scale_mode,
                              scale, scale_min, scale_max, preview, seed,
-                             f"Wave axis={axis} freq={frequency:.1f}")
-    return {"status": "ok", "spawned": spawned}
+                             f"Wave axis={axis} freq={frequency:.1f}", focus=focus)
+    return {"status": "ok", "spawned": spawned, "center": list(center)}
 
 
 @register_tool(
@@ -633,6 +657,7 @@ def pattern_helix(
     scale_max: float = 1.2,
     preview: bool = False,
     seed: int = 42,
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     """
@@ -652,8 +677,8 @@ def pattern_helix(
                                  origin, start_angle_deg)
     spawned = _spawn_pattern(pts, center, mesh_path, rotation_mode, scale_mode,
                              scale, scale_min, scale_max, preview, seed,
-                             f"Helix {turns:.1f} turns r={radius:.0f}")
-    return {"status": "ok", "spawned": spawned}
+                             f"Helix {turns:.1f} turns r={radius:.0f}", focus=focus)
+    return {"status": "ok", "spawned": spawned, "center": list(center)}
 
 
 @register_tool(
@@ -678,6 +703,7 @@ def pattern_radial_rows(
     scale_max: float = 1.2,
     preview: bool = False,
     seed: int = 42,
+    focus: bool = False,
     **kwargs,
 ) -> dict:
     """
@@ -699,8 +725,8 @@ def pattern_radial_rows(
                                        origin, start_angle_deg, include_center)
     spawned = _spawn_pattern(pts, center, mesh_path, rotation_mode, scale_mode,
                              scale, scale_min, scale_max, preview, seed,
-                             f"Radial rows {rings} rings ({len(pts)} props)")
-    return {"status": "ok", "spawned": spawned}
+                             f"Radial rows {rings} rings ({len(pts)} props)", focus=focus)
+    return {"status": "ok", "spawned": spawned, "center": list(center)}
 
 
 @register_tool(
