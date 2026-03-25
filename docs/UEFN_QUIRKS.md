@@ -879,3 +879,30 @@ import UEFN_Toolbelt as tb; tb.register_all_tools()
 > Nuclear reload fixes **code**. Hard restart fixes **state**.
 > If nuclear reload isn't working, the problem is state — restart UEFN.
 
+---
+
+## Quirk #28 — Claude Code Agent Worktrees Showing as a Third Repo in VS Code
+
+**What you see:** VS Code Source Control shows a third repository entry (e.g. `agent-ae5015a9`) alongside `UEFN-TOOLBELT` and `verse-book`. It has modified files inside it and no sync/push button visible on the main repo.
+
+**Why it happens:** When Claude Code runs a task using the `isolation: "worktree"` agent mode, it creates a temporary git worktree at `.claude/worktrees/<agent-id>/`. This is a fully functional git branch isolated from your working copy. If the agent makes no changes, the worktree is cleaned up automatically. If it does make changes (or the task is interrupted), the directory is left behind. VS Code detects any directory containing a `.git` file as a repo and surfaces it in Source Control.
+
+**How to fix it:**
+
+```bash
+# List all worktrees — the stale one will show a branch like worktree-agent-xxxxx
+git worktree list
+
+# Remove it (--force needed if it has uncommitted changes)
+git worktree remove --force .claude/worktrees/agent-ae5015a9
+```
+
+Or remove all leftover agent worktrees at once:
+```bash
+git worktree prune
+```
+
+**Already handled:** `.claude/worktrees/` is in `.gitignore` so worktree directories never accidentally get committed. But you still need to `git worktree remove` to delete the directory from disk and make VS Code stop showing it.
+
+**This is a Claude Code behavior, not a VS Code or UEFN quirk.** It only appears when agent-mode tasks run. Regular Claude Code sessions (no `isolation: "worktree"`) never create these.
+
