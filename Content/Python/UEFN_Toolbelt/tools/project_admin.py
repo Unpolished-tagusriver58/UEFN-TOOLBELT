@@ -11,7 +11,7 @@ from ..core import log_info, log_error
     description="Creates a timestamped .zip backup of the Content folder.",
     tags=["system", "backup", "save", "admin", "archive"]
 )
-def run_system_backup_project(**kwargs):
+def run_system_backup_project(**kwargs) -> dict:
     """
     Zips the Content folder into Saved/UEFN_Toolbelt/backups/
     """
@@ -44,8 +44,10 @@ def run_system_backup_project(**kwargs):
         
         size_mb = os.path.getsize(zip_path) / (1024 * 1024)
         log_info(f"✓ Backup complete: {zip_path} ({size_mb:.2f} MB)")
+        return {"status": "ok", "path": zip_path, "size_mb": round(size_mb, 2)}
     except Exception as e:
         log_error(f"Backup failed: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 @register_tool(
     name="system_perf_audit",
@@ -53,7 +55,7 @@ def run_system_backup_project(**kwargs):
     description="Fast performance check of the current level.",
     tags=["system", "performance", "audit", "memory"]
 )
-def run_system_perf_audit(**kwargs):
+def run_system_perf_audit(**kwargs) -> dict:
     """
     Prints a high-level performance snapshot.
     """
@@ -86,5 +88,6 @@ def run_system_perf_audit(**kwargs):
     # Check for high-poly candidates
     mesh_actors = [a for a in all_actors if isinstance(a, unreal.StaticMeshActor)]
     log_info(f"Static Mesh Actors: {len(mesh_actors)}")
-    
+
     log_info("════════════════════════════════════════════════════════════")
+    return {"status": "ok", "actor_count": len(all_actors), "light_count": light_count, "mesh_count": len(mesh_actors)}

@@ -76,7 +76,7 @@ def run_generate_proxy(**kwargs) -> dict:
     if not info:
         log_error(f"Class '{v_cls}' not found in any schema.")
         log_info("Tip: Ensure your Verse code is compiled and you've run 'Sync Level Schema'.")
-        return
+        return {"status": "error", "message": f"Class '{v_cls}' not found in any schema."}
 
     props   = info.get("properties", {})
     methods = info.get("methods", []) or info.get("functions", [])

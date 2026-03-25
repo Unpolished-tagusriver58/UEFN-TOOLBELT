@@ -75,7 +75,7 @@ UEFN-TOOLBELT/
 │   │   ├── verse_tools.py
 │   │   ├── world_settings.py
 │   │   └── zone_tools.py
-│   └── diagnostics/                 ← Health check tools (smoke test)
+│   └── diagnostics.py               ← Health check tools (smoke test)
 │
 ├── tests/
 │   └── smoke_test.py                ← 6-layer health check (no UEFN required for layers 1-3)

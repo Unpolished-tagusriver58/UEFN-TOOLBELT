@@ -8,11 +8,11 @@ from .registry import register_tool
     description="Dump all internal properties of a selected Verse actor for discovery.",
     tags=["debug", "verse", "discovery"],
 )
-def dump_actor_info(**kwargs):
+def dump_actor_info(**kwargs) -> dict:
     sel = unreal.EditorLevelLibrary.get_selected_level_actors()
     if not sel:
         unreal.log_warning("[DIAGNOSTIC] No actor selected.")
-        return
+        return {"status": "error", "message": "No actor selected."}
         
     actor = sel[0]
     unreal.log(f"[DIAGNOSTIC] Actor Label: {actor.get_actor_label()}")
@@ -74,6 +74,7 @@ def dump_actor_info(**kwargs):
         pass
 
     unreal.log("[DIAGNOSTIC] Dump Complete.")
+    return {"status": "ok", "actor": actor.get_actor_label()}
 
 @register_tool(
     name="debug_audit_verse_assets",
@@ -81,7 +82,7 @@ def dump_actor_info(**kwargs):
     description="Search the project asset registry for all Verse-generated Blueprints.",
     tags=["debug", "verse", "audit"],
 )
-def audit_verse_assets(**kwargs):
+def audit_verse_assets(**kwargs) -> dict:
     ar = unreal.AssetRegistryHelpers.get_asset_registry()
     unreal.log("[ASSET AUDIT] Searching for Verse-related assets...")
     
@@ -105,4 +106,4 @@ def audit_verse_assets(**kwargs):
     if not found:
         unreal.log_warning("[ASSET AUDIT] No student Verse assets found in /TOOL_TEST. Ensure Verse is compiled.")
     
-    return f"Audit complete. Found {found} assets."
+    return {"status": "ok", "found": found}
