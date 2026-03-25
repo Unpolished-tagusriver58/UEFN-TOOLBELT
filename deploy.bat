@@ -101,7 +101,7 @@ if not "!UE_PYTHON!"=="" (
     )
 ) else (
     echo  NOTE: Could not find UE Python — tried C:, D:, E: drives.
-    echo  If the dashboard is blank, run manually in a terminal:
+    echo  Run install.py for a full drive scan, or install manually in a terminal:
     echo    "^<UE_PATH^>\Engine\Binaries\ThirdParty\Python3\Win64\python.exe" -m pip install PySide6
 )
 
@@ -129,10 +129,12 @@ echo [VERSE GRAPH] Reload + open device graph:
 echo import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]; import UEFN_Toolbelt as tb; tb.register_all_tools(); tb.run("verse_graph_open")
 echo.
 echo ==========================================
-echo   !! TEST IN UEFN BEFORE COMMITTING !!
+echo   !! BEFORE COMMITTING !!
 echo ==========================================
-echo   Run the SMOKE TEST command above in UEFN.
-echo   Confirm the dashboard opens and your change works.
+echo   1. Run drift check (catches stale counts + versions):
+echo      python scripts/drift_check.py
+echo   2. Run the SMOKE TEST command above in UEFN.
+echo   3. Confirm the dashboard opens and your change works.
 echo   Only run "git commit" after you see it working live.
 echo   Syntax passing != working in the editor.
 echo ==========================================
