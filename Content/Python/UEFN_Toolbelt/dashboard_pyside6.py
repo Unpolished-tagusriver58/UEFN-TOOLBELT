@@ -286,6 +286,7 @@ def _build_setup_status(L: "QVBoxLayout") -> None:
 
 
 def _tab_quick_actions(R) -> "QScrollArea":
+    import os
     scroll, L = _page()
 
     hero = QLabel("Quick Actions")
@@ -296,6 +297,22 @@ def _tab_quick_actions(R) -> "QScrollArea":
     desc.setStyleSheet(f"font-size: 12px; color: {_color('text_dim')}; padding-bottom: 12px;")
     desc.setWordWrap(True)
     L.addWidget(desc)
+
+    # ── First-run banner — shown only when config.json doesn't exist yet ──────
+    _cfg_path = _get_config()._path
+    if not os.path.exists(_cfg_path):
+        banner = QLabel(
+            "👋  First time here? Start with the AI Project Setup section below, "
+            "or browse any tab to explore all 247 tools. "
+            "Full docs: github.com/undergroundrap/UEFN-TOOLBELT"
+        )
+        banner.setWordWrap(True)
+        banner.setStyleSheet(
+            f"background: {_color('card')}; border: 1px solid {_color('ok')}; "
+            f"border-radius: 6px; color: {_color('text')}; "
+            "font-size: 12px; padding: 10px 14px; margin-bottom: 8px;"
+        )
+        L.addWidget(banner)
 
     _build_setup_status(L)
 
@@ -2666,7 +2683,8 @@ def _tab_about(_R=None) -> "QScrollArea":
     tagline.setAlignment(Qt.AlignCenter)
     L.addWidget(tagline)
 
-    version = QLabel("v1.5.3  ·  171 tools  ·  UEFN 40.00+  ·  Python 3.11  ·  March 2026")
+    from . import __version__ as _tbv
+    version = QLabel(f"v{_tbv}  ·  247 tools  ·  UEFN 40.00+  ·  Python 3.11  ·  March 2026")
     version.setStyleSheet(f"font-size: 11px; color: {_color('muted')}; padding-bottom: 12px;")
     version.setAlignment(Qt.AlignCenter)
     L.addWidget(version)
@@ -2890,6 +2908,12 @@ def _tab_about(_R=None) -> "QScrollArea":
         _url = url
         link_btn.clicked.connect(lambda _, u=_url: QDesktopServices.openUrl(QUrl(u)))
         g_attr.addWidget(link_btn)
+
+    btn_docs = QPushButton("  Getting Started — README")
+    btn_docs.clicked.connect(
+        lambda: QDesktopServices.openUrl(QUrl(_REPO_URL + "#getting-started"))
+    )
+    g_com.addWidget(btn_docs)
 
     btn_issue = QPushButton("  Open an Issue on GitHub")
     btn_issue.clicked.connect(
