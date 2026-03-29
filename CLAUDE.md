@@ -4,7 +4,7 @@
 > It gives Claude full knowledge of the UEFN Toolbelt so you can use natural language
 > to control UEFN without looking up tool names or parameters.
 
-<!-- last full audit: v1.9.8 — 2026-03-29 -->
+<!-- last full audit: v1.9.9 — 2026-03-29 -->
 
 ---
 
@@ -147,7 +147,7 @@ This keeps the tool count honest, the dashboard scannable, and the MCP manifest 
 ## What This Project Is
 
 **UEFN Toolbelt** is a comprehensive Python automation framework for Unreal Editor for Fortnite (UEFN 40.00+, March 2026).
-It runs inside the editor and exposes 296 tools through:
+It runs inside the editor and exposes 297 tools through:
 - A persistent top-menu entry (`Toolbelt ▾`) in the UEFN editor bar
 - A 26-tab PySide6 dark-themed dashboard (`tb.launch_qt()`)
 - An MCP HTTP bridge so Claude Code can control UEFN directly
@@ -166,6 +166,17 @@ It runs inside the editor and exposes 296 tools through:
 > 4. **Every tool window must have a `?` help button** that opens a `_HelpDialog(ToolbeltWindow)`. No exceptions. If the window has a topbar → `?` goes last on the right. If no topbar → `?` goes in the bottom action row right-aligned. See `docs/ui_style_guide.md` for the exact pattern.
 > 5. For read-only text areas (help dialogs, logs): always set `editor.setLineWrapMode(QTextEdit.NoWrap)` — otherwise separator lines and fixed-width content wrap and break the layout.
 > 6. Reference implementation: `tools/verse_device_graph.py` (main window has topbar with 8+ toolbar buttons — that earns it)
+> 7. **`run_*` functions that open windows MUST use this exact pattern — no exceptions:**
+>    ```python
+>    from PySide6.QtWidgets import QApplication
+>    QApplication.instance() or QApplication([])   # BEFORE _build_*()
+>    if _win is None or not _win.isVisible():
+>        _win = _build_my_window()
+>        _win.show_in_uefn()                       # not show()
+>    else:
+>        _win.raise_(); _win.activateWindow()
+>    ```
+>    Missing the `QApplication` guard crashes UEFN (access violation before any widget can be created). Using plain `show()` instead of `show_in_uefn()` leaves the window without a Slate tick — unresponsive or unstable outside the dashboard. See `docs/UEFN_QUIRKS.md` Quirk #31 and `tools/smart_organizer.py` → `run_organize_open` for the reference implementation.
 
 ---
 
@@ -194,7 +205,7 @@ This file contains every registered tool with its full Python parameter signatur
   }
 }
 ```
-All 296 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
+All 297 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as of Phase 21. Zero `None` returns remain in the codebase — MCP callers can read every result directly without parsing log output.
 
 **Schema utility functions** (`schema_utils.py`):
 - `schema_utils.validate_property(class_name, prop)` — check if a property exists and is writable
@@ -215,7 +226,7 @@ All 296 tools (100%) return `{"status": "ok"/"error", ...}` structured dicts as 
    PySide6 is installed separately to UE's embedded Python.
 4. **Save explicitly** — asset changes aren't saved automatically.
    Always call `save_asset(path)` or `save_current_level()`.
-5. **Path format** — asset paths use forward slashes. In standard UE5 docs paths start with `/Game/`, but **in UEFN the Content Browser mount point is the project name** (e.g. `/Device_API_Mapping/`). `AssetData.package_name` returns the project-mount form. Never force-prepend `/Game/` to paths from the Asset Registry or Content Browser selection. `unreal.Paths.project_content_dir()` returns the FortniteGame engine path — use `unreal.Paths.project_dir() + "/Content"` instead. See `docs/UEFN_QUIRKS.md` Quirk #23.
+5. **Path format** — asset paths use forward slashes. In standard UE5 docs paths start with `/Game/`, but **in UEFN the Content Browser mount point is the project name** (e.g. `/Device_API_Mapping/`). `AssetData.package_name` returns the project-mount form. Never force-prepend `/Game/` to paths from the Asset Registry or Content Browser selection. **All three `Paths` disk functions are wrong in UEFN:** `project_content_dir()` → FortniteGame engine path; `project_dir()` → `../../../FortniteGame/` (relative engine dir); `project_saved_dir()` → editor-level saved dir, not project. **The only reliable method is to walk up from `__file__`** — every tool lives inside `[Project]/Content/Python/...` so walking up until you hit a folder named `Content` gives the real content dir. See `docs/UEFN_QUIRKS.md` Quirk #23.
 
    **Detecting the project mount point** — never take the first alphabetical non-engine mount. Epic plugin mounts (`ACLPlugin`, `AnimationWarping`, etc.) sort before user project mounts. Always use the **"most paths" approach** — the user's project has far more content than any plugin:
    ```python
@@ -373,7 +384,7 @@ See `docs/plugin_dev_guide.md` for full details. You can generate plugins for th
 
 ```python
 import UEFN_Toolbelt as tb
-tb.register_all_tools()   # ← required — registers all 296 tools
+tb.register_all_tools()   # ← required — registers all 297 tools
 
 # Basic
 tb.run("tool_name")
@@ -421,14 +432,14 @@ import sys; [sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in
 Two separate test systems. Know which is which before running either.
 
 ### Smoke Test — `tb.run("toolbelt_smoke_test")`
-**What it proves:** All 296 tools *registered* correctly. The registry loaded, all modules imported, and a set of "safe" tools ran end-to-end without exceptions.
+**What it proves:** All 297 tools *registered* correctly. The registry loaded, all modules imported, and a set of "safe" tools ran end-to-end without exceptions.
 **What it does NOT prove:** That tools produce correct output on real actors. It cannot test anything selection-dependent or level-state-dependent.
 **Safe to run:** Anywhere, any project, any time. ~5 seconds.
 **Run after:** Every code change, before committing.
 
 ### Integration Test — `tb.run("toolbelt_integration_test")`
 **What it proves:** 163 tools *work* in a live UEFN editor. The harness spawns real actor fixtures, runs each tool against them, verifies the result (property changed, actor count correct, file written), and cleans up.
-**Coverage:** All 296 tools across 21 test sections — materials, bulk ops, patterns, scatter, zones, stamps, actor org, proximity, alignment, signs, post-process, audio, lighting, world state, and more.
+**Coverage:** All 297 tools across 21 test sections — materials, bulk ops, patterns, scatter, zones, stamps, actor org, proximity, alignment, signs, post-process, audio, lighting, world state, and more.
 **⚠️ INVASIVE — only run in a blank template level.** It spawns and deletes actors. Never run in a production project.
 **Run after:** Before any PR. After adding a new tool. After major refactors. ~35 seconds.
 
@@ -439,7 +450,7 @@ If the editor crashes mid-run, the file contains partial results up to the last 
 
 | | Smoke Test | Integration Test |
 |---|---|---|
-| Tests registration? | ✅ All 296 tools | ✅ |
+| Tests registration? | ✅ All 297 tools | ✅ |
 | Tests live execution? | Partial (safe tools only) | ✅ 163 tests on real actors |
 | Safe in production? | ✅ Yes | ❌ Blank level only |
 | Runtime | ~5s | ~35s |
@@ -1143,7 +1154,7 @@ tb.run("config_reset", key="all")   # wipe all customisations
 | `level_health_open` | — | Open the Level Health Dashboard window — colour-coded category cards, per-issue drilldown, live audit progress. |
 | `plugin_validate_all` | — | Validate all registered tools against schema |
 | `plugin_list_custom` | — | List all loaded third-party tools from `Saved/UEFN_Toolbelt/Custom_Plugins` |
-| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 296 tools with full parameter signatures (name, type, required, default) + `example` call string for AI-agent and automation use |
+| `plugin_export_manifest` | — | Export `tool_manifest.json` — machine-readable index of all 297 tools with full parameter signatures (name, type, required, default) + `example` call string for AI-agent and automation use |
 
 **Online Plugin Hub** — the Plugin Hub dashboard tab fetches `registry.json` live from GitHub.
 - **Core Tools** (green/BUILT-IN): 10 flagship modules by Ocean Bennett, already built in
@@ -1337,7 +1348,7 @@ tb.run("scatter_props", ...)   # N actors
 | `Content/Python/UEFN_Toolbelt/core/theme.py` | **Single source of truth for all UI colors.** Edit `PALETTE` here to change the platform's appearance everywhere. |
 | `Content/Python/UEFN_Toolbelt/core/base_window.py` | `ToolbeltWindow` base class — subclass instead of `QMainWindow` for any tool window. Auto-applies theme + Slate tick. |
 | `docs/ui_style_guide.md` | **UI Style Guide — MANDATORY** for all windowed tools and plugins. Color palette, `ToolbeltWindow` API, widget recipes. Read this before writing any PySide6 UI. |
-| `docs/UEFN_QUIRKS.md` | **Critical reading for tool authors** — non-obvious UEFN Python behaviors. Key quirks: #2 Main Thread Lock, #19 V2 Device Property Wall, #23 `/Game/` mount invisible in CB + correct project mount detection. Any tool that touches assets, paths, or the Content Browser should consult this first. |
+| `docs/UEFN_QUIRKS.md` | **Critical reading for tool authors** — non-obvious UEFN Python behaviors. Key quirks: #2 Main Thread Lock, #19 V2 Device Property Wall, #23 `/Game/` mount + disk path detection (all three `Paths.*` functions wrong — use `__file__` walkup), #31 PySide6 window crash pattern, #32 Asset Registry scans crash on pak-heavy projects (use disk scan instead). Any tool that touches assets, paths, or the Content Browser should consult this first. |
 | `docs/CHANGELOG.md` | Version history — all notable changes by release. |
 | `docs/plugin_dev_guide.md` | Plugin authorship guide — security model, audit format, version stamp |
 | `tests/smoke_test.py` | 5-layer health check — run `tb.smoke_test()` |

@@ -5,6 +5,27 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [1.9.9] — 2026-03-29
+
+### feat: Auto Organizer window + disk-based scan (ARFilter-free, pak-safe)
+
+**`smart_organizer.py` additions**
+- `organize_open` — interactive PySide6 window: scan root + organized root path inputs, per-type checkboxes (14 asset types), include-unused toggle, scrollable preview table (asset name / class / type / category / destination), Organize button
+- `_PREFIX_TO_TYPE` map + `_type_from_prefix()` — type detection from Epic naming prefixes (zero AR calls)
+
+**Scan engine — disk-based, not Asset Registry**
+- `_execute_scan` walks the project `Content/` directory on disk via `os.walk` / `os.listdir`
+- Finds the real `Content/` dir by walking up from `__file__` — `unreal.Paths.project_dir()` returns `../../../FortniteGame/` in UEFN (useless); the `__file__` walkup is the only reliable method (Quirk #23, Quirk #32)
+- Assets are typed via prefix matching — zero Asset Registry calls during scan
+- Safe on pak-heavy projects like BRCosmetics where AR queries on the project mount stall/crash due to 1M+ mounted pak entries (Quirk #32)
+- Deferred to next Slate post-tick callback to run outside Qt `processEvents()` (Quirk #31)
+
+**Also**
+- Added `MaterialFunctionMaterialLayerBlend` to `CLASS_TO_TYPE` map
+- `_do_organize` redirector count removed (was using `ar.get_assets_by_path(scan_root)` — same crash vector as the scan)
+
+---
+
 ## [1.9.8] — 2026-03-29
 
 ### feat: Cooker Optimizer — native absorption of BiomeForge's UEFNCookerOptimizer (291 → 296 tools)

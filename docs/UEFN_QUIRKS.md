@@ -576,19 +576,38 @@ is needed (see `prefab_migrator.py` for a reference implementation).
 
 ### Getting the Project Content Dir on Disk
 
-For disk-level operations (e.g. `shutil.copy2`), never use `project_content_dir()`.
-Use `project_dir()` + `"/Content"` instead:
+**Both `project_content_dir()` and `project_dir()` are wrong in UEFN.** Neither returns the user's project directory:
 
 ```python
-# ❌ Returns FortniteGame engine path — wrong for user project files
-src = unreal.Paths.project_content_dir()
-
-# ✅ Returns user project Content dir on disk
-project_root = unreal.Paths.convert_relative_path_to_full(
-    unreal.Paths.project_dir()
-).rstrip("/\\")
-src = project_root + "/Content"
+unreal.Paths.project_content_dir()  # → C:/Program Files/Epic Games/Fortnite/FortniteGame/Content/
+unreal.Paths.project_dir()          # → ../../../FortniteGame/  (relative, resolves to engine dir)
+unreal.Paths.project_saved_dir()    # → C:/Users/.../AppData/Local/UnrealEditorFortnite/Saved/ (editor-level, not project)
 ```
+
+**The only reliable method is to walk up from `__file__`** — every Toolbelt `.py` file lives inside the project's `Content/` directory, so walking up the path until you hit a folder named `Content` gives you the real content dir:
+
+```python
+import os
+
+def _find_project_content_dir() -> str:
+    """Walk up from this file to find Content/ — the UEFN project content dir."""
+    curr = os.path.abspath(__file__)
+    while True:
+        parent = os.path.dirname(curr)
+        if parent == curr:
+            raise RuntimeError("Could not find Content/ directory walking up from __file__")
+        if os.path.basename(curr) == "Content":
+            return curr
+        curr = parent
+
+content_dir = _find_project_content_dir()
+# → C:/Users/ocean/AppData/Local/FortniteGame/Saved/Projects/BRCosmetics/Content
+```
+
+This works because every tool file lives at `[Project]/Content/Python/UEFN_Toolbelt/tools/toolname.py`. Walking four levels up always reaches `Content/`.
+
+**Canonical implementation:** `tools/verse_snippet_generator.py` → `_find_uefn_project_root()`.
+**Also used by:** `tools/smart_organizer.py` → `_execute_scan()` (disk-based asset scan).
 
 ### Asset Path Rules
 
@@ -612,7 +631,9 @@ Never force-prepend `/Game/` to paths from `get_selected_asset_data()` or the As
 
 | API | Problem | Use instead |
 |---|---|---|
-| `Paths.project_content_dir()` | Returns FortniteGame engine path | `Paths.project_dir() + "/Content"` |
+| `Paths.project_content_dir()` | Returns FortniteGame engine path | Walk up from `__file__` to find `Content/` |
+| `Paths.project_dir()` | Returns `../../../FortniteGame/` — engine dir, not user project | Walk up from `__file__` |
+| `Paths.project_saved_dir()` | Returns editor-level `UnrealEditorFortnite/Saved/` | Walk up from `__file__` |
 | `Paths.get_project_file_path()` | Returns `FortniteGame.uproject` | Asset Registry mount detection |
 | `candidates[0]` (first alpha mount) | Picks ACLPlugin or similar before user project | `max(counts, key=counts.get)` |
 | `/Game/` as asset destination | Assets invisible in Content Browser | `_detect_project_mount()` |
@@ -1002,3 +1023,102 @@ git worktree prune
 - Handles mixed selections (locks what it can, skips what it can't)
 - Returns a clear failure message naming the sandboxed actors
 - Does not crash or corrupt state
+
+
+
+---
+
+## Quirk #31 — Tool Windows Crash UEFN Without QApplication Guard + show_in_uefn() (Discovered: March 2026)
+
+Opening any PySide6 tool window from a `run_*` function crashes UEFN with an access violation if:
+
+1. **No `QApplication` exists** — creating any `QWidget` (including `ToolbeltWindow.__init__`) before a `QApplication` is a hard crash. This happens when the user runs a tool without the dashboard open (`tb.launch_qt()` not called).
+2. **Using plain `show()` instead of `show_in_uefn()`** — without registering the Slate post-tick callback, Qt's event loop is never pumped, making windows unresponsive or unstable when run standalone.
+
+**Correct pattern for every `run_*` function that opens a window:**
+
+```python
+def run_my_tool(**kwargs) -> dict:
+    global _my_window
+    try:
+        from PySide6.QtWidgets import QApplication
+        QApplication.instance() or QApplication([])   # guard BEFORE _build_*()
+        if _my_window is None or not _my_window.isVisible():
+            _my_window = _build_my_window()
+            _my_window.show_in_uefn()                 # not show()
+        else:
+            _my_window.raise_()
+            _my_window.activateWindow()
+        return {"status": "ok"}
+    except Exception as exc:
+        log_error(f"my_tool: {exc}")
+        return {"status": "error", "error": str(exc)}
+```
+
+**Why the guard must come before `_build_*()`:** `show_in_uefn()` creates the QApplication internally, but `_build_*()` is called first and instantiates `ToolbeltWindow` (a `QMainWindow`) before `show_in_uefn()` is reached — crash.
+
+**Reference implementation:** `tools/smart_organizer.py` → `run_organize_open`.
+
+---
+
+## Quirk #32 — Asset Registry Scans Crash on Pak-Heavy Projects (Discovered: March 2026)
+
+### The Problem
+
+On Fortnite projects like `/BRCosmetics`, UEFN mounts the entire Fortnite pak library at startup. A single UEFN session can have 20+ pak chunks mounted under the user's project mount point, each containing 100,000–300,000+ packages:
+
+```
+pakchunk11   → 311,161 packages
+pakchunk13   → 249,753 packages
+pakchunk30   → 164,268 packages
+pakchunk35   → 173,348 packages
+pakchunk60   → 149,724 packages
+... (20+ more chunks)
+```
+
+Any Asset Registry query with `package_paths=["/BRCosmetics"]` — even with `ARFilter`, `recursive_paths=False`, and explicit `class_names` — must scan all mounted containers at the C++ level. This causes `MaxTickInterval` violations (4000ms+) and eventually crashes UEFN.
+
+These AR calls all crash on pak-heavy projects:
+```python
+# ❌ All of these will freeze/crash when scan_root = the project mount point
+ar.get_assets_by_path(scan_root, recursive=True)
+ar.get_assets_by_path(scan_root, recursive=False)
+ar.get_assets(unreal.ARFilter(package_paths=[scan_root], recursive_paths=True))
+ar.get_assets(unreal.ARFilter(package_paths=[scan_root], recursive_paths=False))
+unreal.EditorAssetLibrary.list_assets(scan_root, recursive=True)
+unreal.EditorAssetLibrary.does_directory_exist(scan_root)   # even this can stall
+```
+
+### Why It Happens
+
+The user's project and Fortnite's pak content share the same mount point. From the Asset Registry's perspective, `/BRCosmetics` contains millions of entries — it cannot distinguish "user assets" from "pak assets" at query time.
+
+### The Fix — Disk-Based Scan via `__file__` Walkup
+
+Skip the Asset Registry entirely for file discovery. Walk the project `Content/` directory on disk using `os.walk`. Pak files are not extracted to disk — only the user's actual `.uasset` files appear on the filesystem:
+
+```python
+import os
+
+# Find the real Content dir (never use Paths.project_dir() — see Quirk #23)
+curr = os.path.abspath(__file__)
+while True:
+    parent = os.path.dirname(curr)
+    if parent == curr:
+        break
+    if os.path.basename(curr) == "Content":
+        content_dir = curr
+        break
+    curr = parent
+
+# Walk disk — only sees user's actual files, never pak content
+for dirpath, _dirs, filenames in os.walk(content_dir):
+    for fn in filenames:
+        if fn.lower().endswith(".uasset"):
+            # type detection via prefix — zero AR calls
+            asset_type = _type_from_prefix(os.path.splitext(fn)[0])
+```
+
+**For the Organize step,** targeted `eal.rename_asset(source, dest)` calls on specific known paths are safe — the crash only happens when scanning/enumerating across the entire mount point.
+
+**Reference implementation:** `tools/smart_organizer.py` → `OrganizerWindow._execute_scan()`.
