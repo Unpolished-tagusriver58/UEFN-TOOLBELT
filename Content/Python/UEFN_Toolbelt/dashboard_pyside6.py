@@ -419,10 +419,8 @@ def _tab_quick_actions(R) -> "QScrollArea":
              lambda: R("scaffold_generate", template=gen_combo.currentText(), project_name=gen_inp.text()), 
              gen_combo, gen_inp, tip="Scaffolds a perfectly organized Epic-standard folder hierarchy.")
     
-    org_inp = _inp("/Game", "Scan Path", width=120)
-    _btn_inp(g_org, "Smart Auto-Categorize Assets", 
-             lambda: R("organize_smart_categorize", scan_path=org_inp.text(), organized_root="/Game/Organized", dry_run=False), 
-             org_inp, tip="Scans a generic folder, detects classes, parses keywords from names, and intelligently sorts them into functional sub-categories (e.g. Meshes/Trees, Textures/Surface).")
+    _btn(g_org, "Auto Organizer", lambda: R("organize_open"),
+         "Open the Auto Organizer window — scan your project, preview planned moves by type and category, then organize in one click.")
 
     ren_inp = _inp("/Game", "Scan Path", width=120)
     _btn_inp(g_org, "Fix Asset Naming Conventions", 
@@ -445,10 +443,6 @@ def _tab_quick_actions(R) -> "QScrollArea":
     # 5. Verse Code Generation
     g_verse = _group(L, "Verse Code Generation")
     _btn(g_verse, "Generate @editable properties (Selected)", lambda: R("verse_gen_device_declarations"), "Reads the selected actors in the viewport and instantly generates perfectly typed Verse code variables.")
-
-    # 6. Media & Assets
-    g_media = _group(L, "Media & Assets")
-    _btn(g_media, "Paste Image from Clipboard", lambda: R("import_image_from_clipboard"), "Instantly imports your current clipboard image as a Texture2D into /Game/UEFN_Toolbelt/Textures/.")
 
     L.addStretch()
     return scroll
