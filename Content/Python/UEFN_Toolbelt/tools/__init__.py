@@ -75,3 +75,7 @@ from . import viewport_tools
 from . import actor_visibility
 from . import verse_templates
 from . import cooker_optimizer
+from . import enhanced_input_tools
+from . import animation_tools
+from . import audio_design_tools
+from . import world_partition_tools

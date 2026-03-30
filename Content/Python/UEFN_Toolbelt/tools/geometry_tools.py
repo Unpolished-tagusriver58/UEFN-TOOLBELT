@@ -409,3 +409,171 @@ def run_geometry_boolean_union(
     except Exception as e:
         log_error(f"geometry_boolean_union failed: {e}")
         return {"status": "error", "error": str(e)}
+
+
+@register_tool(
+    name="geometry_boolean_subtract",
+    category="Geometry",
+    description=(
+        "Boolean subtract: cut the second selected actor's shape out of the first. "
+        "Saves the result into the first actor's mesh asset. Always dry_run=True first."
+    ),
+    tags=["geometry", "mesh", "boolean", "subtract", "cut", "csg"],
+)
+def run_geometry_boolean_subtract(dry_run: bool = True, **kwargs) -> dict:
+    actors = _selected_static_mesh_actors()
+    if len(actors) < 2:
+        return {"status": "error", "error": "Select exactly 2 StaticMeshActors — first is the target, second is the cutter."}
+
+    actor_a, actor_b = actors[0], actors[1]
+    mesh_a = _load_static_mesh(actor_a)
+    mesh_b = _load_static_mesh(actor_b)
+    if mesh_a is None or mesh_b is None:
+        return {"status": "error", "error": "One or both actors have no static mesh."}
+
+    if dry_run:
+        return {
+            "status": "ok", "dry_run": True,
+            "target": actor_a.get_actor_label(), "cutter": actor_b.get_actor_label(),
+            "message": "Set dry_run=False to apply. Cuts second mesh out of first.",
+        }
+
+    try:
+        dyn_a, dyn_b = _get_dyn_mesh(), _get_dyn_mesh()
+        copy_opts = unreal.GeometryScriptCopyMeshFromAssetOptions()
+        unreal.GeometryScriptLibrary_StaticMeshFunctions.copy_mesh_from_static_mesh(
+            static_mesh_asset=mesh_a, target_mesh=dyn_a, asset_options=copy_opts,
+            lod_type=unreal.GeometryScriptLODType.MAXIMUM_AVAILABLE,
+        )
+        unreal.GeometryScriptLibrary_StaticMeshFunctions.copy_mesh_from_static_mesh(
+            static_mesh_asset=mesh_b, target_mesh=dyn_b, asset_options=copy_opts,
+            lod_type=unreal.GeometryScriptLODType.MAXIMUM_AVAILABLE,
+        )
+        unreal.GeometryScriptLibrary_MeshBooleanFunctions.apply_mesh_boolean(
+            target_mesh=dyn_a, target_transform=actor_a.get_actor_transform(),
+            tool_mesh=dyn_b, tool_transform=actor_b.get_actor_transform(),
+            operation=unreal.GeometryScriptMeshBooleanOperation.SUBTRACT,
+            options=unreal.GeometryScriptMeshBooleanOptions(),
+        )
+        write_opts = unreal.GeometryScriptCopyMeshToAssetOptions()
+        unreal.GeometryScriptLibrary_StaticMeshFunctions.copy_mesh_to_static_mesh(
+            from_dynamic_mesh=dyn_a, to_static_mesh_asset=mesh_a,
+            options=write_opts, lod_type=unreal.GeometryScriptLODType.MAXIMUM_AVAILABLE,
+        )
+        unreal.EditorAssetLibrary.save_loaded_asset(mesh_a)
+        log_info(f"geometry_boolean_subtract: {actor_a.get_actor_label()} − {actor_b.get_actor_label()} → saved.")
+        return {"status": "ok", "dry_run": False, "saved_mesh": mesh_a.get_name()}
+    except Exception as e:
+        log_error(f"geometry_boolean_subtract failed: {e}")
+        return {"status": "error", "error": str(e)}
+
+
+@register_tool(
+    name="geometry_boolean_intersect",
+    category="Geometry",
+    description=(
+        "Boolean intersect: keep only the volume shared by both selected actors. "
+        "Saves the result into the first actor's mesh asset. Always dry_run=True first."
+    ),
+    tags=["geometry", "mesh", "boolean", "intersect", "csg", "overlap"],
+)
+def run_geometry_boolean_intersect(dry_run: bool = True, **kwargs) -> dict:
+    actors = _selected_static_mesh_actors()
+    if len(actors) < 2:
+        return {"status": "error", "error": "Select exactly 2 StaticMeshActors."}
+
+    actor_a, actor_b = actors[0], actors[1]
+    mesh_a = _load_static_mesh(actor_a)
+    mesh_b = _load_static_mesh(actor_b)
+    if mesh_a is None or mesh_b is None:
+        return {"status": "error", "error": "One or both actors have no static mesh."}
+
+    if dry_run:
+        return {
+            "status": "ok", "dry_run": True,
+            "target": actor_a.get_actor_label(), "cutter": actor_b.get_actor_label(),
+            "message": "Set dry_run=False to apply. Keeps only the shared volume.",
+        }
+
+    try:
+        dyn_a, dyn_b = _get_dyn_mesh(), _get_dyn_mesh()
+        copy_opts = unreal.GeometryScriptCopyMeshFromAssetOptions()
+        unreal.GeometryScriptLibrary_StaticMeshFunctions.copy_mesh_from_static_mesh(
+            static_mesh_asset=mesh_a, target_mesh=dyn_a, asset_options=copy_opts,
+            lod_type=unreal.GeometryScriptLODType.MAXIMUM_AVAILABLE,
+        )
+        unreal.GeometryScriptLibrary_StaticMeshFunctions.copy_mesh_from_static_mesh(
+            static_mesh_asset=mesh_b, target_mesh=dyn_b, asset_options=copy_opts,
+            lod_type=unreal.GeometryScriptLODType.MAXIMUM_AVAILABLE,
+        )
+        unreal.GeometryScriptLibrary_MeshBooleanFunctions.apply_mesh_boolean(
+            target_mesh=dyn_a, target_transform=actor_a.get_actor_transform(),
+            tool_mesh=dyn_b, tool_transform=actor_b.get_actor_transform(),
+            operation=unreal.GeometryScriptMeshBooleanOperation.INTERSECT,
+            options=unreal.GeometryScriptMeshBooleanOptions(),
+        )
+        write_opts = unreal.GeometryScriptCopyMeshToAssetOptions()
+        unreal.GeometryScriptLibrary_StaticMeshFunctions.copy_mesh_to_static_mesh(
+            from_dynamic_mesh=dyn_a, to_static_mesh_asset=mesh_a,
+            options=write_opts, lod_type=unreal.GeometryScriptLODType.MAXIMUM_AVAILABLE,
+        )
+        unreal.EditorAssetLibrary.save_loaded_asset(mesh_a)
+        log_info(f"geometry_boolean_intersect: {actor_a.get_actor_label()} ∩ {actor_b.get_actor_label()} → saved.")
+        return {"status": "ok", "dry_run": False, "saved_mesh": mesh_a.get_name()}
+    except Exception as e:
+        log_error(f"geometry_boolean_intersect failed: {e}")
+        return {"status": "error", "error": str(e)}
+
+
+@register_tool(
+    name="geometry_remove_degenerate",
+    category="Geometry",
+    description=(
+        "Remove degenerate triangles (zero-area or near-zero-area faces) from "
+        "selected StaticMesh actors. Fixes invisible collision and lighting artifacts."
+    ),
+    tags=["geometry", "mesh", "repair", "degenerate", "triangles", "cleanup"],
+)
+def run_geometry_remove_degenerate(min_area: float = 0.0001, dry_run: bool = True, **kwargs) -> dict:
+    actors = _selected_static_mesh_actors()
+    if not actors:
+        return {"status": "error", "error": "No StaticMeshActors selected."}
+
+    if dry_run:
+        meshes = [a.get_actor_label() for a in actors if _load_static_mesh(a)]
+        return {
+            "status": "ok", "dry_run": True, "actors": meshes,
+            "message": f"Set dry_run=False to remove degenerate triangles (min_area={min_area}) from {len(meshes)} mesh(es).",
+        }
+
+    repaired = []
+    failed   = []
+    for actor in actors:
+        mesh = _load_static_mesh(actor)
+        if mesh is None:
+            continue
+        try:
+            dyn = _get_dyn_mesh()
+            copy_opts = unreal.GeometryScriptCopyMeshFromAssetOptions()
+            unreal.GeometryScriptLibrary_StaticMeshFunctions.copy_mesh_from_static_mesh(
+                static_mesh_asset=mesh, target_mesh=dyn, asset_options=copy_opts,
+                lod_type=unreal.GeometryScriptLODType.MAXIMUM_AVAILABLE,
+            )
+            repair_opts = unreal.GeometryScriptRemoveSmallComponentsOptions()
+            repair_opts.set_editor_property("min_triangle_area_threshold", min_area)
+            unreal.GeometryScriptLibrary_MeshRepairFunctions.remove_small_components(
+                target_mesh=dyn, options=repair_opts,
+            )
+            write_opts = unreal.GeometryScriptCopyMeshToAssetOptions()
+            unreal.GeometryScriptLibrary_StaticMeshFunctions.copy_mesh_to_static_mesh(
+                from_dynamic_mesh=dyn, to_static_mesh_asset=mesh,
+                options=write_opts, lod_type=unreal.GeometryScriptLODType.MAXIMUM_AVAILABLE,
+            )
+            unreal.EditorAssetLibrary.save_loaded_asset(mesh)
+            repaired.append(mesh.get_name())
+        except Exception as e:
+            failed.append({"mesh": mesh.get_name(), "error": str(e)})
+            log_error(f"geometry_remove_degenerate failed on {mesh.get_name()}: {e}")
+
+    log_info(f"geometry_remove_degenerate: {len(repaired)} repaired, {len(failed)} failed.")
+    return {"status": "ok", "dry_run": False, "repaired": repaired, "failed": failed}

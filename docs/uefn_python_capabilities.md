@@ -18,7 +18,7 @@ Toolbelt can automate, what's read-only, and what doesn't exist yet.
 | Actors & Levels | Full | bulk_operations, prop_patterns, foliage_tools, level_snapshot | `EditorActorSubsystem` (45), `LevelEditorSubsystem` (49) |
 | Materials | Full | material_master | `MaterialEditingLibrary` (89) |
 | Static Meshes | Full | lod_tools, memory_profiler | `StaticMeshEditorSubsystem` (87) |
-| Geometry Scripting | Full | — future module | `GeometryScriptingCore` (46 classes, 145+ ops) |
+| Geometry Scripting | Full | geometry_tools | `GeometryScriptingCore` (46 classes, 145+ ops) |
 | PCG | Full | — future module | `PCG` (597 types) |
 | Screenshots | Full | screenshot_tools | `AutomationLibrary` (58) |
 | Movie Render | Full | — future module | `MovieRenderPipelineCore` (145 classes) |
@@ -26,9 +26,9 @@ Toolbelt can automate, what's read-only, and what doesn't exist yet.
 | Measurement | High | measurement_tools | `EditorActorSubsystem`, `Vector` math |
 | Localization | High | localization_tools | `TextRenderActor`, `AssetTools` |
 | Niagara VFX | High | — future module | `Niagara` (260 types) |
-| Audio / MetaSound | High | — future module | `AudioMixer`, `MetasoundEngine` |
-| Animation | Good | — future module | `AnimGraph` (97), `AnimGraphRuntime` (152) |
-| Enhanced Input | Good | — future module | `EnhancedInput` (75 types) |
+| Audio / MetaSound | High | audio_design_tools | `AudioMixer`, `MetasoundEngine` |
+| Animation | Good | animation_tools | `AnimGraph` (97), `AnimGraphRuntime` (152) |
+| Enhanced Input | Good | enhanced_input_tools | `EnhancedInput` (75 types) |
 | Import / Interchange | Good | smart_importer | `InterchangeImport` (73) |
 | Fortnite Classes | Read-only | verse_device_editor (inspection) | 28,850 types — mostly locked |
 

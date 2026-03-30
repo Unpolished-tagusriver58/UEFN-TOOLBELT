@@ -5,6 +5,46 @@ Format: `## [version] — date` · Types: `feat` · `fix` · `refactor` · `docs
 
 ---
 
+## [2.0.0] — 2026-03-29
+
+### feat: full UEFN Python API coverage — 4 new modules, 21 new tools (297 → 318)
+
+Every previously empty API domain in `docs/uefn_python_capabilities.md` now has toolbelt coverage.
+Claude's tool manifest now spans the complete UEFN Python surface area.
+
+**`enhanced_input_tools.py`** (4 tools — EnhancedInput, 75 types)
+- `input_list_actions` — list all InputAction assets (name, path, value type)
+- `input_list_contexts` — list all InputMappingContext assets
+- `input_inspect_context` — inspect a context's key→action bindings
+- `input_create_action` — create a new InputAction asset (bool/axis1d/axis2d/axis3d)
+
+**`animation_tools.py`** (5 tools — AnimGraph 97 types, AnimGraphRuntime 152 types)
+- `anim_list_skeletons` — list all Skeleton assets
+- `anim_list_sequences` — list AnimSequences with duration and skeleton
+- `anim_list_montages` — list AnimMontage assets
+- `anim_list_blend_spaces` — list BlendSpace and BlendSpace1D assets
+- `anim_create_montage` — create an AnimMontage from an existing AnimSequence
+
+**`audio_design_tools.py`** (5 tools — MetasoundEngine 24, MetasoundEditor 37, AudioSynesthesia 38)
+- `audio_list_metasounds` — list MetaSoundSource and MetaSoundPatch assets
+- `audio_list_sound_classes` — list SoundClass assets with volume/pitch
+- `audio_list_sound_cues` — list SoundCue assets
+- `audio_list_sound_mixes` — list SoundMix snapshot assets
+- `audio_list_synesthesia` — list AudioSynesthesia analyzers (LoudnessNRT, ConstantQNRT, OnsetNRT)
+
+**`world_partition_tools.py`** (4 tools — DataLayerEditorSubsystem, WorldPartition)
+- `world_partition_status` — check if WP is enabled for the current level
+- `data_layer_list` — list all Data Layers with load/visibility states
+- `data_layer_create` — create a new Data Layer
+- `data_layer_assign_selection` — assign selected actors to a named Data Layer
+
+**`geometry_tools.py`** additions (3 more boolean/repair tools — GeometryScriptingCore)
+- `geometry_boolean_subtract` — cut second mesh out of first
+- `geometry_boolean_intersect` — keep only the shared volume
+- `geometry_remove_degenerate` — remove zero-area triangles causing lighting/collision artifacts
+
+---
+
 ## [1.9.9] — 2026-03-29
 
 ### feat: Auto Organizer window + disk-based scan (ARFilter-free, pak-safe)
