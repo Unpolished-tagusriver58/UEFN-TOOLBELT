@@ -1161,6 +1161,8 @@ for dirpath, _dirs, filenames in os.walk(content_dir):
 
 ## Quirk #33 — `does_directory_exist("/{mount}/Content")` Is a False-Positive Mount Probe (Discovered: March 2026)
 
+
+
 ### The Trap
 
 A common pattern to detect whether a UEFN project mount includes `Content` as a CB path segment is:
@@ -1190,4 +1192,18 @@ package_name = f"/{mount}/{rel_no_ext}"   # ← always correct, no Content probe
 If the user has a folder named `Content` inside `Content/`, the `rel` path naturally includes it (e.g. `"Content/Assets/M_Locker"`) and the CB path becomes `/{mount}/Content/Assets/M_Locker` — which is exactly right.
 
 **Reference implementation:** `tools/smart_organizer.py` → `OrganizerWindow._execute_scan()`.
+
+---
+
+## Quirk #34 — `BodyInstance.bSimulatePhysics` Is Sandboxed (Discovered: March 2026)
+
+**Symptom:** `comp.get_editor_property("BodyInstance").get_editor_property("bSimulatePhysics")` returns `None` on every `StaticMeshComponent`, even after `set_simulate_physics(True)` has been called and the Details panel confirms physics is enabled.
+
+**Why:** UEFN's Python sandbox blocks read access to `BodyInstance` struct properties. The `bSimulatePhysics` flag lives inside a `FBodyInstance` C++ struct — not a top-level UPROPERTY — and UEFN's reflection layer does not expose it for reading.
+
+**What works:** `set_simulate_physics(True/False)` is a method call (not a property read) and works correctly. The write path is fully functional. Only the read path is sandboxed.
+
+**Workaround:** There is no Python API to read the current physics state. Use the Details panel to inspect current state. Tools that need to act conditionally on physics state should call `set_simulate_physics()` unconditionally (it is idempotent) rather than trying to read first.
+
+**Affected tools:** `physics_list` — reports `physics_capable` (whether the actor has a `StaticMeshComponent`) rather than current on/off state, with an explicit note about the sandbox restriction.
 
