@@ -205,7 +205,7 @@ def _build_setup_status(L: "QVBoxLayout") -> None:
         from UEFN_Toolbelt.tools import mcp_bridge as _mcpb
         port = getattr(_mcpb, "_bound_port", 0)
         if port and port > 0:
-            checks.append(("MCP bridge", "ok", f"Listening on port {port}  —  Claude Code can now control UEFN"))
+            checks.append(("MCP bridge", "ok", f"Listening on port {port}  —  AI client can now control UEFN"))
         else:
             checks.append(("MCP bridge", "warn", "Not running  —  go to the MCP tab to start AI control"))
     except Exception as e:
@@ -1721,7 +1721,7 @@ def _tab_mcp(R) -> "QScrollArea":
 
     _btn(g, "▶  Start Listener",
          _start,
-         "Start the HTTP listener so Claude Code can control UEFN directly")
+         "Start the HTTP listener so any MCP-compatible AI can control UEFN directly")
 
     _btn(g, "■  Stop Listener",
          _stop,
@@ -1761,16 +1761,18 @@ def _tab_mcp(R) -> "QScrollArea":
          "Calls the tool through mcp_bridge.run_tool so you can test the bridge")
 
     # ── Setup info ────────────────────────────────────────────────────────
-    g3 = _group(L, "Claude Code Setup (.mcp.json)")
+    g3 = _group(L, "AI Client Setup (.mcp.json)")
     info = QLabel(
+        "Works with Claude Code, Cursor, Windsurf, Zed,\n"
+        "Continue, OpenClaw, NemoClaw, or any MCP agent.\n\n"
         "1. Click Start Listener above\n"
         "2. Place mcp_server.py next to .mcp.json in this repo\n"
         "3. Add to .mcp.json:\n"
         '   {"mcpServers": {"uefn-toolbelt":\n'
         '     {"command": "python",\n'
         '      "args": ["<path>/mcp_server.py"]}}}\n'
-        "4. Restart Claude Code — it auto-connects\n\n"
-        "Claude can then run all 355 tools, spawn/move actors,\n"
+        "4. Restart your AI client — it auto-connects\n\n"
+        "Your AI can then run all 355 tools, spawn/move actors,\n"
         "write Verse code, and read your level — without leaving\n"
         "the conversation.\n\n"
         "When done: click ■ Stop Listener above, or run\n"
