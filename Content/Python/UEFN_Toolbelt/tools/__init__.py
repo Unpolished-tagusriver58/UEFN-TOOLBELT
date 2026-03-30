@@ -83,3 +83,6 @@ from . import datatable_tools
 from . import texture_tools
 from . import skeletal_mesh_tools
 from . import curve_tools
+from . import blueprint_tools
+from . import landscape_tools
+from . import sound_asset_tools
