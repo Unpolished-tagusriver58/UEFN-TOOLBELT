@@ -1679,7 +1679,7 @@ def _tab_mcp(R) -> "QScrollArea":
             from UEFN_Toolbelt.tools import mcp_bridge as _mcpb
             port = getattr(_mcpb, "_bound_port", 0)
             if port and port > 0:
-                return "running", f"● RUNNING  —  port {port}  —  Claude Code is connected"
+                return "running", f"● RUNNING  —  port {port}  —  AI client connected"
             else:
                 return "stopped", "● NOT RUNNING  —  click Start to enable AI control"
         except Exception:

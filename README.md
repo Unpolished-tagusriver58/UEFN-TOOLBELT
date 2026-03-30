@@ -162,7 +162,7 @@ Toolbelt is built to be used with AI (Claude/Gemini). To give your AI **perfect 
 - [Custom Plugins & Security](#custom-plugins--security)
 - [API Capability Crawler](#api-capability-crawler)
 - [Fortnite Device API Mapping](#fortnite-device-api-mapping)
-- [MCP / Claude Integration](#mcp--claude-integration)
+- [MCP — Connect Any AI to UEFN](#mcp--connect-any-ai-to-uefn)
 - [Spec-Accurate Verse Code Generation](#spec-accurate-verse-code-generation)
 - [CLAUDE.md — Instant AI Context](#claudemd--instant-ai-context)
 - [Why This Is the Best UEFN Python Tool](#why-this-is-the-best-uefn-python-tool)
@@ -2207,15 +2207,18 @@ All of these also appear in `deploy.bat` output — after deploying, just copy f
 
 ---
 
-## MCP / Claude Integration
+## MCP — Connect Any AI to UEFN
 
-UEFN Toolbelt ships a full two-process MCP architecture so Claude Code (or any MCP-compatible AI) can directly control the editor — no copy-pasting, no manual Python runs.
+UEFN Toolbelt ships a full two-process MCP (Model Context Protocol) architecture so **any MCP-compatible AI** can directly control the editor — no copy-pasting, no manual Python runs.
+
+**This works with Claude Code, Cursor, Windsurf, Zed, Continue, or any agent that speaks MCP.**
+Claude is the recommended driver because of the verse-book spec integration and CLAUDE.md context loading, but the bridge is completely model-agnostic. If your AI client supports MCP, it connects.
 
 **How it works:**
 
 ```
-Claude Code  ←── MCP stdio ──→  mcp_server.py  ←── HTTP ──→  UEFN editor
-                                 (runs outside)              (mcp_bridge.py)
+Your AI  ←── MCP stdio ──→  mcp_server.py  ←── HTTP ──→  UEFN editor
+  (IDE)                       (runs outside)              (mcp_bridge.py)
 ```
 
 **One-time setup:**
@@ -2229,9 +2232,9 @@ import UEFN_Toolbelt as tb; tb.run("mcp_start")
 # Output Log: [MCP] ✓ Listener running on http://127.0.0.1:8765
 ```
 
-`.mcp.json` is already in the repo root — Claude Code picks it up automatically on next launch.
+`.mcp.json` is already in the repo root — any MCP client picks it up automatically.
 
-**What Claude can do:**
+**What any connected AI can do:**
 - Run any of the 355 toolbelt tools by name (`run_toolbelt_tool`)
 - Spawn, move, delete actors; read selected actors live
 - List, rename, duplicate, import, delete Content Browser assets
@@ -2277,7 +2280,7 @@ curl -s -X POST http://127.0.0.1:8765 \
   -d '{"command":"run_tool","params":{"tool_name":"snapshot_save","kwargs":{}}}'
 ```
 
-Claude is the recommended driver because it has the verse-book spec integration and the best reasoning for complex tasks — but the bridge is model-agnostic by design.
+**Claude is the recommended driver** because of the verse-book spec integration, CLAUDE.md auto-context loading, and the best reasoning for complex autonomous tasks — but the bridge is fully model-agnostic. Any AI that speaks MCP works: Claude Code, Cursor, Windsurf, Zed, Continue, or a custom agent you build yourself against the HTTP API directly.
 
 MCP bridge architecture inspired by [Kirch's uefn-mcp-server](https://github.com/KirChuvakov/uefn-mcp-server) ([@KirchCreator](https://x.com/KirchCreator)) — full credit for the queue + Slate tick pattern.
 
