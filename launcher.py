@@ -14,8 +14,8 @@ Paste ONE of these into the UEFN Python REPL (Tools → Execute Python Script):
 
 The launcher:
   1. Adds Content/Python/ to sys.path
-  2. Hot-reloads all toolbelt modules (safe to run repeatedly during development)
-  3. Registers all tool modules (171 tools)
+  2. Clears all cached Toolbelt modules (safe nuclear reload)
+  3. Registers all 355 tools
   4. Opens the PySide6 tabbed dashboard (falls back gracefully if PySide6 missing)
 
 Install PySide6 (one-time, run OUTSIDE UEFN in a regular terminal):
@@ -27,83 +27,33 @@ API ground truth: Built-in API Explorer: tb.run("api_export_full") for IDE autoc
 
 import sys
 import os
-import importlib
 import unreal
 
 # ── 1. Path setup ─────────────────────────────────────────────────────────────
 
-_CONTENT_DIR  = unreal.Paths.project_content_dir()
-_PYTHON_ROOT  = os.path.join(_CONTENT_DIR, "Python")
+_CONTENT_DIR = unreal.Paths.project_content_dir()
+_PYTHON_ROOT = os.path.join(_CONTENT_DIR, "Python")
 
 if _PYTHON_ROOT not in sys.path:
     sys.path.insert(0, _PYTHON_ROOT)
 
-# ── 2. Hot-reload every module (safe to run repeatedly while developing) ───────
+# ── 2. Nuclear reload — clears all cached modules so every import is fresh ───
+#
+# Safe to run repeatedly during development. The hardcoded module list approach
+# was removed in v2.2.0 — it was brittle (missed new modules) and caused stale
+# reload bugs. The sys.modules pop pattern is authoritative and always complete.
+#
+# ⚠️ If this was the FIRST time deploying a new module (new entry in
+# tools/__init__.py), do a full UEFN restart instead — nuclear reload can
+# crash on brand-new modules. See docs/UEFN_QUIRKS.md Quirk #26.
 
-_ALL_MODULES = [
-    # Core
-    "UEFN_Toolbelt",
-    "UEFN_Toolbelt.core",
-    "UEFN_Toolbelt.registry",
-    "UEFN_Toolbelt.tools",
-    "UEFN_Toolbelt.dashboard_pyside6",
-    # Tools
-    "UEFN_Toolbelt.tools.material_master",
-    "UEFN_Toolbelt.tools.arena_generator",
-    "UEFN_Toolbelt.tools.spline_prop_placer",
-    "UEFN_Toolbelt.tools.bulk_operations",
-    "UEFN_Toolbelt.tools.verse_device_editor",
-    "UEFN_Toolbelt.tools.smart_importer",
-    "UEFN_Toolbelt.tools.verse_snippet_generator",
-    "UEFN_Toolbelt.tools.text_painter",
-    "UEFN_Toolbelt.tools.asset_renamer",
-    "UEFN_Toolbelt.tools.foliage_tools",
-    "UEFN_Toolbelt.tools.lod_tools",
-    "UEFN_Toolbelt.tools.spline_to_verse",
-    "UEFN_Toolbelt.tools.project_scaffold",
-    "UEFN_Toolbelt.tools.memory_profiler",
-    "UEFN_Toolbelt.tools.api_explorer",
-    "UEFN_Toolbelt.tools.prop_patterns",
-    "UEFN_Toolbelt.tools.reference_auditor",
-    "UEFN_Toolbelt.tools.level_snapshot",
-    "UEFN_Toolbelt.tools.asset_tagger",
-    "UEFN_Toolbelt.tools.screenshot_tools",
-    "UEFN_Toolbelt.tools.mcp_bridge",
-    "UEFN_Toolbelt.tools.measurement_tools",
-    "UEFN_Toolbelt.tools.localization_tools",
-    "UEFN_Toolbelt.tools.integration_test",
-    "UEFN_Toolbelt.tools.api_capability_crawler",
-    "UEFN_Toolbelt.tools.smart_organizer",
-    "UEFN_Toolbelt.tools.system_perf",
-    "UEFN_Toolbelt.tools.asset_importer",
-    "UEFN_Toolbelt.tools.procedural_geometry",
-    "UEFN_Toolbelt.tools.text_voxelizer",
-    "UEFN_Toolbelt.tools.verse_schema",
-    "UEFN_Toolbelt.tools.system_build",
-    "UEFN_Toolbelt.tools.foliage_converter",
-    "UEFN_Toolbelt.tools.entity_kits",
-    "UEFN_Toolbelt.tools.selection_utils",
-    "UEFN_Toolbelt.tools.project_admin",
-    "UEFN_Toolbelt.tools.lighting_mastery",
-    "UEFN_Toolbelt.tools.sequencer_tools",
-    "UEFN_Toolbelt.tools.sim_device_proxy",
-    "UEFN_Toolbelt.tools.config_tools",
-    "UEFN_Toolbelt.tools.verse_device_graph",
-    "UEFN_Toolbelt.tools.plugin_manager",
-]
-
-for _mod in _ALL_MODULES:
-    if _mod in sys.modules:
-        try:
-            importlib.reload(sys.modules[_mod])
-        except Exception as _e:
-            unreal.log_warning(f"[TOOLBELT] Reload skipped for {_mod}: {_e}")
+[sys.modules.pop(k) for k in list(sys.modules) if "UEFN_Toolbelt" in k]
 
 # ── 3. Launch ─────────────────────────────────────────────────────────────────
 
 try:
     import UEFN_Toolbelt as _tb
-    _tb.launch()  # registers all tools → opens Qt dashboard
+    _tb.launch()  # register_all_tools() → opens Qt dashboard
 except Exception as _err:
     unreal.log_error(f"[TOOLBELT] Launch failed: {_err}")
     raise

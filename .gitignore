@@ -164,6 +164,7 @@ credentials.json
 
 # ─── UEFN Toolbelt Local Data ─────────────────────────────────────────────────
 docs/api_level_classes_schema.json
+tools_dump.json
 
 # UEFN Internal Stubs (Proprietary / Large Files)
 unreal_engine_blueprint.pyi
